@@ -15,7 +15,7 @@ extern "C" size_t findkey_scalar(const uint8_t* data,
         *out_status = FINDKEY_OK;
     }
 
-    if (!data || (!key && key_len != 0) || !out_positions) {
+    if ((!data && len != 0) || (!key && key_len != 0) || !out_positions) {
         if (out_status) {
             *out_status = FINDKEY_ERR_BAD_ARGS;
         }
