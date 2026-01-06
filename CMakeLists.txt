@@ -25,8 +25,24 @@ if(FIND_KEY_NATIVE)
     target_compile_options(find_json_key PUBLIC -march=native)
 endif()
 
-add_executable(findkey_scalar
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-mssse3" COMPILER_SUPPORTS_MSSSE3)
+
+if(COMPILER_SUPPORTS_MSSSE3)
+    target_sources(find_json_key PRIVATE src/matcher_teddy.cpp)
+    set_source_files_properties(
+        src/matcher_teddy.cpp
+        PROPERTIES COMPILE_OPTIONS "-mssse3"
+    )
+    target_compile_definitions(find_json_key PUBLIC COMPILER_SUPPORTS_TEDDY=1)
+else()
+    message(STATUS "-mssse3 not supported!")
+    target_compile_definitions(find_json_key PUBLIC COMPILER_SUPPORTS_TEDDY=0)
+endif()
+
+add_executable(findkey
     src/main.cpp
 )
-target_include_directories(findkey_scalar PRIVATE include)
-target_link_libraries(findkey_scalar PRIVATE find_json_key)
+
+target_include_directories(findkey PRIVATE include src)
+target_link_libraries(findkey PRIVATE find_json_key)
