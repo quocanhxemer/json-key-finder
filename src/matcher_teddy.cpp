@@ -3,12 +3,15 @@
 #include <cctype>
 #include <cstring>
 
+#include <algorithm>
+
 #include <immintrin.h>
 
-std::vector<size_t> matcher_teddy(std::string_view data, std::string_view key) {
-    std::vector<size_t> positions;
+std::vector<findkey_result> matcher_teddy(
+    std::string_view data,
+    const std::vector<std::string_view>& keys) {
     // placeholder
     (void)data;
-    (void)key;
-    return positions;
+    (void)keys;
+    return {};
 }

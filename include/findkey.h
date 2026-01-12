@@ -12,21 +12,28 @@ enum findkey_status {
     FINDKEY_TEDDY_NOT_SUPPORTED = 2,
 };
 
+struct findkey_result {
+    size_t position;
+    uint32_t key_id;
+};
+
 size_t findkey_scalar(const uint8_t* data,
                       size_t len,
-                      const uint8_t* key,
-                      size_t key_len,
-                      size_t* out_positions,
+                      const uint8_t* const* keys,
+                      const size_t* key_lens,
+                      size_t num_keys,
+                      struct findkey_result* out_results,
                       size_t max_out_positions,
                       int* out_status);
 
 size_t findkey_teddy(const uint8_t* data,
-                      size_t len,
-                      const uint8_t* key,
-                      size_t key_len,
-                      size_t* out_positions,
-                      size_t max_out_positions,
-                      int* out_status);
+                     size_t len,
+                     const uint8_t* const* keys,
+                     const size_t* key_lens,
+                     size_t num_keys,
+                     struct findkey_result* out_results,
+                     size_t max_out_positions,
+                     int* out_status);
 
 #ifdef __cplusplus
 }

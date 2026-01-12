@@ -5,48 +5,98 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
+#include <string>
+#include <string_view>
 #include <vector>
 
-int main(int argc, char** argv) {
-    auto print_usage_and_exit = [&argv]() {
-        std::fprintf(stderr, "Usage: [--algo scalar|teddy] %s <key> <file>\n",
-                     argv[0]);
+static void print_usage_and_exit(const char* prog_name) {
+    std::fprintf(stderr,
+                 "Usage: %s --keys <keys_file> --data <json_file> [--algo "
+                 "scalar|teddy] [--print-positions]\n",
+                 prog_name);
+    std::exit(EXIT_FAILURE);
+}
+
+static std::vector<std::string> read_keys_from_file(const char* keys_file) {
+    std::ifstream infile(keys_file);
+    if (!infile) {
+        std::fprintf(stderr, "Failed to open keys file: %s\n", keys_file);
         std::exit(EXIT_FAILURE);
-    };
-
-    const char* algo = "scalar";
-    int idx = 1;
-    if (argc >= 3 && std::strcmp(argv[1], "--algo") == 0) {
-        if (argc != 5) {
-            print_usage_and_exit();
-        }
-        algo = argv[2];
-        idx = 3;
-    } else if (argc != 3) {
-        print_usage_and_exit();
     }
-    const char* key = argv[idx++];
-    const char* file = argv[idx++];
 
-    MMapFile mmap_file(file);
+    std::vector<std::string> keys;
+    std::string line;
+    while (std::getline(infile, line)) {
+        if (!line.empty()) {
+            if (line.back() == '\r') {
+                line.pop_back();  // windows return
+            }
+            keys.push_back(line);
+        }
+    }
+
+    if (keys.empty()) {
+        std::fprintf(stderr, "No keys found in keys file: %s\n", keys_file);
+        std::exit(EXIT_FAILURE);
+    }
+
+    return keys;
+}
+
+int main(int argc, char** argv) {
+    const char* algo = "scalar";
+    const char* keys_path = nullptr;
+    const char* data_path = nullptr;
+    bool print_positions = false;
+
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--algo") == 0 && i + 1 < argc) {
+            algo = argv[++i];
+        } else if (std::strcmp(argv[i], "--keys") == 0 && i + 1 < argc) {
+            keys_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
+            data_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--print-positions") == 0) {
+            print_positions = true;
+        } else {
+            print_usage_and_exit(argv[0]);
+        }
+    }
+
+    if (!keys_path || !data_path) {
+        print_usage_and_exit(argv[0]);
+    }
+
+    std::vector<std::string> keys = read_keys_from_file(keys_path);
+    std::vector<const uint8_t*> key_ptrs;
+    key_ptrs.reserve(keys.size());
+    std::vector<size_t> key_lens;
+    key_lens.reserve(keys.size());
+    for (const auto& key : keys) {
+        key_ptrs.push_back(reinterpret_cast<const uint8_t*>(key.data()));
+        key_lens.push_back(key.size());
+    }
+
+    MMapFile mmap_file(data_path);
 
     constexpr size_t POSITIONS_CAPACITY = 1024 * 1024;
-    std::vector<size_t> positions(POSITIONS_CAPACITY);
+    std::vector<findkey_result> positions(POSITIONS_CAPACITY);
     int status = 0;
 
     size_t num_found = 0;
     if (std::strcmp(algo, "scalar") == 0) {
         num_found = findkey_scalar(
             reinterpret_cast<const uint8_t*>(mmap_file.data()),
-            mmap_file.size(), reinterpret_cast<const uint8_t*>(key),
-            std::strlen(key), positions.data(), positions.size(), &status);
+            mmap_file.size(), key_ptrs.data(), key_lens.data(), key_ptrs.size(),
+            positions.data(), positions.size(), &status);
     } else if (std::strcmp(algo, "teddy") == 0) {
         num_found = findkey_teddy(
             reinterpret_cast<const uint8_t*>(mmap_file.data()),
-            mmap_file.size(), reinterpret_cast<const uint8_t*>(key),
-            std::strlen(key), positions.data(), positions.size(), &status);
+            mmap_file.size(), key_ptrs.data(), key_lens.data(), key_ptrs.size(),
+            positions.data(), positions.size(), &status);
     } else {
-        print_usage_and_exit();
+        print_usage_and_exit(argv[0]);
     }
 
     switch (status) {
@@ -60,13 +110,17 @@ int main(int argc, char** argv) {
             break;
     }
 
-    std::printf("Found %zu occurrences of key \"%s\" in file \"%s\":\n",
-                num_found, key, file);
-    for (size_t i = 0; i < num_found && i < positions.size(); ++i) {
-        std::printf("  Position: %zu\n", positions[i]);
-    }
-    if (num_found > positions.size()) {
-        std::printf("  ... and %zu more\n", num_found - positions.size());
+    std::printf("Algorithm used: %s\n", algo);
+    std::printf("Total key-value pairs found: %zu\n", num_found);
+
+    if (print_positions) {
+        for (size_t i = 0; i < num_found && i < positions.size(); ++i) {
+            std::printf("\tPosition: %zu\n", positions[i].position);
+            std::printf("\tKey: %s\n", keys[positions[i].key_id].c_str());
+        }
+        if (num_found > positions.size()) {
+            std::printf("  ... and %zu more\n", num_found - positions.size());
+        }
     }
 
     return 0;
