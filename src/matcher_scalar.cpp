@@ -62,7 +62,7 @@ std::vector<findkey_result> matcher_scalar(
             std::string_view sv(str + position, key_length);
             auto it = key_map.find(sv);
             if (it != key_map.end()) {
-                result.push_back(findkey_result{position - 1, it->second});
+                result.push_back(findkey_result{position, it->second});
             }
         }
         in_string = false;

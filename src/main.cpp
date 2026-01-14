@@ -10,6 +10,8 @@
 #include <string_view>
 #include <vector>
 
+#include <chrono>
+
 static void print_usage_and_exit(const char* prog_name) {
     std::fprintf(stderr,
                  "Usage: %s --keys <keys_file> --data <json_file> [--algo "
@@ -84,6 +86,8 @@ int main(int argc, char** argv) {
     std::vector<findkey_result> positions(POSITIONS_CAPACITY);
     int status = 0;
 
+    auto start_time = std::chrono::steady_clock::now();
+
     size_t num_found = 0;
     if (std::strcmp(algo, "scalar") == 0) {
         num_found = findkey_scalar(
@@ -98,6 +102,17 @@ int main(int argc, char** argv) {
     } else {
         print_usage_and_exit(argv[0]);
     }
+
+    auto end_time = std::chrono::steady_clock::now();
+    const auto duration_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end_time -
+                                                              start_time)
+            .count();
+    const double duration_s = duration_ms / 1000.0;
+
+    const double bytes = mmap_file.size();
+    const double mbps =
+        duration_s > 0 ? (bytes / (1024.0 * 1024.0)) / duration_s : 0.0;
 
     switch (status) {
         case FINDKEY_ERR_BAD_ARGS:
@@ -116,12 +131,16 @@ int main(int argc, char** argv) {
     if (print_positions) {
         for (size_t i = 0; i < num_found && i < positions.size(); ++i) {
             std::printf("\tPosition: %zu\n", positions[i].position);
-            std::printf("\tKey: %s\n", keys[positions[i].key_id].c_str());
+            std::printf("\tKey: \"%s\"\n", keys[positions[i].key_id].c_str());
         }
         if (num_found > positions.size()) {
             std::printf("  ... and %zu more\n", num_found - positions.size());
         }
     }
+
+    std::printf("Time taken: %.2f ms\n", static_cast<double>(duration_ms));
+    std::printf("Data size: %.2f MiB\n", bytes / (1024.0 * 1024.0));
+    std::printf("Throughput: %.2f MiB/s\n", mbps);
 
     return 0;
 }
