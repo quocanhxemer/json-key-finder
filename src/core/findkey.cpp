@@ -1,8 +1,8 @@
 #include "findkey.h"
-#include "matcher_scalar.h"
+#include "matchers/matcher_scalar.h"
 
 #if COMPILER_SUPPORTS_TEDDY
-#include "matcher_teddy.h"
+#include "matchers/matcher_teddy.h"
 #endif
 
 #include <algorithm>
