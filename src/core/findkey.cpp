@@ -30,14 +30,15 @@ static inline bool bad_args(const uint8_t* data,
     return false;
 }
 
-extern "C" size_t findkey_scalar(const uint8_t* data,
-                                 size_t len,
-                                 const uint8_t* const* keys,
-                                 const size_t* key_lens,
-                                 size_t num_keys,
-                                 struct findkey_result* out_results,
-                                 size_t max_out_positions,
-                                 int* out_status) {
+extern "C" size_t findkey(const uint8_t* data,
+                          size_t len,
+                          const uint8_t* const* keys,
+                          const size_t* key_lens,
+                          size_t num_keys,
+                          enum findkey_algo algo,
+                          struct findkey_result* out_results,
+                          size_t max_out_positions,
+                          int* out_status) {
     if (out_status) {
         *out_status = FINDKEY_OK;
     }
@@ -59,60 +60,32 @@ extern "C" size_t findkey_scalar(const uint8_t* data,
         key_svs.emplace_back(k, key_lens[i]);
     }
 
-    std::vector<findkey_result> results = matcher_scalar(data_sv, key_svs);
+    std::vector<findkey_result> results;
 
-    const size_t num_positions = std::min(results.size(), max_out_positions);
+    switch (algo) {
+        case SCALAR:
+            results = matcher_scalar(data_sv, key_svs);
+            break;
 
-    for (size_t i = 0; i < num_positions; ++i) {
-        out_results[i] = results[i];
-    }
-
-    return results.size();
-}
-
-extern "C" size_t findkey_teddy(const uint8_t* data,
-                                size_t len,
-                                const uint8_t* const* keys,
-                                const size_t* key_lens,
-                                size_t num_keys,
-                                struct findkey_result* out_results,
-                                size_t max_out_positions,
-                                int* out_status) {
-#if !COMPILER_SUPPORTS_TEDDY
-    if (out_status) {
-        *out_status = FINDKEY_TEDDY_NOT_SUPPORTED;
-        (void)data;
-        (void)len;
-        (void)keys;
-        (void)key_lens;
-        (void)num_keys;
-        (void)out_results;
-        (void)max_out_positions;
-        return 0;
-    }
+        case TEDDY:
+#if COMPILER_SUPPORTS_TEDDY
+            results = matcher_teddy(data_sv, key_svs);
+            break;
 #else
-    if (out_status) {
-        *out_status = FINDKEY_OK;
+            (void)out_results;
+            (void)max_out_positions;
+
+            if (out_status) {
+                *out_status = FINDKEY_TEDDY_NOT_SUPPORTED;
+            }
+            return 0;
+#endif
+        default:
+            if (out_status) {
+                *out_status = FINDKEY_ERR_UNKNOWN_ALGO;
+            }
+            return 0;
     }
-
-    if (bad_args(data, len, keys, key_lens, num_keys, out_results)) {
-        if (out_status) {
-            *out_status = FINDKEY_ERR_BAD_ARGS;
-        }
-        return 0;
-    }
-
-    const char* str = reinterpret_cast<const char*>(data);
-    std::string_view data_sv(str ? str : "", len);
-
-    std::vector<std::string_view> key_svs;
-    key_svs.reserve(num_keys);
-    for (size_t i = 0; i < num_keys; ++i) {
-        const char* k = reinterpret_cast<const char*>(keys[i]);
-        key_svs.emplace_back(k, key_lens[i]);
-    }
-
-    std::vector<findkey_result> results = matcher_teddy(data_sv, key_svs);
 
     const size_t num_positions = std::min(results.size(), max_out_positions);
 
@@ -121,5 +94,4 @@ extern "C" size_t findkey_teddy(const uint8_t* data,
     }
 
     return results.size();
-#endif
 }

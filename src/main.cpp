@@ -46,15 +46,27 @@ static std::vector<std::string> read_keys_from_file(const char* keys_file) {
     return keys;
 }
 
+static findkey_algo parse_algo(const char* algo) {
+    if (std::strcmp(algo, "scalar") == 0) {
+        return SCALAR;
+    }
+
+    if (std::strcmp(algo, "teddy") == 0) {
+        return TEDDY;
+    }
+
+    return static_cast<findkey_algo>(-1);
+}
+
 int main(int argc, char** argv) {
-    const char* algo = "scalar";
+    enum findkey_algo algo = SCALAR;
     const char* keys_path = nullptr;
     const char* data_path = nullptr;
     bool print_positions = false;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--algo") == 0 && i + 1 < argc) {
-            algo = argv[++i];
+            algo = parse_algo(argv[++i]);
         } else if (std::strcmp(argv[i], "--keys") == 0 && i + 1 < argc) {
             keys_path = argv[++i];
         } else if (std::strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
@@ -88,22 +100,13 @@ int main(int argc, char** argv) {
 
     auto start_time = std::chrono::steady_clock::now();
 
-    size_t num_found = 0;
-    if (std::strcmp(algo, "scalar") == 0) {
-        num_found = findkey_scalar(
-            reinterpret_cast<const uint8_t*>(mmap_file.data()),
-            mmap_file.size(), key_ptrs.data(), key_lens.data(), key_ptrs.size(),
-            positions.data(), positions.size(), &status);
-    } else if (std::strcmp(algo, "teddy") == 0) {
-        num_found = findkey_teddy(
-            reinterpret_cast<const uint8_t*>(mmap_file.data()),
-            mmap_file.size(), key_ptrs.data(), key_lens.data(), key_ptrs.size(),
-            positions.data(), positions.size(), &status);
-    } else {
-        print_usage_and_exit(argv[0]);
-    }
+    size_t num_found = findkey(
+        reinterpret_cast<const uint8_t*>(mmap_file.data()), mmap_file.size(),
+        key_ptrs.data(), key_lens.data(), key_ptrs.size(), algo,
+        positions.data(), positions.size(), &status);
 
     auto end_time = std::chrono::steady_clock::now();
+
     const auto duration_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(end_time -
                                                               start_time)
@@ -116,16 +119,18 @@ int main(int argc, char** argv) {
 
     switch (status) {
         case FINDKEY_ERR_BAD_ARGS:
-            std::fprintf(stderr, "bad arguments");
+            std::fprintf(stderr, "Bad arguments\n");
             return EXIT_FAILURE;
         case FINDKEY_TEDDY_NOT_SUPPORTED:
-            std::fprintf(stderr, "teddy not supported by this compiler");
+            std::fprintf(stderr, "Teddy not supported by this compiler\n");
+            return EXIT_FAILURE;
+        case FINDKEY_ERR_UNKNOWN_ALGO:
+            std::fprintf(stderr, "Unknown algorithm specified\n");
             return EXIT_FAILURE;
         default:
             break;
     }
 
-    std::printf("Algorithm used: %s\n", algo);
     std::printf("Total key-value pairs found: %zu\n", num_found);
 
     if (print_positions) {

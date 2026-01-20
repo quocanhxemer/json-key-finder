@@ -10,6 +10,12 @@ enum findkey_status {
     FINDKEY_OK = 0,
     FINDKEY_ERR_BAD_ARGS = 1,
     FINDKEY_TEDDY_NOT_SUPPORTED = 2,
+    FINDKEY_ERR_UNKNOWN_ALGO = 3,
+};
+
+enum findkey_algo {
+    SCALAR = 0,
+    TEDDY = 1,
 };
 
 struct findkey_result {
@@ -17,23 +23,15 @@ struct findkey_result {
     uint32_t key_id;
 };
 
-size_t findkey_scalar(const uint8_t* data,
-                      size_t len,
-                      const uint8_t* const* keys,
-                      const size_t* key_lens,
-                      size_t num_keys,
-                      struct findkey_result* out_results,
-                      size_t max_out_positions,
-                      int* out_status);
-
-size_t findkey_teddy(const uint8_t* data,
-                     size_t len,
-                     const uint8_t* const* keys,
-                     const size_t* key_lens,
-                     size_t num_keys,
-                     struct findkey_result* out_results,
-                     size_t max_out_positions,
-                     int* out_status);
+size_t findkey(const uint8_t* data,
+               size_t len,
+               const uint8_t* const* keys,
+               const size_t* key_lens,
+               size_t num_keys,
+               enum findkey_algo algo,
+               struct findkey_result* out_results,
+               size_t max_out_positions,
+               int* out_status);
 
 #ifdef __cplusplus
 }
