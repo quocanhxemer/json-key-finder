@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <unordered_map>
 #include <vector>
 
 // shift current vector to right by offset, fill left with prev vector
@@ -45,6 +46,18 @@ std::vector<findkey_result> matcher_teddy(
         return results;
     }
 
+    // hash map for fast key verification
+    std::unordered_map<std::string_view, uint32_t> key_map;
+    key_map.reserve(keys.size());
+
+    size_t max_key_len = 0;
+    for (uint32_t i = 0; i < keys.size(); ++i) {
+        max_key_len = std::max(max_key_len, keys[i].size());
+        if (key_map.find(keys[i]) == key_map.end()) {
+            key_map[keys[i]] = i;
+        }
+    }
+
     const char* str = data.data();
     const size_t len = data.size();
 
@@ -70,8 +83,7 @@ std::vector<findkey_result> matcher_teddy(
     const __m128i group_mask_vector =
         _mm_set1_epi8(static_cast<char>(1u << teddy_data.num_groups) - 1u);
 
-    size_t base = 0;
-    for (; base < len; base += 16) {
+    for (size_t base = 0; base < len; base += 16) {
         __m128i bytes;
         if (base + 16 > len) {
             alignas(16) unsigned char chunk[16];
@@ -117,46 +129,50 @@ std::vector<findkey_result> matcher_teddy(
 
             uint8_t hits = match_bytes[i];
             // extract hit groups
-            while (hits) {
-                const int group = __builtin_ctz(hits);
-                hits &= hits - 1;
+            if (hits) {
+                const size_t last_char = base + i;
+                const size_t end_quote = last_char + 1;
 
-                // verify keys in this group
-                for (uint32_t key_id : teddy_data.group_keys[group]) {
-                    const std::string_view key = keys[key_id];
+                if (end_quote >= len || str[end_quote] != '"') {
+                    continue;
+                }
 
-                    if (base + i + 1 < key.size()) {
+                if (!is_valid_quote(str, end_quote)) {
+                    continue;
+                }
+
+                size_t j = end_quote + 1;
+                while (j < len &&
+                       std::isspace(static_cast<unsigned char>(str[j]))) {
+                    ++j;
+                }
+
+                if (j < len && str[j] == ':') {
+                    // find opening quote
+                    size_t start_quote = std::string_view::npos;
+                    size_t min_start_quote = 0;
+                    if (end_quote > max_key_len + 1) {
+                        min_start_quote = end_quote - max_key_len - 1;
+                    }
+                    for (size_t k = end_quote - 1; k >= min_start_quote; --k) {
+                        if (str[k] == '"' && is_valid_quote(str, k)) {
+                            start_quote = k;
+                            break;
+                        }
+                        if (k == 0) {
+                            break;
+                        }
+                    }
+                    if (start_quote == std::string_view::npos) {
                         continue;
                     }
 
-                    const size_t key_start = base + i + 1 - key.size();
-
-                    // no space for quotes
-                    if (key_start == 0 || key_start + key.size() >= len) {
-                        continue;
-                    }
-                    if (str[key_start - 1] != '"' ||
-                        str[key_start + key.size()] != '"') {
-                        continue;
-                    }
-
-                    if (!is_valid_quote(str, key_start - 1) ||
-                        !is_valid_quote(str, key_start + key.size())) {
-                        continue;
-                    }
-
-                    if (std::memcmp(str + key_start, key.data(), key.size())) {
-                        continue;
-                    }
-
-                    // colon
-                    size_t j = key_start + key.size() + 1;
-                    while (j < len &&
-                           std::isspace(static_cast<unsigned char>(str[j]))) {
-                        ++j;
-                    }
-                    if (j < len && str[j] == ':') {
-                        results.push_back(findkey_result{key_start, key_id});
+                    std::string_view sv(str + start_quote + 1,
+                                        end_quote - start_quote - 1);
+                    auto it = key_map.find(sv);
+                    if (it != key_map.end()) {
+                        results.push_back(
+                            findkey_result{start_quote + 1, it->second});
                     }
                 }
             }
