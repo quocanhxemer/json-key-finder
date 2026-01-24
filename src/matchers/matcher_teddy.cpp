@@ -77,8 +77,6 @@ std::vector<findkey_result> matcher_teddy(
         prev_V[i] = _mm_set1_epi8(-1);  // 0xFF
     }
 
-    alignas(16) uint8_t match_bytes[16];
-
     const __m128i mask_0f = _mm_set1_epi8(0x0F);
     const __m128i group_mask_vector =
         _mm_set1_epi8(static_cast<char>(1u << teddy_data.num_groups) - 1u);
@@ -115,65 +113,65 @@ std::vector<findkey_result> matcher_teddy(
             // shift V to the right, fill left blank spaces with prev_V
             const __m128i shifted_V =
                 shift_right(V[i], prev_V[i], shift_offset);
+            //  (3) Bit-Or vectors σ − 1 times
             shift_or = _mm_or_si128(shift_or, shifted_V);
         }
 
-        //  (3) Bit-Or vectors σ − 1 times
         __m128i match = _mm_andnot_si128(shift_or, group_mask_vector);
-        _mm_store_si128(reinterpret_cast<__m128i*>(match_bytes), match);
+        __m128i is_zero = _mm_cmpeq_epi8(match, _mm_setzero_si128());
+        uint16_t hit_mask = ~static_cast<uint16_t>(_mm_movemask_epi8(is_zero));
 
-        for (int i = 0; i < 16; ++i) {
+        while (hit_mask) {
+            int i = __builtin_ctz(hit_mask);
+            hit_mask &= hit_mask - 1;
+
             if (base + i >= len) {
                 break;
             }
 
-            uint8_t hits = match_bytes[i];
-            // extract hit groups
-            if (hits) {
-                const size_t last_char = base + i;
-                const size_t end_quote = last_char + 1;
+            const size_t last_char = base + i;
+            const size_t end_quote = last_char + 1;
 
-                if (end_quote >= len || str[end_quote] != '"') {
+            if (end_quote >= len || str[end_quote] != '"') {
+                continue;
+            }
+
+            if (!is_valid_quote(str, end_quote)) {
+                continue;
+            }
+
+            size_t j = end_quote + 1;
+            while (j < len &&
+                   std::isspace(static_cast<unsigned char>(str[j]))) {
+                ++j;
+            }
+
+            if (j < len && str[j] == ':') {
+                // find opening quote
+                size_t start_quote = std::string_view::npos;
+                size_t min_start_quote = 0;
+                if (end_quote > max_key_len + 1) {
+                    min_start_quote = end_quote - max_key_len - 1;
+                }
+                for (size_t k = end_quote - 1; k >= min_start_quote; --k) {
+                    if (str[k] == '"' && is_valid_quote(str, k)) {
+                        start_quote = k;
+                        break;
+                    }
+                    if (k == 0) {
+                        break;
+                    }
+                }
+                if (start_quote == std::string_view::npos) {
                     continue;
                 }
 
-                if (!is_valid_quote(str, end_quote)) {
-                    continue;
-                }
-
-                size_t j = end_quote + 1;
-                while (j < len &&
-                       std::isspace(static_cast<unsigned char>(str[j]))) {
-                    ++j;
-                }
-
-                if (j < len && str[j] == ':') {
-                    // find opening quote
-                    size_t start_quote = std::string_view::npos;
-                    size_t min_start_quote = 0;
-                    if (end_quote > max_key_len + 1) {
-                        min_start_quote = end_quote - max_key_len - 1;
-                    }
-                    for (size_t k = end_quote - 1; k >= min_start_quote; --k) {
-                        if (str[k] == '"' && is_valid_quote(str, k)) {
-                            start_quote = k;
-                            break;
-                        }
-                        if (k == 0) {
-                            break;
-                        }
-                    }
-                    if (start_quote == std::string_view::npos) {
-                        continue;
-                    }
-
-                    std::string_view sv(str + start_quote + 1,
-                                        end_quote - start_quote - 1);
-                    auto it = key_map.find(sv);
-                    if (it != key_map.end()) {
-                        results.push_back(
-                            findkey_result{start_quote + 1, it->second});
-                    }
+                std::string_view sv(str + start_quote + 1,
+                                    end_quote - start_quote - 1);
+                auto it = key_map.find(sv);
+                if (it != key_map.end()) {
+                    results.push_back(
+                        findkey_result{start_quote + 1, it->second});
                 }
             }
         }
