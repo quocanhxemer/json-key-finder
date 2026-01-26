@@ -18,6 +18,7 @@ add_library(find_json_key STATIC
     src/teddy/teddy_common.cpp
 
     src/matchers/matcher_scalar.cpp
+    src/matchers/matcher_teddy_baseline.cpp
 )
 target_include_directories(find_json_key
     PUBLIC include 

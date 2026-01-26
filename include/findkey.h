@@ -16,6 +16,7 @@ enum findkey_status {
 enum findkey_algo {
     SCALAR = 0,
     TEDDY = 1,
+    TEDDY_BASELINE = 2,
 };
 
 struct findkey_result {

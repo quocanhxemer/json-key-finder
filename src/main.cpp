@@ -55,6 +55,10 @@ static findkey_algo parse_algo(const char* algo) {
         return TEDDY;
     }
 
+    if (std::strcmp(algo, "teddy_baseline") == 0) {
+        return TEDDY_BASELINE;
+    }
+
     return static_cast<findkey_algo>(-1);
 }
 

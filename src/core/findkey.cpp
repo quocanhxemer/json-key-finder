@@ -1,5 +1,6 @@
 #include "findkey.h"
 #include "matchers/matcher_scalar.h"
+#include "matchers/matcher_teddy_baseline.h"
 
 #if COMPILER_SUPPORTS_TEDDY
 #include "matchers/matcher_teddy.h"
@@ -80,6 +81,9 @@ extern "C" size_t findkey(const uint8_t* data,
             }
             return 0;
 #endif
+        case TEDDY_BASELINE:
+            results = matcher_teddy_baseline(data_sv, key_svs);
+            break;
         default:
             if (out_status) {
                 *out_status = FINDKEY_ERR_UNKNOWN_ALGO;
