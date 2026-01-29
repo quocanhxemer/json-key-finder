@@ -2,6 +2,31 @@
 #include <algorithm>
 #include <array>
 
+struct Group {
+    std::vector<uint32_t> key_ids;
+    uint8_t b[DEFAULT_SIGMA];
+
+    uint32_t score;
+
+    Group(uint32_t key_id, const std::string_view& key, int sigma) {
+        key_ids.push_back(key_id);
+        score = 1;
+        for (int i = 0; i < sigma; ++i) {
+            b[i] = static_cast<uint8_t>(key[key.size() - sigma + i]);
+            score *= __builtin_popcount(b[i]);
+        }
+    }
+
+    static uint32_t merge_score(const Group& a, const Group& b, int sigma) {
+        uint32_t s = 1;
+        for (int i = 0; i < sigma; ++i) {
+            uint8_t merged = a.b[i] | b.b[i];
+            s *= __builtin_popcount(merged);
+        }
+        return s;
+    }
+};
+
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys) {
     TeddyCompilationData data;
@@ -22,24 +47,65 @@ TeddyCompilationData compile_teddy_data(
         return data;
     }
 
-    // partition
-    std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
-    for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
-        std::string_view suffix(
-            keys[key_id].data() + keys[key_id].size() - data.sigma, data.sigma);
-        const uint32_t hash =
-            static_cast<uint32_t>(std::hash<std::string_view>{}(suffix));
-
-        buckets[hash & (MAX_GROUPS - 1)].push_back(key_id);
+    std::vector<Group> groups;
+    groups.reserve(keys.size());
+    for (uint32_t i = 0; i < keys.size(); ++i) {
+        groups.emplace_back(i, keys[i], data.sigma);
     }
 
-    // compress into struct
-    for (int group = 0; group < MAX_GROUPS; ++group) {
-        if (buckets[group].empty()) {
-            continue;
+    while (groups.size() > MAX_GROUPS) {
+        // find best pair to merge
+        uint32_t best = UINT32_MAX;
+        int best_i = -1;
+        int best_j = -1;
+        bool perfect_found = false;
+        uint32_t merge_score = 0;
+
+        for (size_t i = 0; i < groups.size(); ++i) {
+            for (size_t j = i + 1; j < groups.size(); ++j) {
+                uint32_t new_score =
+                    Group::merge_score(groups[i], groups[j], data.sigma);
+                uint32_t old_score = groups[i].score + groups[j].score;
+                if (new_score < old_score) {
+                    best_i = i;
+                    best_j = j;
+                    merge_score = new_score;
+                    perfect_found = true;
+                    break;
+                }
+
+                if (best > new_score - old_score) {
+                    best = new_score - old_score;
+                    best_i = i;
+                    best_j = j;
+                    merge_score = new_score;
+                }
+            }
+            if (perfect_found) {
+                break;
+            }
         }
 
-        data.group_keys.push_back(std::move(buckets[group]));
+        // shouldn't happen - an iteration should always find a pair to merge
+        if (best_i == -1) {
+            break;
+        }
+
+        Group& target = groups[best_i];
+        Group& source = groups[best_j];
+
+        for (int i = 0; i < data.sigma; ++i) {
+            target.b[i] |= source.b[i];
+        }
+        target.key_ids.insert(target.key_ids.end(), source.key_ids.begin(),
+                              source.key_ids.end());
+        target.score = merge_score;
+
+        groups.erase(groups.begin() + best_j);
+    }
+
+    for (auto& group : groups) {
+        data.group_keys.push_back(std::move(group.key_ids));
     }
 
     data.num_groups = static_cast<int>(data.group_keys.size());
