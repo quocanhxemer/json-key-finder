@@ -111,11 +111,11 @@ int main(int argc, char** argv) {
 
     auto end_time = std::chrono::steady_clock::now();
 
-    const auto duration_ms =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end_time -
-                                                              start_time)
+    const auto duration_ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end_time -
+                                                             start_time)
             .count();
-    const double duration_s = duration_ms / 1000.0;
+    const double duration_s = duration_ns / 1e9;
 
     const double bytes = mmap_file.size();
     const double mbps =
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::printf("Time taken: %.2f ms\n", static_cast<double>(duration_ms));
+    std::printf("Time taken: %.2f ns\n", static_cast<double>(duration_ns));
     std::printf("Data size: %.2f MiB\n", bytes / (1024.0 * 1024.0));
     std::printf("Throughput: %.2f MiB/s\n", mbps);
 
