@@ -15,7 +15,7 @@
 static void print_usage_and_exit(const char* prog_name) {
     std::fprintf(stderr,
                  "Usage: %s --keys <keys_file> --data <json_file> [--algo "
-                 "scalar|teddy] [--print-positions]\n",
+                 "scalar|teddy|teddy_baseline] [--print-positions]\n",
                  prog_name);
     std::exit(EXIT_FAILURE);
 }
