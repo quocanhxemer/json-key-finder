@@ -10,10 +10,14 @@ option(FIND_KEY_NATIVE "Enable -march=native" ON)
 add_library(find_json_key_warnings INTERFACE)
 target_compile_options(find_json_key_warnings INTERFACE -Wall -Wextra -Wpedantic)
 
+add_library(find_json_key_utils STATIC src/io/mmap_file.cpp)
+
+target_include_directories(find_json_key_utils PUBLIC src)
+
+target_link_libraries(find_json_key_utils PUBLIC find_json_key_warnings)
+
 add_library(find_json_key STATIC
     src/core/findkey.cpp
-
-    src/io/mmap_file.cpp
 
     src/teddy/teddy_common.cpp
 
@@ -21,7 +25,7 @@ add_library(find_json_key STATIC
     src/matchers/matcher_teddy_baseline.cpp
 )
 target_include_directories(find_json_key
-    PUBLIC include 
+    PUBLIC include
     PRIVATE src
 )
 target_link_libraries(find_json_key PUBLIC find_json_key_warnings)
@@ -45,9 +49,10 @@ else()
     target_compile_definitions(find_json_key PUBLIC COMPILER_SUPPORTS_TEDDY=0)
 endif()
 
-add_executable(findkey
-    src/main.cpp
-)
-
+add_executable(findkey src/main.cpp)
 target_include_directories(findkey PRIVATE include src)
-target_link_libraries(findkey PRIVATE find_json_key)
+target_link_libraries(findkey PRIVATE find_json_key find_json_key_utils)
+
+add_executable(gen_keys tools/gen_keys.cpp)
+target_include_directories(gen_keys PRIVATE include src)
+target_link_libraries(gen_keys PRIVATE find_json_key_utils)
