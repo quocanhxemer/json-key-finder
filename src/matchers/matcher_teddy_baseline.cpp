@@ -9,11 +9,13 @@
 
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
-    const std::vector<std::string_view>& keys) {
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
 
-    const TeddyCompilationData teddy_data = compile_teddy_data(keys);
+    const TeddyCompilationData teddy_data =
+        compile_teddy_data(keys, grouping_strategy);
 
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {

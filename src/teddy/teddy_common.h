@@ -1,5 +1,7 @@
 #pragma once
 
+#include "findkey.h"
+
 #include <cstdint>
 #include <string_view>
 #include <vector>
@@ -19,7 +21,8 @@ struct TeddyCompilationData {
 };
 
 TeddyCompilationData compile_teddy_data(
-    const std::vector<std::string_view>& keys);
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy);
 
 // quote with even number of backlashes
 static inline bool is_valid_quote(const char* str, size_t pos) {

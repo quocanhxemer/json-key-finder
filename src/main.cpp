@@ -15,7 +15,8 @@
 static void print_usage_and_exit(const char* prog_name) {
     std::fprintf(stderr,
                  "Usage: %s --keys <keys_file> --data <json_file> [--algo "
-                 "scalar|teddy|teddy_baseline] [--print-positions]\n",
+                 "scalar|teddy|teddy_baseline] [--teddy-grouping-strategy hash "
+                 "| greedy] [--print-positions]\n",
                  prog_name);
     std::exit(EXIT_FAILURE);
 }
@@ -62,8 +63,23 @@ static findkey_algo parse_algo(const char* algo) {
     return static_cast<findkey_algo>(-1);
 }
 
+static findkey_teddy_compile_grouping_strategy parse_grouping_strategy(
+    const char* strategy) {
+    if (std::strcmp(strategy, "greedy") == 0) {
+        return TEDDY_COMPILE_GREEDY;
+    }
+
+    if (std::strcmp(strategy, "hash") == 0) {
+        return TEDDY_COMPILE_HASH;
+    }
+
+    return static_cast<findkey_teddy_compile_grouping_strategy>(-1);
+}
+
 int main(int argc, char** argv) {
     enum findkey_algo algo = SCALAR;
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy =
+        TEDDY_COMPILE_GREEDY;
     const char* keys_path = nullptr;
     const char* data_path = nullptr;
     bool print_positions = false;
@@ -71,6 +87,9 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--algo") == 0 && i + 1 < argc) {
             algo = parse_algo(argv[++i]);
+        } else if (std::strcmp(argv[i], "--teddy-grouping-strategy") == 0 &&
+                   i + 1 < argc) {
+            grouping_strategy = parse_grouping_strategy(argv[++i]);
         } else if (std::strcmp(argv[i], "--keys") == 0 && i + 1 < argc) {
             keys_path = argv[++i];
         } else if (std::strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
@@ -80,6 +99,17 @@ int main(int argc, char** argv) {
         } else {
             print_usage_and_exit(argv[0]);
         }
+    }
+
+    if (algo == static_cast<findkey_algo>(-1)) {
+        std::fprintf(stderr, "Unknown algorithm specified\n");
+        print_usage_and_exit(argv[0]);
+    }
+
+    if (grouping_strategy ==
+        static_cast<findkey_teddy_compile_grouping_strategy>(-1)) {
+        std::fprintf(stderr, "Unknown teddy grouping strategy specified\n");
+        print_usage_and_exit(argv[0]);
     }
 
     if (!keys_path || !data_path) {
@@ -107,7 +137,7 @@ int main(int argc, char** argv) {
     size_t num_found = findkey(
         reinterpret_cast<const uint8_t*>(mmap_file.data()), mmap_file.size(),
         key_ptrs.data(), key_lens.data(), key_ptrs.size(), algo,
-        positions.data(), positions.size(), &status);
+        grouping_strategy, positions.data(), positions.size(), &status);
 
     auto end_time = std::chrono::steady_clock::now();
 

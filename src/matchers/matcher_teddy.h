@@ -13,4 +13,5 @@
 */
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const std::vector<std::string_view>& keys);
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy);

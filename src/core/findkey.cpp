@@ -31,15 +31,17 @@ static inline bool bad_args(const uint8_t* data,
     return false;
 }
 
-extern "C" size_t findkey(const uint8_t* data,
-                          size_t len,
-                          const uint8_t* const* keys,
-                          const size_t* key_lens,
-                          size_t num_keys,
-                          enum findkey_algo algo,
-                          struct findkey_result* out_results,
-                          size_t max_out_positions,
-                          int* out_status) {
+extern "C" size_t findkey(
+    const uint8_t* data,
+    size_t len,
+    const uint8_t* const* keys,
+    const size_t* key_lens,
+    size_t num_keys,
+    enum findkey_algo algo,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    struct findkey_result* out_results,
+    size_t max_out_positions,
+    int* out_status) {
     if (out_status) {
         *out_status = FINDKEY_OK;
     }
@@ -70,9 +72,10 @@ extern "C" size_t findkey(const uint8_t* data,
 
         case TEDDY:
 #if COMPILER_SUPPORTS_TEDDY
-            results = matcher_teddy(data_sv, key_svs);
+            results = matcher_teddy(data_sv, key_svs, grouping_strategy);
             break;
 #else
+            (void)grouping_strategy;
             (void)out_results;
             (void)max_out_positions;
 
@@ -82,7 +85,8 @@ extern "C" size_t findkey(const uint8_t* data,
             return 0;
 #endif
         case TEDDY_BASELINE:
-            results = matcher_teddy_baseline(data_sv, key_svs);
+            results =
+                matcher_teddy_baseline(data_sv, key_svs, grouping_strategy);
             break;
         default:
             if (out_status) {

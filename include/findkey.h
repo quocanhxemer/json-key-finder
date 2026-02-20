@@ -24,12 +24,18 @@ struct findkey_result {
     uint32_t key_id;
 };
 
+enum findkey_teddy_compile_grouping_strategy {
+    TEDDY_COMPILE_GREEDY = 0,  // strategy stated in the original teddy paper
+    TEDDY_COMPILE_HASH = 1,
+};
+
 size_t findkey(const uint8_t* data,
                size_t len,
                const uint8_t* const* keys,
                const size_t* key_lens,
                size_t num_keys,
                enum findkey_algo algo,
+               enum findkey_teddy_compile_grouping_strategy grouping_strategy,
                struct findkey_result* out_results,
                size_t max_out_positions,
                int* out_status);
