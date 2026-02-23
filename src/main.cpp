@@ -16,7 +16,8 @@ static void print_usage_and_exit(const char* prog_name) {
     std::fprintf(stderr,
                  "Usage: %s --keys <keys_file> --data <json_file> [--algo "
                  "scalar|teddy|teddy_baseline] [--teddy-grouping-strategy hash "
-                 "| greedy] [--print-positions]\n",
+                 "| greedy] [--teddy-suffix-mode raw|quote-suffix] "
+                 "[--print-positions]\n",
                  prog_name);
     std::exit(EXIT_FAILURE);
 }
@@ -76,10 +77,23 @@ static findkey_teddy_compile_grouping_strategy parse_grouping_strategy(
     return static_cast<findkey_teddy_compile_grouping_strategy>(-1);
 }
 
+static findkey_teddy_suffix_mode parse_suffix_mode(const char* mode) {
+    if (std::strcmp(mode, "raw") == 0) {
+        return TEDDY_SUFFIX_RAW;
+    }
+
+    if (std::strcmp(mode, "quote-suffix") == 0) {
+        return TEDDY_SUFFIX_QUOTED;
+    }
+
+    return static_cast<findkey_teddy_suffix_mode>(-1);
+}
+
 int main(int argc, char** argv) {
     enum findkey_algo algo = SCALAR;
     enum findkey_teddy_compile_grouping_strategy grouping_strategy =
         TEDDY_COMPILE_GREEDY;
+    enum findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
     const char* keys_path = nullptr;
     const char* data_path = nullptr;
     bool print_positions = false;
@@ -90,6 +104,9 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "--teddy-grouping-strategy") == 0 &&
                    i + 1 < argc) {
             grouping_strategy = parse_grouping_strategy(argv[++i]);
+        } else if (std::strcmp(argv[i], "--teddy-suffix-mode") == 0 &&
+                   i + 1 < argc) {
+            suffix_mode = parse_suffix_mode(argv[++i]);
         } else if (std::strcmp(argv[i], "--keys") == 0 && i + 1 < argc) {
             keys_path = argv[++i];
         } else if (std::strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
@@ -109,6 +126,11 @@ int main(int argc, char** argv) {
     if (grouping_strategy ==
         static_cast<findkey_teddy_compile_grouping_strategy>(-1)) {
         std::fprintf(stderr, "Unknown teddy grouping strategy specified\n");
+        print_usage_and_exit(argv[0]);
+    }
+
+    if (suffix_mode == static_cast<findkey_teddy_suffix_mode>(-1)) {
+        std::fprintf(stderr, "Unknown teddy suffix mode specified\n");
         print_usage_and_exit(argv[0]);
     }
 
@@ -134,10 +156,11 @@ int main(int argc, char** argv) {
 
     auto start_time = std::chrono::steady_clock::now();
 
-    size_t num_found = findkey(
-        reinterpret_cast<const uint8_t*>(mmap_file.data()), mmap_file.size(),
-        key_ptrs.data(), key_lens.data(), key_ptrs.size(), algo,
-        grouping_strategy, positions.data(), positions.size(), &status);
+    size_t num_found =
+        findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
+                mmap_file.size(), key_ptrs.data(), key_lens.data(),
+                key_ptrs.size(), algo, grouping_strategy, suffix_mode,
+                positions.data(), positions.size(), &status);
 
     auto end_time = std::chrono::steady_clock::now();
 

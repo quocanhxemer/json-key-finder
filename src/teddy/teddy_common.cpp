@@ -1,20 +1,55 @@
 #include "teddy_common.h"
+
 #include <algorithm>
 #include <array>
 
+static inline size_t teddy_virtual_length(
+    std::string_view key,
+    enum findkey_teddy_suffix_mode suffix_mode) {
+    switch (suffix_mode) {
+        case TEDDY_SUFFIX_RAW:
+            return key.size();
+        case TEDDY_SUFFIX_QUOTED:
+            return key.size() + 1;
+        default:
+            return -1;
+    }
+}
+
+static inline uint8_t teddy_suffix_byte(
+    std::string_view key,
+    int sigma,
+    int i,
+    enum findkey_teddy_suffix_mode suffix_mode) {
+    const size_t virtual_len = teddy_virtual_length(key, suffix_mode);
+    const size_t idx = virtual_len - sigma + i;
+
+    if (idx < key.size()) {
+        return static_cast<uint8_t>(key[idx]);
+    }
+
+    // for QUOTED mode, the virtual suffix byte after the last character is
+    // the closing quote (")
+    return '"';
+}
+
 static TeddyCompilationData compile_teddy_data_greedy(
-    const std::vector<std::string_view>& keys) {
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_suffix_mode suffix_mode) {
     struct Group {
         std::vector<uint32_t> key_ids;
         uint8_t b[DEFAULT_SIGMA];
 
         uint32_t score;
 
-        Group(uint32_t key_id, const std::string_view& key, int sigma) {
+        Group(uint32_t key_id,
+              const std::string_view& key,
+              int sigma,
+              enum findkey_teddy_suffix_mode suffix_mode) {
             key_ids.push_back(key_id);
             score = 1;
             for (int i = 0; i < sigma; ++i) {
-                b[i] = static_cast<uint8_t>(key[key.size() - sigma + i]);
+                b[i] = teddy_suffix_byte(key, sigma, i, suffix_mode);
                 score *= __builtin_popcount(b[i]);
             }
         }
@@ -35,12 +70,13 @@ static TeddyCompilationData compile_teddy_data_greedy(
         return data;
     }
 
-    size_t min_len = keys[0].size();
+    size_t min_len = teddy_virtual_length(keys[0], suffix_mode);
     for (std::string_view key : keys) {
-        min_len = std::min(min_len, key.size());
+        min_len = std::min(min_len, teddy_virtual_length(key, suffix_mode));
     }
 
     data.sigma = std::min(static_cast<int>(min_len), DEFAULT_SIGMA);
+    data.end_quote_offset = (suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
 
     // edge case: empty keys should be filtered out earlier
     if (data.sigma <= 0) {
@@ -50,7 +86,7 @@ static TeddyCompilationData compile_teddy_data_greedy(
     std::vector<Group> groups;
     groups.reserve(keys.size());
     for (uint32_t i = 0; i < keys.size(); ++i) {
-        groups.emplace_back(i, keys[i], data.sigma);
+        groups.emplace_back(i, keys[i], data.sigma, suffix_mode);
     }
 
     while (groups.size() > MAX_GROUPS) {
@@ -127,8 +163,8 @@ static TeddyCompilationData compile_teddy_data_greedy(
 
             for (uint32_t key_id : data.group_keys[group]) {
                 const std::string_view key = keys[key_id];
-                const size_t idx = key.size() - data.sigma + i;
-                const uint8_t c = static_cast<uint8_t>(key[idx]);
+                const uint8_t c =
+                    teddy_suffix_byte(key, data.sigma, i, suffix_mode);
 
                 uint8_t low_nibble = c & 0x0F;
                 uint8_t high_nibble = (c >> 4) & 0x0F;
@@ -152,19 +188,21 @@ static TeddyCompilationData compile_teddy_data_greedy(
 }
 
 static TeddyCompilationData compile_teddy_data_hash(
-    const std::vector<std::string_view>& keys) {
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_suffix_mode suffix_mode) {
     TeddyCompilationData data;
 
     if (keys.empty()) {
         return data;
     }
 
-    size_t min_len = keys[0].size();
+    size_t min_len = teddy_virtual_length(keys[0], suffix_mode);
     for (std::string_view key : keys) {
-        min_len = std::min(min_len, key.size());
+        min_len = std::min(min_len, teddy_virtual_length(key, suffix_mode));
     }
 
     data.sigma = std::min(static_cast<int>(min_len), DEFAULT_SIGMA);
+    data.end_quote_offset = (suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
 
     // edge case: empty keys should be filtered out earlier
     if (data.sigma <= 0) {
@@ -174,8 +212,12 @@ static TeddyCompilationData compile_teddy_data_hash(
     // partition
     std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
-        std::string_view suffix(
-            keys[key_id].data() + keys[key_id].size() - data.sigma, data.sigma);
+        char suffix_buf[DEFAULT_SIGMA];
+        for (int i = 0; i < data.sigma; ++i) {
+            suffix_buf[i] =
+                teddy_suffix_byte(keys[key_id], data.sigma, i, suffix_mode);
+        }
+        std::string_view suffix(suffix_buf, data.sigma);
         const uint32_t hash =
             static_cast<uint32_t>(std::hash<std::string_view>{}(suffix));
 
@@ -210,8 +252,8 @@ static TeddyCompilationData compile_teddy_data_hash(
 
             for (uint32_t key_id : data.group_keys[group]) {
                 const std::string_view key = keys[key_id];
-                const size_t idx = key.size() - data.sigma + i;
-                const uint8_t c = static_cast<uint8_t>(key[idx]);
+                const uint8_t c =
+                    teddy_suffix_byte(key, data.sigma, i, suffix_mode);
 
                 uint8_t low_nibble = c & 0x0F;
                 uint8_t high_nibble = (c >> 4) & 0x0F;
@@ -236,12 +278,13 @@ static TeddyCompilationData compile_teddy_data_hash(
 
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy) {
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode) {
     switch (grouping_strategy) {
         case TEDDY_COMPILE_GREEDY:
-            return compile_teddy_data_greedy(keys);
+            return compile_teddy_data_greedy(keys, suffix_mode);
         case TEDDY_COMPILE_HASH:
-            return compile_teddy_data_hash(keys);
+            return compile_teddy_data_hash(keys, suffix_mode);
         default:
             return {};
     }

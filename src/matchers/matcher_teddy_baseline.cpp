@@ -10,12 +10,13 @@
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy) {
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
 
     const TeddyCompilationData teddy_data =
-        compile_teddy_data(keys, grouping_strategy);
+        compile_teddy_data(keys, grouping_strategy, suffix_mode);
 
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
@@ -59,7 +60,7 @@ std::vector<findkey_result> matcher_teddy_baseline(
             continue;
         }
 
-        const size_t end_quote = position + 1;
+        const size_t end_quote = position + teddy_data.end_quote_offset;
         if (end_quote >= len || str[end_quote] != '"') {
             continue;
         }

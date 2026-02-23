@@ -14,6 +14,11 @@ struct TeddyCompilationData {
     int sigma = 0;
     int num_groups = 0;
 
+    // offset from last character to the closing quote
+    // default for RAW mode is 1, but for QUOTED mode it can be larger due to
+    // escape characters
+    size_t end_quote_offset = 1;
+
     alignas(16) uint8_t low_table[MAX_SIGMA][16];
     alignas(16) uint8_t high_table[MAX_SIGMA][16];
 
@@ -22,7 +27,8 @@ struct TeddyCompilationData {
 
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy);
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode);
 
 // quote with even number of backlashes
 static inline bool is_valid_quote(const char* str, size_t pos) {
