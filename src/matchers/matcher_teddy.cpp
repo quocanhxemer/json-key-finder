@@ -28,6 +28,10 @@ static inline __m128i shift_right(__m128i current, __m128i prev, int offset) {
             return _mm_alignr_epi8(current, prev, 13);
         case 4:
             return _mm_alignr_epi8(current, prev, 12);
+        case 5:
+            return _mm_alignr_epi8(current, prev, 11);
+        case 6:
+            return _mm_alignr_epi8(current, prev, 10);
         default:
             return current;
     }

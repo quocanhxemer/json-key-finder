@@ -38,7 +38,7 @@ static TeddyCompilationData compile_teddy_data_greedy(
     enum findkey_teddy_suffix_mode suffix_mode) {
     struct Group {
         std::vector<uint32_t> key_ids;
-        uint8_t b[DEFAULT_SIGMA];
+        uint8_t b[MAX_SIGMA];
 
         uint32_t score;
 
@@ -75,7 +75,9 @@ static TeddyCompilationData compile_teddy_data_greedy(
         min_len = std::min(min_len, teddy_virtual_length(key, suffix_mode));
     }
 
-    data.sigma = std::min(static_cast<int>(min_len), DEFAULT_SIGMA);
+    data.sigma = std::min(
+        static_cast<int>(min_len),
+        suffix_mode == TEDDY_SUFFIX_QUOTED ? DEFAULT_SIGMA + 1 : DEFAULT_SIGMA);
     data.end_quote_offset = (suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
 
     // edge case: empty keys should be filtered out earlier
@@ -201,7 +203,9 @@ static TeddyCompilationData compile_teddy_data_hash(
         min_len = std::min(min_len, teddy_virtual_length(key, suffix_mode));
     }
 
-    data.sigma = std::min(static_cast<int>(min_len), DEFAULT_SIGMA);
+    data.sigma = std::min(
+        static_cast<int>(min_len),
+        suffix_mode == TEDDY_SUFFIX_QUOTED ? DEFAULT_SIGMA + 1 : DEFAULT_SIGMA);
     data.end_quote_offset = (suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
 
     // edge case: empty keys should be filtered out earlier
@@ -212,7 +216,7 @@ static TeddyCompilationData compile_teddy_data_hash(
     // partition
     std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
-        char suffix_buf[DEFAULT_SIGMA];
+        char suffix_buf[MAX_SIGMA];
         for (int i = 0; i < data.sigma; ++i) {
             suffix_buf[i] =
                 teddy_suffix_byte(keys[key_id], data.sigma, i, suffix_mode);

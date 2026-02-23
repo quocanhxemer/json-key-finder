@@ -7,7 +7,7 @@
 #include <vector>
 
 static constexpr int DEFAULT_SIGMA = 3;
-static constexpr int MAX_SIGMA = 4;
+static constexpr int MAX_SIGMA = DEFAULT_SIGMA + 1;
 static constexpr int MAX_GROUPS = 8;  // must be power of 2
 
 struct TeddyCompilationData {
