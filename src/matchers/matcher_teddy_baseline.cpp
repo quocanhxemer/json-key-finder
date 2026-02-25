@@ -7,21 +7,13 @@
 #include <unordered_map>
 #include <vector>
 
-std::vector<findkey_result> matcher_teddy_baseline(
+template <int Sigma>
+std::vector<findkey_result> matcher_teddy_baseline_impl(
     std::string_view data,
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_suffix_mode suffix_mode) {
+    const TeddyCompilationData& teddy_data) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
-
-    const TeddyCompilationData teddy_data =
-        compile_teddy_data(keys, grouping_strategy, suffix_mode);
-
-    // shouldn't happen
-    if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
-        return results;
-    }
 
     // hash map for fast key verification
     std::unordered_map<std::string_view, uint32_t> key_map;
@@ -41,12 +33,12 @@ std::vector<findkey_result> matcher_teddy_baseline(
     const uint8_t group_mask =
         static_cast<char>(1u << teddy_data.num_groups) - 1u;
 
-    for (size_t position = teddy_data.sigma - 1; position < len; ++position) {
+    for (size_t position = Sigma - 1; position < len; ++position) {
         uint8_t shift_or = 0;
 
-        for (int i = 0; i < teddy_data.sigma; ++i) {
+        for (int i = 0; i < Sigma; ++i) {
             const uint8_t c =
-                static_cast<uint8_t>(str[position - teddy_data.sigma + 1 + i]);
+                static_cast<uint8_t>(str[position - Sigma + 1 + i]);
             const uint8_t low_nibble = c & 0x0F;
             const uint8_t high_nibble = (c >> 4) & 0x0F;
 
@@ -104,4 +96,31 @@ std::vector<findkey_result> matcher_teddy_baseline(
     }
 
     return results;
+}
+
+std::vector<findkey_result> matcher_teddy_baseline(
+    std::string_view data,
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode) {
+    const TeddyCompilationData teddy_data =
+        compile_teddy_data(keys, grouping_strategy, suffix_mode);
+
+    // shouldn't happen
+    if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
+        return {};
+    }
+
+    switch (teddy_data.sigma) {
+        case 1:
+            return matcher_teddy_baseline_impl<1>(data, keys, teddy_data);
+        case 2:
+            return matcher_teddy_baseline_impl<2>(data, keys, teddy_data);
+        case 3:
+            return matcher_teddy_baseline_impl<3>(data, keys, teddy_data);
+        case 4:
+            return matcher_teddy_baseline_impl<4>(data, keys, teddy_data);
+        default:
+            return {};
+    }
 }
