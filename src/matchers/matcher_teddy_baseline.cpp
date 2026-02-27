@@ -1,17 +1,19 @@
 #include "matcher_teddy_baseline.h"
 #include "teddy/teddy_common.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstring>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
-template <int Sigma>
+template <int Sigma, bool CollectStats>
 std::vector<findkey_result> matcher_teddy_baseline_impl(
     std::string_view data,
     const std::vector<std::string_view>& keys,
-    const TeddyCompilationData& teddy_data) {
+    const TeddyCompilationData& teddy_data,
+    struct findkey_teddy_stats* stats) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
 
@@ -30,8 +32,7 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
     const char* str = data.data();
     const size_t len = data.size();
 
-    const uint8_t group_mask =
-        static_cast<char>(1u << teddy_data.num_groups) - 1u;
+    const uint8_t group_mask = (1u << teddy_data.num_groups) - 1u;
 
     for (size_t position = Sigma - 1; position < len; ++position) {
         uint8_t shift_or = 0;
@@ -52,45 +53,72 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
             continue;
         }
 
+        bool any_exact_suffix = false;
+        if constexpr (CollectStats) {
+            if (stats) {
+                ++stats->prefilter_hit_lanes;
+                stats->prefilter_hit_groups += __builtin_popcount(hits);
+
+                uint8_t suffix[Sigma];
+                for (int i = 0; i < Sigma; ++i) {
+                    suffix[i] =
+                        static_cast<uint8_t>(str[position - Sigma + 1 + i]);
+                }
+
+                uint8_t group_hits = hits;
+                while (group_hits) {
+                    const uint32_t group = __builtin_ctz(group_hits);
+                    group_hits &= group_hits - 1;
+
+                    if (group_has_exact_suffix(keys, teddy_data, group,
+                                               suffix)) {
+                        any_exact_suffix = true;
+                    } else {
+                        ++stats->fp_type1_groups;
+                    }
+                }
+            }
+        }
+
         const size_t end_quote = position + teddy_data.end_quote_offset;
-        if (end_quote >= len || str[end_quote] != '"') {
-            continue;
-        }
+        const candidate_result cr = verify_json_key_candidate(
+            str, len, end_quote, max_key_len, key_map);
 
-        if (!is_valid_quote(str, end_quote)) {
-            continue;
-        }
-
-        size_t j = end_quote + 1;
-        while (j < len && std::isspace(static_cast<unsigned char>(str[j]))) {
-            ++j;
-        }
-
-        if (j < len && str[j] == ':') {
-            // find opening quote
-            size_t start_quote = std::string_view::npos;
-            size_t min_start_quote = 0;
-            if (end_quote > max_key_len + 1) {
-                min_start_quote = end_quote - max_key_len - 1;
-            }
-            for (size_t k = end_quote - 1; k >= min_start_quote; --k) {
-                if (str[k] == '"' && is_valid_quote(str, k)) {
-                    start_quote = k;
-                    break;
-                }
-                if (k == 0) {
-                    break;
+        if (cr.type == CANDIDATE_TYPE_MATCH) {
+            results.push_back({cr.position, cr.key_id});
+            if constexpr (CollectStats) {
+                if (stats) {
+                    ++stats->exact_matches;
                 }
             }
-            if (start_quote == std::string_view::npos) {
-                continue;
-            }
-
-            std::string_view sv(str + start_quote + 1,
-                                end_quote - start_quote - 1);
-            auto it = key_map.find(sv);
-            if (it != key_map.end()) {
-                results.push_back(findkey_result{start_quote + 1, it->second});
+        } else {
+            if constexpr (CollectStats) {
+                if (stats) {
+                    switch (cr.type) {
+                        case CANDIDATE_BAD_END_QUOTE:
+                            ++stats->reject_bad_end_quote;
+                            break;
+                        case CANDIDATE_INVALID_QUOTE:
+                            ++stats->reject_invalid_quote;
+                            break;
+                        case CANDIDATE_MISSING_COLON:
+                            ++stats->reject_missing_colon;
+                            break;
+                        case CANDIDATE_MISSING_OPEN_QUOTE:
+                            ++stats->reject_missing_open_quote;
+                            break;
+                        case CANDIDATE_KEY_NOT_FOUND:
+                            ++stats->reject_key_not_found;
+                            break;
+                        default:
+                            break;
+                    }
+                    if (any_exact_suffix) {
+                        ++stats->fp_type2_lanes;
+                    } else {
+                        ++stats->fp_type1_lanes;
+                    }
+                }
             }
         }
     }
@@ -98,11 +126,13 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
     return results;
 }
 
-std::vector<findkey_result> matcher_teddy_baseline(
+template <bool CollectStats>
+std::vector<findkey_result> matcher_teddy_baseline_dispatch(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_suffix_mode suffix_mode) {
+    enum findkey_teddy_suffix_mode suffix_mode,
+    struct findkey_teddy_stats* stats) {
     const TeddyCompilationData teddy_data =
         compile_teddy_data(keys, grouping_strategy, suffix_mode);
 
@@ -113,14 +143,37 @@ std::vector<findkey_result> matcher_teddy_baseline(
 
     switch (teddy_data.sigma) {
         case 1:
-            return matcher_teddy_baseline_impl<1>(data, keys, teddy_data);
+            return matcher_teddy_baseline_impl<1, CollectStats>(
+                data, keys, teddy_data, stats);
         case 2:
-            return matcher_teddy_baseline_impl<2>(data, keys, teddy_data);
+            return matcher_teddy_baseline_impl<2, CollectStats>(
+                data, keys, teddy_data, stats);
         case 3:
-            return matcher_teddy_baseline_impl<3>(data, keys, teddy_data);
+            return matcher_teddy_baseline_impl<3, CollectStats>(
+                data, keys, teddy_data, stats);
         case 4:
-            return matcher_teddy_baseline_impl<4>(data, keys, teddy_data);
+            return matcher_teddy_baseline_impl<4, CollectStats>(
+                data, keys, teddy_data, stats);
         default:
             return {};
     }
+}
+
+std::vector<findkey_result> matcher_teddy_baseline(
+    std::string_view data,
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode) {
+    return matcher_teddy_baseline_dispatch<false>(data, keys, grouping_strategy,
+                                                  suffix_mode, nullptr);
+}
+
+std::vector<findkey_result> matcher_teddy_baseline_collect_stats(
+    std::string_view data,
+    const std::vector<std::string_view>& keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode,
+    struct findkey_teddy_stats* stats) {
+    return matcher_teddy_baseline_dispatch<true>(data, keys, grouping_strategy,
+                                                 suffix_mode, stats);
 }

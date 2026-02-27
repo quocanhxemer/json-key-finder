@@ -33,6 +33,29 @@ static inline uint8_t teddy_suffix_byte(
     return '"';
 }
 
+bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
+                            const TeddyCompilationData& data,
+                            uint32_t group,
+                            const uint8_t* suffix) {
+    for (uint32_t key_id : data.group_keys[group]) {
+        bool found = true;
+        for (int i = 0; i < data.sigma; ++i) {
+            uint8_t suffix_byte = teddy_suffix_byte(keys[key_id], data.sigma, i,
+                                                    data.suffix_mode);
+            if (suffix_byte != suffix[i]) {
+                found = false;
+                break;
+            }
+        }
+
+        if (found) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static TeddyCompilationData compile_teddy_data_greedy(
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_suffix_mode suffix_mode) {
@@ -65,6 +88,7 @@ static TeddyCompilationData compile_teddy_data_greedy(
     };
 
     TeddyCompilationData data;
+    data.suffix_mode = suffix_mode;
 
     if (keys.empty()) {
         return data;
@@ -193,6 +217,7 @@ static TeddyCompilationData compile_teddy_data_hash(
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_suffix_mode suffix_mode) {
     TeddyCompilationData data;
+    data.suffix_mode = suffix_mode;
 
     if (keys.empty()) {
         return data;

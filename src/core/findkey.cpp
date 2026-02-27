@@ -31,6 +31,27 @@ static inline bool bad_args(const uint8_t* data,
     return false;
 }
 
+static inline bool bad_args_stats(const uint8_t* data,
+                                  size_t len,
+                                  const uint8_t* const* keys,
+                                  const size_t* key_lens,
+                                  size_t num_keys,
+                                  struct findkey_teddy_stats* teddy_stats) {
+    if ((!data && len != 0) || !keys || !key_lens || !num_keys ||
+        !teddy_stats) {
+        return true;
+    }
+    for (size_t i = 0; i < num_keys; ++i) {
+        if (!keys[i] && key_lens[i] != 0) {
+            return true;
+        }
+        if (key_lens[i] == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 extern "C" size_t findkey(
     const uint8_t* data,
     size_t len,
@@ -103,6 +124,45 @@ extern "C" size_t findkey(
     for (size_t i = 0; i < num_positions; ++i) {
         out_results[i] = results[i];
     }
+
+    return results.size();
+}
+
+extern "C" size_t findkey_with_stats(
+    const uint8_t* data,
+    size_t len,
+    const uint8_t* const* keys,
+    const size_t* key_lens,
+    size_t num_keys,
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_suffix_mode suffix_mode,
+    struct findkey_teddy_stats* teddy_stats,
+    int* out_status) {
+    if (out_status) {
+        *out_status = FINDKEY_OK;
+    }
+
+    *teddy_stats = {};
+
+    if (bad_args_stats(data, len, keys, key_lens, num_keys, teddy_stats)) {
+        if (out_status) {
+            *out_status = FINDKEY_ERR_BAD_ARGS;
+        }
+        return 0;
+    }
+
+    const char* str = reinterpret_cast<const char*>(data);
+    std::string_view data_sv(str ? str : "", len);
+
+    std::vector<std::string_view> key_svs;
+    key_svs.reserve(num_keys);
+    for (size_t i = 0; i < num_keys; ++i) {
+        const char* k = reinterpret_cast<const char*>(keys[i]);
+        key_svs.emplace_back(k, key_lens[i]);
+    }
+
+    std::vector<findkey_result> results = matcher_teddy_baseline_collect_stats(
+        data_sv, key_svs, grouping_strategy, suffix_mode, teddy_stats);
 
     return results.size();
 }

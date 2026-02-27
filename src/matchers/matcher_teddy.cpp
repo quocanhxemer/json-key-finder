@@ -55,7 +55,7 @@ std::vector<findkey_result> matcher_teddy_impl(
 
     const __m128i mask_0f = _mm_set1_epi8(0x0F);
     const __m128i group_mask_vector =
-        _mm_set1_epi8(static_cast<char>(1u << teddy_data.num_groups) - 1u);
+        _mm_set1_epi8(static_cast<char>((1u << teddy_data.num_groups) - 1u));
     const __m128i zero_vector = _mm_setzero_si128();
 
     for (size_t base = 0; base < len; base += 16) {
@@ -109,47 +109,10 @@ std::vector<findkey_result> matcher_teddy_impl(
             const size_t last_char = base + i;
             const size_t end_quote = last_char + teddy_data.end_quote_offset;
 
-            if (end_quote >= len || str[end_quote] != '"') {
-                continue;
-            }
-
-            if (!is_valid_quote(str, end_quote)) {
-                continue;
-            }
-
-            size_t j = end_quote + 1;
-            while (j < len &&
-                   std::isspace(static_cast<unsigned char>(str[j]))) {
-                ++j;
-            }
-
-            if (j < len && str[j] == ':') {
-                // find opening quote
-                size_t start_quote = std::string_view::npos;
-                size_t min_start_quote = 0;
-                if (end_quote > max_key_len + 1) {
-                    min_start_quote = end_quote - max_key_len - 1;
-                }
-                for (size_t k = end_quote - 1; k >= min_start_quote; --k) {
-                    if (str[k] == '"' && is_valid_quote(str, k)) {
-                        start_quote = k;
-                        break;
-                    }
-                    if (k == 0) {
-                        break;
-                    }
-                }
-                if (start_quote == std::string_view::npos) {
-                    continue;
-                }
-
-                std::string_view sv(str + start_quote + 1,
-                                    end_quote - start_quote - 1);
-                auto it = key_map.find(sv);
-                if (it != key_map.end()) {
-                    results.push_back(
-                        findkey_result{start_quote + 1, it->second});
-                }
+            const candidate_result cr = verify_json_key_candidate(
+                str, len, end_quote, max_key_len, key_map);
+            if (cr.type == CANDIDATE_TYPE_MATCH) {
+                results.push_back({cr.position, cr.key_id});
             }
         }
 

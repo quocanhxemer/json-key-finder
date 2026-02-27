@@ -17,7 +17,7 @@ static void print_usage_and_exit(const char* prog_name) {
                  "Usage: %s --keys <keys_file> --data <json_file> [--algo "
                  "scalar|teddy|teddy_baseline] [--teddy-grouping-strategy hash "
                  "| greedy] [--teddy-suffix-mode raw|quote-suffix] "
-                 "[--print-positions]\n",
+                 "[--print-positions] [--collect-stats]\n",
                  prog_name);
     std::exit(EXIT_FAILURE);
 }
@@ -96,6 +96,7 @@ int main(int argc, char** argv) {
     enum findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
     const char* keys_path = nullptr;
     const char* data_path = nullptr;
+    bool collect_stats = false;
     bool print_positions = false;
 
     for (int i = 1; i < argc; ++i) {
@@ -111,6 +112,8 @@ int main(int argc, char** argv) {
             keys_path = argv[++i];
         } else if (std::strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
             data_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--collect-stats") == 0) {
+            collect_stats = true;
         } else if (std::strcmp(argv[i], "--print-positions") == 0) {
             print_positions = true;
         } else {
@@ -153,14 +156,21 @@ int main(int argc, char** argv) {
     constexpr size_t POSITIONS_CAPACITY = 1024 * 1024;
     std::vector<findkey_result> positions(POSITIONS_CAPACITY);
     int status = 0;
+    findkey_teddy_stats teddy_stats = {};
 
     auto start_time = std::chrono::steady_clock::now();
 
     size_t num_found =
-        findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
-                mmap_file.size(), key_ptrs.data(), key_lens.data(),
-                key_ptrs.size(), algo, grouping_strategy, suffix_mode,
-                positions.data(), positions.size(), &status);
+        collect_stats
+            ? findkey_with_stats(
+                  reinterpret_cast<const uint8_t*>(mmap_file.data()),
+                  mmap_file.size(), key_ptrs.data(), key_lens.data(),
+                  key_ptrs.size(), grouping_strategy, suffix_mode, &teddy_stats,
+                  &status)
+            : findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
+                      mmap_file.size(), key_ptrs.data(), key_lens.data(),
+                      key_ptrs.size(), algo, grouping_strategy, suffix_mode,
+                      positions.data(), positions.size(), &status);
 
     auto end_time = std::chrono::steady_clock::now();
 
@@ -198,6 +208,28 @@ int main(int argc, char** argv) {
         if (num_found > positions.size()) {
             std::printf("  ... and %zu more\n", num_found - positions.size());
         }
+    }
+
+    if (collect_stats) {
+        std::printf("Teddy Stats:\n");
+        std::printf("\tPrefilter hit lanes: %lu\n",
+                    teddy_stats.prefilter_hit_lanes);
+        std::printf("\tPrefilter hit groups: %lu\n",
+                    teddy_stats.prefilter_hit_groups);
+        std::printf("\tFP type 1 lanes: %lu\n", teddy_stats.fp_type1_lanes);
+        std::printf("\tFP type 1 groups: %lu\n", teddy_stats.fp_type1_groups);
+        std::printf("\tFP type 2 lanes: %lu\n", teddy_stats.fp_type2_lanes);
+        std::printf("\tReject bad end quote: %lu\n",
+                    teddy_stats.reject_bad_end_quote);
+        std::printf("\tReject invalid quote: %lu\n",
+                    teddy_stats.reject_invalid_quote);
+        std::printf("\tReject missing colon: %lu\n",
+                    teddy_stats.reject_missing_colon);
+        std::printf("\tReject missing open quote: %lu\n",
+                    teddy_stats.reject_missing_open_quote);
+        std::printf("\tReject key not found: %lu\n",
+                    teddy_stats.reject_key_not_found);
+        std::printf("\tExact matches: %lu\n", teddy_stats.exact_matches);
     }
 
     std::printf("Time taken: %.2f ns\n", static_cast<double>(duration_ns));
