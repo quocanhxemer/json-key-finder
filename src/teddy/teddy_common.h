@@ -2,6 +2,7 @@
 
 #include "findkey.h"
 
+#include <array>
 #include <cctype>
 #include <cstdint>
 #include <string_view>
@@ -11,6 +12,18 @@
 static constexpr int DEFAULT_SIGMA = 3;
 static constexpr int MAX_SIGMA = DEFAULT_SIGMA + 1;
 static constexpr int MAX_GROUPS = 8;  // must be power of 2
+
+struct TrieNode {
+    std::array<int32_t, 256> children{};
+    int32_t key_id = -1;
+
+    TrieNode() { children.fill(-1); }
+};
+
+struct DFA {
+    std::vector<TrieNode> nodes;
+    size_t max_key_len = 0;
+};
 
 struct TeddyCompilationData {
     int sigma = 0;
@@ -26,6 +39,8 @@ struct TeddyCompilationData {
     alignas(16) uint8_t high_table[MAX_SIGMA][16];
 
     std::vector<std::vector<uint32_t>> group_keys;
+
+    DFA dfa;
 };
 
 enum candidate_type {
@@ -66,12 +81,10 @@ static inline bool is_valid_quote(const char* str, size_t pos) {
     return (backslash_count % 2) == 0;
 }
 
-static inline candidate_result verify_json_key_candidate(
-    const char* str,
-    size_t len,
-    size_t end_quote,
-    size_t max_key_len,
-    const std::unordered_map<std::string_view, uint32_t>& key_map) {
+static inline candidate_result verify_json_key_candidate(const char* str,
+                                                         size_t len,
+                                                         size_t end_quote,
+                                                         const DFA& dfa) {
     if (end_quote >= len || str[end_quote] != '"') {
         return {CANDIDATE_BAD_END_QUOTE, 0, 0};
     }
@@ -89,30 +102,33 @@ static inline candidate_result verify_json_key_candidate(
         return {CANDIDATE_MISSING_COLON, 0, 0};
     }
 
-    // find opening quote
-    size_t start_quote = std::string_view::npos;
-    size_t min_start_quote = 0;
-    if (end_quote > max_key_len + 1) {
-        min_start_quote = end_quote - max_key_len - 1;
-    }
-    for (size_t k = end_quote - 1; k >= min_start_quote; --k) {
-        if (str[k] == '"' && is_valid_quote(str, k)) {
-            start_quote = k;
-            break;
+    int32_t current_node = 0;
+    size_t consumed = 0;
+
+    for (size_t position = end_quote; position > 0;) {
+        --position;
+        const uint8_t c = static_cast<uint8_t>(str[position]);
+
+        if (c == '"' && is_valid_quote(str, position)) {
+            if (dfa.nodes[current_node].key_id != -1) {
+                return {CANDIDATE_TYPE_MATCH, position + 1,
+                        static_cast<uint32_t>(dfa.nodes[current_node].key_id)};
+            }
+            return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
         }
-        if (k == 0) {
-            break;
+
+        if (consumed >= dfa.max_key_len) {
+            return {CANDIDATE_MISSING_OPEN_QUOTE, 0, 0};
         }
-    }
-    if (start_quote == std::string_view::npos) {
-        return {CANDIDATE_MISSING_OPEN_QUOTE, 0, 0};
+
+        const int32_t next_node = dfa.nodes[current_node].children[c];
+        if (next_node == -1) {
+            return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
+        }
+
+        current_node = next_node;
+        ++consumed;
     }
 
-    std::string_view sv(str + start_quote + 1, end_quote - start_quote - 1);
-    auto it = key_map.find(sv);
-    if (it == key_map.end()) {
-        return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
-    }
-
-    return {CANDIDATE_TYPE_MATCH, start_quote + 1, it->second};
+    return {CANDIDATE_MISSING_OPEN_QUOTE, 0, 0};
 }

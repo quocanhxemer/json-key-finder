@@ -12,28 +12,14 @@
 
 #include <algorithm>
 #include <array>
-#include <unordered_map>
 #include <vector>
 
 template <int Sigma>
 std::vector<findkey_result> matcher_teddy_impl(
     std::string_view data,
-    const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
-
-    // hash map for fast key verification
-    std::unordered_map<std::string_view, uint32_t> key_map;
-    key_map.reserve(keys.size());
-
-    size_t max_key_len = 0;
-    for (uint32_t i = 0; i < keys.size(); ++i) {
-        max_key_len = std::max(max_key_len, keys[i].size());
-        if (key_map.find(keys[i]) == key_map.end()) {
-            key_map[keys[i]] = i;
-        }
-    }
 
     const char* str = data.data();
     const size_t len = data.size();
@@ -109,8 +95,8 @@ std::vector<findkey_result> matcher_teddy_impl(
             const size_t last_char = base + i;
             const size_t end_quote = last_char + teddy_data.end_quote_offset;
 
-            const candidate_result cr = verify_json_key_candidate(
-                str, len, end_quote, max_key_len, key_map);
+            const candidate_result cr =
+                verify_json_key_candidate(str, len, end_quote, teddy_data.dfa);
             if (cr.type == CANDIDATE_TYPE_MATCH) {
                 results.push_back({cr.position, cr.key_id});
             }
@@ -139,13 +125,13 @@ std::vector<findkey_result> matcher_teddy(
 
     switch (teddy_data.sigma) {
         case 1:
-            return matcher_teddy_impl<1>(data, keys, teddy_data);
+            return matcher_teddy_impl<1>(data, teddy_data);
         case 2:
-            return matcher_teddy_impl<2>(data, keys, teddy_data);
+            return matcher_teddy_impl<2>(data, teddy_data);
         case 3:
-            return matcher_teddy_impl<3>(data, keys, teddy_data);
+            return matcher_teddy_impl<3>(data, teddy_data);
         case 4:
-            return matcher_teddy_impl<4>(data, keys, teddy_data);
+            return matcher_teddy_impl<4>(data, teddy_data);
         default:
             return {};
     }

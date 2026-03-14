@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cstring>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 template <int Sigma, bool CollectStats>
@@ -16,18 +15,6 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
     struct findkey_teddy_stats* stats) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
-
-    // hash map for fast key verification
-    std::unordered_map<std::string_view, uint32_t> key_map;
-    key_map.reserve(keys.size());
-
-    size_t max_key_len = 0;
-    for (uint32_t i = 0; i < keys.size(); ++i) {
-        max_key_len = std::max(max_key_len, keys[i].size());
-        if (key_map.find(keys[i]) == key_map.end()) {
-            key_map[keys[i]] = i;
-        }
-    }
 
     const char* str = data.data();
     const size_t len = data.size();
@@ -81,8 +68,8 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
         }
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
-        const candidate_result cr = verify_json_key_candidate(
-            str, len, end_quote, max_key_len, key_map);
+        const candidate_result cr =
+            verify_json_key_candidate(str, len, end_quote, teddy_data.dfa);
 
         if (cr.type == CANDIDATE_TYPE_MATCH) {
             results.push_back({cr.position, cr.key_id});
