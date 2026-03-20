@@ -60,6 +60,7 @@ static DFA buildDFA(const std::vector<std::string_view>& keys,
                     const std::vector<std::vector<uint32_t>>& group_keys) {
     DFA dfa;
     dfa.nodes.emplace_back();  // root
+    dfa.node_group_masks.push_back(0);
     std::vector<uint8_t> key_groups(keys.size(), 0);
 
     for (uint32_t group = 0; group < group_keys.size(); ++group) {
@@ -81,9 +82,10 @@ static DFA buildDFA(const std::vector<std::string_view>& keys,
                 dfa.nodes[current_node].children[c] =
                     static_cast<int32_t>(dfa.nodes.size());
                 dfa.nodes.emplace_back();
+                dfa.node_group_masks.push_back(0);
             }
             current_node = dfa.nodes[current_node].children[c];
-            dfa.nodes[current_node].group_mask |= key_group_mask;
+            dfa.node_group_masks[current_node] |= key_group_mask;
         }
 
         if (dfa.nodes[current_node].key_id != -1) {  // duplicated key

@@ -16,13 +16,13 @@ static constexpr int MAX_GROUPS = 8;  // must be power of 2
 struct TrieNode {
     std::array<int32_t, 256> children{};
     int32_t key_id = -1;
-    uint8_t group_mask = 0;
 
     TrieNode() { children.fill(-1); }
 };
 
 struct DFA {
     std::vector<TrieNode> nodes;
+    std::vector<uint8_t> node_group_masks;
     size_t max_key_len = 0;
 };
 
@@ -131,7 +131,7 @@ static inline candidate_result verify_json_key_candidate(
         }
 
         current_node = next_node;
-        active_groups &= dfa.nodes[current_node].group_mask;
+        active_groups &= dfa.node_group_masks[current_node];
         if (!active_groups) {
             return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
         }
