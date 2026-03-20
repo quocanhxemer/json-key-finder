@@ -56,12 +56,22 @@ bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
     return false;
 }
 
-static DFA buildDFA(const std::vector<std::string_view>& keys) {
+static DFA buildDFA(const std::vector<std::string_view>& keys,
+                    const std::vector<std::vector<uint32_t>>& group_keys) {
     DFA dfa;
     dfa.nodes.emplace_back();  // root
+    std::vector<uint8_t> key_groups(keys.size(), 0);
+
+    for (uint32_t group = 0; group < group_keys.size(); ++group) {
+        const uint8_t group_bit = static_cast<uint8_t>(1u << group);
+        for (uint32_t key_id : group_keys[group]) {
+            key_groups[key_id] |= group_bit;
+        }
+    }
 
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
         const std::string_view key = keys[key_id];
+        const uint8_t key_group_mask = key_groups[key_id];
         dfa.max_key_len = std::max(dfa.max_key_len, key.size());
 
         int32_t current_node = 0;
@@ -73,6 +83,7 @@ static DFA buildDFA(const std::vector<std::string_view>& keys) {
                 dfa.nodes.emplace_back();
             }
             current_node = dfa.nodes[current_node].children[c];
+            dfa.nodes[current_node].group_mask |= key_group_mask;
         }
 
         if (dfa.nodes[current_node].key_id != -1) {  // duplicated key
@@ -118,7 +129,6 @@ static TeddyCompilationData compile_teddy_data_greedy(
 
     TeddyCompilationData data;
     data.suffix_mode = suffix_mode;
-    data.dfa = buildDFA(keys);
 
     if (keys.empty()) {
         return data;
@@ -205,6 +215,8 @@ static TeddyCompilationData compile_teddy_data_greedy(
         return data;
     }
 
+    data.dfa = buildDFA(keys, data.group_keys);
+
     for (int i = 0; i < MAX_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {
             data.low_table[i][j] = 0xFF;
@@ -248,7 +260,6 @@ static TeddyCompilationData compile_teddy_data_hash(
     enum findkey_teddy_suffix_mode suffix_mode) {
     TeddyCompilationData data;
     data.suffix_mode = suffix_mode;
-    data.dfa = buildDFA(keys);
 
     if (keys.empty()) {
         return data;
@@ -297,6 +308,8 @@ static TeddyCompilationData compile_teddy_data_hash(
     if (!data.num_groups) {
         return data;
     }
+
+    data.dfa = buildDFA(keys, data.group_keys);
 
     for (int i = 0; i < MAX_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {

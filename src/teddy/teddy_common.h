@@ -16,6 +16,7 @@ static constexpr int MAX_GROUPS = 8;  // must be power of 2
 struct TrieNode {
     std::array<int32_t, 256> children{};
     int32_t key_id = -1;
+    uint8_t group_mask = 0;
 
     TrieNode() { children.fill(-1); }
 };
@@ -81,10 +82,12 @@ static inline bool is_valid_quote(const char* str, size_t pos) {
     return (backslash_count % 2) == 0;
 }
 
-static inline candidate_result verify_json_key_candidate(const char* str,
-                                                         size_t len,
-                                                         size_t end_quote,
-                                                         const DFA& dfa) {
+static inline candidate_result verify_json_key_candidate(
+    const char* str,
+    size_t len,
+    size_t end_quote,
+    const DFA& dfa,
+    uint8_t candidate_groups) {
     if (end_quote >= len || str[end_quote] != '"') {
         return {CANDIDATE_BAD_END_QUOTE, 0, 0};
     }
@@ -104,6 +107,7 @@ static inline candidate_result verify_json_key_candidate(const char* str,
 
     int32_t current_node = 0;
     size_t consumed = 0;
+    uint8_t active_groups = candidate_groups;
 
     for (size_t position = end_quote; position > 0;) {
         --position;
@@ -127,6 +131,10 @@ static inline candidate_result verify_json_key_candidate(const char* str,
         }
 
         current_node = next_node;
+        active_groups &= dfa.nodes[current_node].group_mask;
+        if (!active_groups) {
+            return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
+        }
         ++consumed;
     }
 

@@ -68,8 +68,8 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
         }
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
-        const candidate_result cr =
-            verify_json_key_candidate(str, len, end_quote, teddy_data.dfa);
+        const candidate_result cr = verify_json_key_candidate(
+            str, len, end_quote, teddy_data.dfa, hits);
 
         if (cr.type == CANDIDATE_TYPE_MATCH) {
             results.push_back({cr.position, cr.key_id});
