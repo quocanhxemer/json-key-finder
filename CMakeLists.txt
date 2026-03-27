@@ -56,3 +56,7 @@ target_link_libraries(findkey PRIVATE find_json_key find_json_key_utils)
 add_executable(gen_keys tools/gen_keys.cpp)
 target_include_directories(gen_keys PRIVATE include src)
 target_link_libraries(gen_keys PRIVATE find_json_key_utils)
+
+add_executable(reverse_keys tools/reverse_keys.cpp)
+target_include_directories(reverse_keys PRIVATE include src)
+target_link_libraries(reverse_keys PRIVATE find_json_key_utils find_json_key_warnings)
