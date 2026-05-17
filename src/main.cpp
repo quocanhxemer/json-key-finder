@@ -1,6 +1,8 @@
 #include "findkey.h"
 #include "io/mmap_file.h"
 
+#include <getopt.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -13,13 +15,41 @@
 #include <chrono>
 
 static void print_usage_and_exit(const char* prog_name) {
-    std::fprintf(stderr,
-                 "Usage: %s --keys <keys_file> --data <json_file> [--algo "
-                 "scalar|teddy|teddy_baseline] [--teddy-grouping-strategy hash "
-                 "| greedy] [--teddy-hash-algo std|adler32|crc32fast|xxhash|"
-                 "fnv1a] [--teddy-suffix-mode raw|quote-suffix] "
-                 "[--print-positions] [--collect-stats]\n",
-                 prog_name);
+    static constexpr const char* usage_message =
+        "Usage:\n"
+        "  %s --keys <keys_file> --data <json_file> [options]\n"
+        "\n"
+        "Required:\n"
+        "  --keys <keys_file>         Newline-delimited list of keys to "
+        "search\n"
+        "  --data <json_file>         JSON input file to scan\n"
+        "\n"
+        "General options:\n"
+        "  --algo <name>              Matching algorithm\n"
+        "                             Values: scalar, teddy, teddy_baseline\n"
+        "                             Default: scalar\n"
+        "  --print-positions          Print the position and key for each "
+        "match\n"
+        "  --collect-stats            Print Teddy baseline false-positive "
+        "stats\n"
+        "\n"
+        "Teddy options:\n"
+        "  --teddy-grouping-strategy <name>\n"
+        "                             Values: greedy, hash\n"
+        "                             Default: greedy\n"
+        "  --teddy-hash-algo <name>   Used only with grouping strategy 'hash'\n"
+        "                             Values: std, adler32, crc32fast, xxhash, "
+        "fnv1a\n"
+        "                             Default: std\n"
+        "  --teddy-suffix-mode <name>\n"
+        "                             Values: raw, quote-suffix\n"
+        "                             Default: raw\n"
+        "\n"
+        "Notes:\n"
+        "  - --collect-stats always uses the Teddy baseline matcher\n"
+        "  - Teddy options are ignored when --algo scalar is selected\n";
+
+    std::fprintf(stderr, usage_message, prog_name);
     std::exit(EXIT_FAILURE);
 }
 
@@ -116,6 +146,18 @@ static findkey_teddy_compile_hash_algorithm parse_hash_algorithm(
 }
 
 int main(int argc, char** argv) {
+    static constexpr option long_options[] = {
+        {"algo", required_argument, nullptr, 'a'},
+        {"teddy-grouping-strategy", required_argument, nullptr, 'g'},
+        {"teddy-hash-algo", required_argument, nullptr, 'h'},
+        {"teddy-suffix-mode", required_argument, nullptr, 's'},
+        {"keys", required_argument, nullptr, 'k'},
+        {"data", required_argument, nullptr, 'd'},
+        {"collect-stats", no_argument, nullptr, 'c'},
+        {"print-positions", no_argument, nullptr, 'p'},
+        {nullptr, 0, nullptr, 0},
+    };
+
     enum findkey_algo algo = SCALAR;
     findkey_teddy_config teddy_config = {};
     const char* keys_path = nullptr;
@@ -123,29 +165,47 @@ int main(int argc, char** argv) {
     bool collect_stats = false;
     bool print_positions = false;
 
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--algo") == 0 && i + 1 < argc) {
-            algo = parse_algo(argv[++i]);
-        } else if (std::strcmp(argv[i], "--teddy-grouping-strategy") == 0 &&
-                   i + 1 < argc) {
-            teddy_config.grouping_strategy = parse_grouping_strategy(argv[++i]);
-        } else if (std::strcmp(argv[i], "--teddy-hash-algo") == 0 &&
-                   i + 1 < argc) {
-            teddy_config.hash_algorithm = parse_hash_algorithm(argv[++i]);
-        } else if (std::strcmp(argv[i], "--teddy-suffix-mode") == 0 &&
-                   i + 1 < argc) {
-            teddy_config.suffix_mode = parse_suffix_mode(argv[++i]);
-        } else if (std::strcmp(argv[i], "--keys") == 0 && i + 1 < argc) {
-            keys_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
-            data_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--collect-stats") == 0) {
-            collect_stats = true;
-        } else if (std::strcmp(argv[i], "--print-positions") == 0) {
-            print_positions = true;
-        } else {
-            print_usage_and_exit(argv[0]);
+    opterr = 0;
+    while (true) {
+        const int option_value =
+            getopt_long(argc, argv, "", long_options, nullptr);
+        if (option_value == -1) {
+            break;
         }
+
+        switch (option_value) {
+            case 'a':
+                algo = parse_algo(optarg);
+                break;
+            case 'g':
+                teddy_config.grouping_strategy =
+                    parse_grouping_strategy(optarg);
+                break;
+            case 'h':
+                teddy_config.hash_algorithm = parse_hash_algorithm(optarg);
+                break;
+            case 's':
+                teddy_config.suffix_mode = parse_suffix_mode(optarg);
+                break;
+            case 'k':
+                keys_path = optarg;
+                break;
+            case 'd':
+                data_path = optarg;
+                break;
+            case 'c':
+                collect_stats = true;
+                break;
+            case 'p':
+                print_positions = true;
+                break;
+            default:
+                print_usage_and_exit(argv[0]);
+        }
+    }
+
+    if (optind != argc) {
+        print_usage_and_exit(argv[0]);
     }
 
     if (algo == static_cast<findkey_algo>(-1)) {
