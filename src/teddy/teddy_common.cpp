@@ -101,7 +101,7 @@ static DFA buildDFA(const std::vector<std::string_view>& keys,
 
 static TeddyCompilationData compile_teddy_data_greedy(
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_suffix_mode suffix_mode) {
+    const findkey_teddy_config& config) {
     struct Group {
         std::vector<uint32_t> key_ids;
         uint8_t b[MAX_SIGMA];
@@ -131,6 +131,7 @@ static TeddyCompilationData compile_teddy_data_greedy(
     };
 
     TeddyCompilationData data;
+    const findkey_teddy_suffix_mode suffix_mode = config.suffix_mode;
     data.suffix_mode = suffix_mode;
 
     if (keys.empty()) {
@@ -260,9 +261,9 @@ static TeddyCompilationData compile_teddy_data_greedy(
 
 static TeddyCompilationData compile_teddy_data_hash(
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_suffix_mode suffix_mode,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm) {
+    const findkey_teddy_config& config) {
     TeddyCompilationData data;
+    const findkey_teddy_suffix_mode suffix_mode = config.suffix_mode;
     data.suffix_mode = suffix_mode;
 
     if (keys.empty()) {
@@ -293,7 +294,7 @@ static TeddyCompilationData compile_teddy_data_hash(
                 teddy_suffix_byte(keys[key_id], data.sigma, i, suffix_mode);
         }
         const uint32_t hash =
-            hash_teddy_suffix(suffix_buf, data.sigma, hash_algorithm);
+            hash_teddy_suffix(suffix_buf, data.sigma, config.hash_algorithm);
 
         buckets[hash & (MAX_GROUPS - 1)].push_back(key_id);
     }
@@ -354,14 +355,12 @@ static TeddyCompilationData compile_teddy_data_hash(
 
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_suffix_mode suffix_mode,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm) {
-    switch (grouping_strategy) {
+    const findkey_teddy_config& config) {
+    switch (config.grouping_strategy) {
         case TEDDY_COMPILE_GREEDY:
-            return compile_teddy_data_greedy(keys, suffix_mode);
+            return compile_teddy_data_greedy(keys, config);
         case TEDDY_COMPILE_HASH:
-            return compile_teddy_data_hash(keys, suffix_mode, hash_algorithm);
+            return compile_teddy_data_hash(keys, config);
         default:
             return {};
     }

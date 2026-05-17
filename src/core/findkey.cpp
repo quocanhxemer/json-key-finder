@@ -52,19 +52,16 @@ static inline bool bad_args_stats(const uint8_t* data,
     return false;
 }
 
-extern "C" size_t findkey(
-    const uint8_t* data,
-    size_t len,
-    const uint8_t* const* keys,
-    const size_t* key_lens,
-    size_t num_keys,
-    enum findkey_algo algo,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
-    enum findkey_teddy_suffix_mode suffix_mode,
-    struct findkey_result* out_results,
-    size_t max_out_positions,
-    int* out_status) {
+extern "C" size_t findkey(const uint8_t* data,
+                          size_t len,
+                          const uint8_t* const* keys,
+                          const size_t* key_lens,
+                          size_t num_keys,
+                          enum findkey_algo algo,
+                          const struct findkey_teddy_config* teddy_config,
+                          struct findkey_result* out_results,
+                          size_t max_out_positions,
+                          int* out_status) {
     if (out_status) {
         *out_status = FINDKEY_OK;
     }
@@ -87,6 +84,9 @@ extern "C" size_t findkey(
     }
 
     std::vector<findkey_result> results;
+    const findkey_teddy_config default_teddy_config = {};
+    const findkey_teddy_config& config =
+        teddy_config ? *teddy_config : default_teddy_config;
 
     switch (algo) {
         case SCALAR:
@@ -95,13 +95,10 @@ extern "C" size_t findkey(
 
         case TEDDY:
 #if COMPILER_SUPPORTS_TEDDY
-            results = matcher_teddy(data_sv, key_svs, grouping_strategy,
-                                    hash_algorithm, suffix_mode);
+            results = matcher_teddy(data_sv, key_svs, config);
             break;
 #else
-            (void)grouping_strategy;
-            (void)hash_algorithm;
-            (void)suffix_mode;
+            (void)config;
             (void)out_results;
             (void)max_out_positions;
 
@@ -111,9 +108,7 @@ extern "C" size_t findkey(
             return 0;
 #endif
         case TEDDY_BASELINE:
-            results =
-                matcher_teddy_baseline(data_sv, key_svs, grouping_strategy,
-                                       hash_algorithm, suffix_mode);
+            results = matcher_teddy_baseline(data_sv, key_svs, config);
             break;
         default:
             if (out_status) {
@@ -137,9 +132,7 @@ extern "C" size_t findkey_with_stats(
     const uint8_t* const* keys,
     const size_t* key_lens,
     size_t num_keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
-    enum findkey_teddy_suffix_mode suffix_mode,
+    const struct findkey_teddy_config* teddy_config,
     struct findkey_teddy_stats* teddy_stats,
     int* out_status) {
     if (out_status) {
@@ -164,10 +157,12 @@ extern "C" size_t findkey_with_stats(
         const char* k = reinterpret_cast<const char*>(keys[i]);
         key_svs.emplace_back(k, key_lens[i]);
     }
+    const findkey_teddy_config default_teddy_config = {};
+    const findkey_teddy_config& config =
+        teddy_config ? *teddy_config : default_teddy_config;
 
     std::vector<findkey_result> results = matcher_teddy_baseline_collect_stats(
-        data_sv, key_svs, grouping_strategy, hash_algorithm, suffix_mode,
-        teddy_stats);
+        data_sv, key_svs, config, teddy_stats);
 
     return results.size();
 }

@@ -115,11 +115,8 @@ std::vector<findkey_result> matcher_teddy_impl(
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
-    enum findkey_teddy_suffix_mode suffix_mode) {
-    const TeddyCompilationData teddy_data = compile_teddy_data(
-        keys, grouping_strategy, suffix_mode, hash_algorithm);
+    const findkey_teddy_config& config) {
+    const TeddyCompilationData teddy_data = compile_teddy_data(keys, config);
 
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
@@ -145,14 +142,10 @@ std::vector<findkey_result> matcher_teddy(
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
-    enum findkey_teddy_suffix_mode suffix_mode) {
+    const findkey_teddy_config& config) {
     (void)data;
     (void)keys;
-    (void)grouping_strategy;
-    (void)hash_algorithm;
-    (void)suffix_mode;
+    (void)config;
     return {};
 }
 

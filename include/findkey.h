@@ -59,31 +59,33 @@ enum findkey_teddy_suffix_mode {
     TEDDY_SUFFIX_QUOTED = 1,
 };
 
+struct findkey_teddy_config {
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy =
+        TEDDY_COMPILE_GREEDY;
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm = TEDDY_HASH_STD;
+    enum findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
+};
+
 size_t findkey(const uint8_t* data,
                size_t len,
                const uint8_t* const* keys,
                const size_t* key_lens,
                size_t num_keys,
                enum findkey_algo algo,
-               enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-               enum findkey_teddy_compile_hash_algorithm hash_algorithm,
-               enum findkey_teddy_suffix_mode suffix_mode,
+               const struct findkey_teddy_config* teddy_config,
                struct findkey_result* out_results,
                size_t max_out_positions,
                int* out_status);
 
 // statistics collection for teddy
-size_t findkey_with_stats(
-    const uint8_t* data,
-    size_t len,
-    const uint8_t* const* keys,
-    const size_t* key_lens,
-    size_t num_keys,
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
-    enum findkey_teddy_suffix_mode suffix_mode,
-    struct findkey_teddy_stats* teddy_stats,
-    int* out_status);
+size_t findkey_with_stats(const uint8_t* data,
+                          size_t len,
+                          const uint8_t* const* keys,
+                          const size_t* key_lens,
+                          size_t num_keys,
+                          const struct findkey_teddy_config* teddy_config,
+                          struct findkey_teddy_stats* teddy_stats,
+                          int* out_status);
 
 #ifdef __cplusplus
 }
