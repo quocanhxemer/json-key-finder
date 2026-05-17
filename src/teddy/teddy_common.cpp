@@ -1,4 +1,5 @@
 #include "teddy_common.h"
+#include "teddy/teddy_hash.h"
 
 #include <algorithm>
 #include <array>
@@ -259,7 +260,8 @@ static TeddyCompilationData compile_teddy_data_greedy(
 
 static TeddyCompilationData compile_teddy_data_hash(
     const std::vector<std::string_view>& keys,
-    enum findkey_teddy_suffix_mode suffix_mode) {
+    enum findkey_teddy_suffix_mode suffix_mode,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm) {
     TeddyCompilationData data;
     data.suffix_mode = suffix_mode;
 
@@ -285,14 +287,13 @@ static TeddyCompilationData compile_teddy_data_hash(
     // partition
     std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
-        char suffix_buf[MAX_SIGMA];
+        uint8_t suffix_buf[MAX_SIGMA];
         for (int i = 0; i < data.sigma; ++i) {
             suffix_buf[i] =
                 teddy_suffix_byte(keys[key_id], data.sigma, i, suffix_mode);
         }
-        std::string_view suffix(suffix_buf, data.sigma);
         const uint32_t hash =
-            static_cast<uint32_t>(std::hash<std::string_view>{}(suffix));
+            hash_teddy_suffix(suffix_buf, data.sigma, hash_algorithm);
 
         buckets[hash & (MAX_GROUPS - 1)].push_back(key_id);
     }
@@ -354,12 +355,13 @@ static TeddyCompilationData compile_teddy_data_hash(
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_suffix_mode suffix_mode) {
+    enum findkey_teddy_suffix_mode suffix_mode,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm) {
     switch (grouping_strategy) {
         case TEDDY_COMPILE_GREEDY:
             return compile_teddy_data_greedy(keys, suffix_mode);
         case TEDDY_COMPILE_HASH:
-            return compile_teddy_data_hash(keys, suffix_mode);
+            return compile_teddy_data_hash(keys, suffix_mode, hash_algorithm);
         default:
             return {};
     }

@@ -118,10 +118,11 @@ std::vector<findkey_result> matcher_teddy_baseline_dispatch(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
     enum findkey_teddy_suffix_mode suffix_mode,
     struct findkey_teddy_stats* stats) {
-    const TeddyCompilationData teddy_data =
-        compile_teddy_data(keys, grouping_strategy, suffix_mode);
+    const TeddyCompilationData teddy_data = compile_teddy_data(
+        keys, grouping_strategy, suffix_mode, hash_algorithm);
 
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
@@ -150,17 +151,19 @@ std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
     enum findkey_teddy_suffix_mode suffix_mode) {
-    return matcher_teddy_baseline_dispatch<false>(data, keys, grouping_strategy,
-                                                  suffix_mode, nullptr);
+    return matcher_teddy_baseline_dispatch<false>(
+        data, keys, grouping_strategy, hash_algorithm, suffix_mode, nullptr);
 }
 
 std::vector<findkey_result> matcher_teddy_baseline_collect_stats(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
     enum findkey_teddy_suffix_mode suffix_mode,
     struct findkey_teddy_stats* stats) {
-    return matcher_teddy_baseline_dispatch<true>(data, keys, grouping_strategy,
-                                                 suffix_mode, stats);
+    return matcher_teddy_baseline_dispatch<true>(
+        data, keys, grouping_strategy, hash_algorithm, suffix_mode, stats);
 }

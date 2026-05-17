@@ -16,7 +16,8 @@ static void print_usage_and_exit(const char* prog_name) {
     std::fprintf(stderr,
                  "Usage: %s --keys <keys_file> --data <json_file> [--algo "
                  "scalar|teddy|teddy_baseline] [--teddy-grouping-strategy hash "
-                 "| greedy] [--teddy-suffix-mode raw|quote-suffix] "
+                 "| greedy] [--teddy-hash-algo std|adler32|crc32fast|xxhash|"
+                 "fnv1a] [--teddy-suffix-mode raw|quote-suffix] "
                  "[--print-positions] [--collect-stats]\n",
                  prog_name);
     std::exit(EXIT_FAILURE);
@@ -89,10 +90,36 @@ static findkey_teddy_suffix_mode parse_suffix_mode(const char* mode) {
     return static_cast<findkey_teddy_suffix_mode>(-1);
 }
 
+static findkey_teddy_compile_hash_algorithm parse_hash_algorithm(
+    const char* algorithm) {
+    if (std::strcmp(algorithm, "std") == 0) {
+        return TEDDY_HASH_STD;
+    }
+
+    if (std::strcmp(algorithm, "adler32") == 0) {
+        return TEDDY_HASH_ADLER32;
+    }
+
+    if (std::strcmp(algorithm, "crc32fast") == 0) {
+        return TEDDY_HASH_CRC32FAST;
+    }
+
+    if (std::strcmp(algorithm, "xxhash") == 0) {
+        return TEDDY_HASH_XXHASH;
+    }
+
+    if (std::strcmp(algorithm, "fnv1a") == 0) {
+        return TEDDY_HASH_FNV1A;
+    }
+
+    return static_cast<findkey_teddy_compile_hash_algorithm>(-1);
+}
+
 int main(int argc, char** argv) {
     enum findkey_algo algo = SCALAR;
     enum findkey_teddy_compile_grouping_strategy grouping_strategy =
         TEDDY_COMPILE_GREEDY;
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm = TEDDY_HASH_STD;
     enum findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
     const char* keys_path = nullptr;
     const char* data_path = nullptr;
@@ -105,6 +132,9 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "--teddy-grouping-strategy") == 0 &&
                    i + 1 < argc) {
             grouping_strategy = parse_grouping_strategy(argv[++i]);
+        } else if (std::strcmp(argv[i], "--teddy-hash-algo") == 0 &&
+                   i + 1 < argc) {
+            hash_algorithm = parse_hash_algorithm(argv[++i]);
         } else if (std::strcmp(argv[i], "--teddy-suffix-mode") == 0 &&
                    i + 1 < argc) {
             suffix_mode = parse_suffix_mode(argv[++i]);
@@ -137,6 +167,12 @@ int main(int argc, char** argv) {
         print_usage_and_exit(argv[0]);
     }
 
+    if (hash_algorithm ==
+        static_cast<findkey_teddy_compile_hash_algorithm>(-1)) {
+        std::fprintf(stderr, "Unknown teddy hash algorithm specified\n");
+        print_usage_and_exit(argv[0]);
+    }
+
     if (!keys_path || !data_path) {
         print_usage_and_exit(argv[0]);
     }
@@ -165,12 +201,12 @@ int main(int argc, char** argv) {
             ? findkey_with_stats(
                   reinterpret_cast<const uint8_t*>(mmap_file.data()),
                   mmap_file.size(), key_ptrs.data(), key_lens.data(),
-                  key_ptrs.size(), grouping_strategy, suffix_mode, &teddy_stats,
-                  &status)
+                  key_ptrs.size(), grouping_strategy, hash_algorithm,
+                  suffix_mode, &teddy_stats, &status)
             : findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
                       mmap_file.size(), key_ptrs.data(), key_lens.data(),
-                      key_ptrs.size(), algo, grouping_strategy, suffix_mode,
-                      positions.data(), positions.size(), &status);
+                      key_ptrs.size(), algo, grouping_strategy, hash_algorithm,
+                      suffix_mode, positions.data(), positions.size(), &status);
 
     auto end_time = std::chrono::steady_clock::now();
 

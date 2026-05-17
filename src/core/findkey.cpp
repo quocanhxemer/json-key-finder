@@ -60,6 +60,7 @@ extern "C" size_t findkey(
     size_t num_keys,
     enum findkey_algo algo,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
     enum findkey_teddy_suffix_mode suffix_mode,
     struct findkey_result* out_results,
     size_t max_out_positions,
@@ -94,11 +95,12 @@ extern "C" size_t findkey(
 
         case TEDDY:
 #if COMPILER_SUPPORTS_TEDDY
-            results =
-                matcher_teddy(data_sv, key_svs, grouping_strategy, suffix_mode);
+            results = matcher_teddy(data_sv, key_svs, grouping_strategy,
+                                    hash_algorithm, suffix_mode);
             break;
 #else
             (void)grouping_strategy;
+            (void)hash_algorithm;
             (void)suffix_mode;
             (void)out_results;
             (void)max_out_positions;
@@ -109,8 +111,9 @@ extern "C" size_t findkey(
             return 0;
 #endif
         case TEDDY_BASELINE:
-            results = matcher_teddy_baseline(data_sv, key_svs,
-                                             grouping_strategy, suffix_mode);
+            results =
+                matcher_teddy_baseline(data_sv, key_svs, grouping_strategy,
+                                       hash_algorithm, suffix_mode);
             break;
         default:
             if (out_status) {
@@ -135,6 +138,7 @@ extern "C" size_t findkey_with_stats(
     const size_t* key_lens,
     size_t num_keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
     enum findkey_teddy_suffix_mode suffix_mode,
     struct findkey_teddy_stats* teddy_stats,
     int* out_status) {
@@ -162,7 +166,8 @@ extern "C" size_t findkey_with_stats(
     }
 
     std::vector<findkey_result> results = matcher_teddy_baseline_collect_stats(
-        data_sv, key_svs, grouping_strategy, suffix_mode, teddy_stats);
+        data_sv, key_svs, grouping_strategy, hash_algorithm, suffix_mode,
+        teddy_stats);
 
     return results.size();
 }

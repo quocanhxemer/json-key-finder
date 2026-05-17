@@ -46,6 +46,14 @@ enum findkey_teddy_compile_grouping_strategy {
     TEDDY_COMPILE_HASH = 1,
 };
 
+enum findkey_teddy_compile_hash_algorithm {
+    TEDDY_HASH_STD = 0,
+    TEDDY_HASH_ADLER32 = 1,
+    TEDDY_HASH_CRC32FAST = 2,
+    TEDDY_HASH_XXHASH = 3,
+    TEDDY_HASH_FNV1A = 4,
+};
+
 enum findkey_teddy_suffix_mode {
     TEDDY_SUFFIX_RAW = 0,
     TEDDY_SUFFIX_QUOTED = 1,
@@ -58,6 +66,7 @@ size_t findkey(const uint8_t* data,
                size_t num_keys,
                enum findkey_algo algo,
                enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+               enum findkey_teddy_compile_hash_algorithm hash_algorithm,
                enum findkey_teddy_suffix_mode suffix_mode,
                struct findkey_result* out_results,
                size_t max_out_positions,
@@ -71,6 +80,7 @@ size_t findkey_with_stats(
     const size_t* key_lens,
     size_t num_keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm,
     enum findkey_teddy_suffix_mode suffix_mode,
     struct findkey_teddy_stats* teddy_stats,
     int* out_status);

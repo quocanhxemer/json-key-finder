@@ -62,7 +62,8 @@ struct candidate_result {
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy,
-    enum findkey_teddy_suffix_mode suffix_mode);
+    enum findkey_teddy_suffix_mode suffix_mode,
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm);
 
 bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
                             const TeddyCompilationData& data,

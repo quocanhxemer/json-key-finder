@@ -7,6 +7,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(FIND_KEY_NATIVE "Enable -march=native" ON)
 
+find_package(ZLIB REQUIRED)
+find_path(XXHASH_INCLUDE_DIR NAMES xxhash.h REQUIRED)
+find_library(XXHASH_LIBRARY
+    NAMES
+    xxhash
+    libxxhash
+    xxhash.so.0
+    libxxhash.so.0
+    REQUIRED
+)
+
 add_library(find_json_key_warnings INTERFACE)
 target_compile_options(find_json_key_warnings INTERFACE -Wall -Wextra -Wpedantic)
 
@@ -20,6 +31,7 @@ add_library(find_json_key STATIC
     src/core/findkey.cpp
 
     src/teddy/teddy_common.cpp
+    src/teddy/teddy_hash.cpp
 
     src/matchers/matcher_scalar.cpp
     src/matchers/matcher_teddy_baseline.cpp
@@ -27,8 +39,14 @@ add_library(find_json_key STATIC
 target_include_directories(find_json_key
     PUBLIC include
     PRIVATE src
+    ${XXHASH_INCLUDE_DIR}
 )
-target_link_libraries(find_json_key PUBLIC find_json_key_warnings)
+target_link_libraries(find_json_key
+    PUBLIC
+    find_json_key_warnings
+    ZLIB::ZLIB
+    ${XXHASH_LIBRARY}
+)
 
 if(FIND_KEY_NATIVE)
     target_compile_options(find_json_key PUBLIC -march=native)
