@@ -365,3 +365,13 @@ TeddyCompilationData compile_teddy_data(
             return {};
     }
 }
+
+TeddyCompilationMetadata get_teddy_compilation_metadata(
+    const TeddyCompilationData& data) {
+    return {
+        .sigma = data.sigma,
+        .num_groups = data.num_groups,
+        .dfa_nodes = data.dfa.nodes.size(),
+        .max_key_len = data.dfa.max_key_len,
+    };
+}

@@ -44,6 +44,13 @@ struct TeddyCompilationData {
     DFA dfa;
 };
 
+struct TeddyCompilationMetadata {
+    int sigma = 0;
+    int num_groups = 0;
+    size_t dfa_nodes = 0;
+    size_t max_key_len = 0;
+};
+
 enum candidate_type {
     CANDIDATE_TYPE_MATCH = 0,
     CANDIDATE_BAD_END_QUOTE = 1,
@@ -62,6 +69,9 @@ struct candidate_result {
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     const findkey_teddy_config& config);
+
+TeddyCompilationMetadata get_teddy_compilation_metadata(
+    const TeddyCompilationData& data);
 
 bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
                             const TeddyCompilationData& data,
