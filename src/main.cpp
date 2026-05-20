@@ -38,7 +38,7 @@ static void print_usage_and_exit(const char* prog_name) {
         "                             Values: greedy, hash\n"
         "                             Default: greedy\n"
         "  --teddy-hash-algo <name>   Used only with grouping strategy 'hash'\n"
-        "                             Values: std, adler32, crc32fast, xxhash, "
+        "                             Values: std, adler32, crc32, xxhash, "
         "fnv1a\n"
         "                             Default: std\n"
         "  --teddy-suffix-mode <name>\n"
@@ -130,8 +130,8 @@ static findkey_teddy_compile_hash_algorithm parse_hash_algorithm(
         return TEDDY_HASH_ADLER32;
     }
 
-    if (std::strcmp(algorithm, "crc32fast") == 0) {
-        return TEDDY_HASH_CRC32FAST;
+    if (std::strcmp(algorithm, "crc32") == 0) {
+        return TEDDY_HASH_CRC32;
     }
 
     if (std::strcmp(algorithm, "xxhash") == 0) {

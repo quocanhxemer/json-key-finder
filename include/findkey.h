@@ -49,7 +49,7 @@ enum findkey_teddy_compile_grouping_strategy {
 enum findkey_teddy_compile_hash_algorithm {
     TEDDY_HASH_STD = 0,
     TEDDY_HASH_ADLER32 = 1,
-    TEDDY_HASH_CRC32FAST = 2,
+    TEDDY_HASH_CRC32 = 2,
     TEDDY_HASH_XXHASH = 3,
     TEDDY_HASH_FNV1A = 4,
 };
@@ -62,6 +62,8 @@ enum findkey_teddy_suffix_mode {
 struct findkey_teddy_config {
     enum findkey_teddy_compile_grouping_strategy grouping_strategy =
         TEDDY_COMPILE_GREEDY;
+
+    // only used if grouping_strategy is TEDDY_COMPILE_HASH
     enum findkey_teddy_compile_hash_algorithm hash_algorithm = TEDDY_HASH_STD;
     enum findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
 };

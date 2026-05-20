@@ -27,7 +27,7 @@ uint32_t hash_teddy_suffix(
         case TEDDY_HASH_ADLER32:
             return static_cast<uint32_t>(
                 ::adler32(1L, suffix, static_cast<uInt>(len)));
-        case TEDDY_HASH_CRC32FAST:
+        case TEDDY_HASH_CRC32:
             return static_cast<uint32_t>(
                 ::crc32(0L, suffix, static_cast<uInt>(len)));
         case TEDDY_HASH_XXHASH:
