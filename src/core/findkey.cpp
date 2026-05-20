@@ -161,8 +161,8 @@ extern "C" size_t findkey_with_stats(
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
 
-    std::vector<findkey_result> results = matcher_teddy_baseline_collect_stats(
-        data_sv, key_svs, config, teddy_stats);
+    std::vector<findkey_result> results =
+        matcher_teddy_baseline(data_sv, key_svs, config, teddy_stats);
 
     return results.size();
 }

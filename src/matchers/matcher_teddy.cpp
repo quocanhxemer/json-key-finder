@@ -118,6 +118,12 @@ std::vector<findkey_result> matcher_teddy(
     const findkey_teddy_config& config) {
     const TeddyCompilationData teddy_data = compile_teddy_data(keys, config);
 
+    return matcher_teddy_compiled(data, teddy_data);
+}
+
+std::vector<findkey_result> matcher_teddy_compiled(
+    std::string_view data,
+    const TeddyCompilationData& teddy_data) {
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
         return {};
@@ -146,6 +152,14 @@ std::vector<findkey_result> matcher_teddy(
     (void)data;
     (void)keys;
     (void)config;
+    return {};
+}
+
+std::vector<findkey_result> matcher_teddy_compiled(
+    std::string_view data,
+    const TeddyCompilationData& teddy_data) {
+    (void)data;
+    (void)teddy_data;
     return {};
 }
 
