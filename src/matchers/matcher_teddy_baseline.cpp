@@ -1,5 +1,6 @@
 #include "matcher_teddy_baseline.h"
 #include "teddy/teddy_common.h"
+#include "teddy/teddy_verify.h"
 
 #include <algorithm>
 #include <cctype>

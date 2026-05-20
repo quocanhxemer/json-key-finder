@@ -1,5 +1,6 @@
 #include "teddy_common.h"
 #include "teddy/teddy_hash.h"
+#include "teddy/teddy_verify.h"
 
 #include <algorithm>
 #include <array>

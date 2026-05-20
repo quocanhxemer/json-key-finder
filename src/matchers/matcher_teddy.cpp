@@ -3,6 +3,7 @@
 #if COMPILER_SUPPORTS_TEDDY
 
 #include "teddy/teddy_common.h"
+#include "teddy/teddy_verify.h"
 
 #include <tmmintrin.h>
 
