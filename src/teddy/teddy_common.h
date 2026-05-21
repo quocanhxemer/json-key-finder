@@ -47,6 +47,7 @@ struct TeddyCompilationMetadata {
     int num_groups = 0;
     size_t dfa_nodes = 0;
     size_t max_key_len = 0;
+    uint64_t total_score = 0;
 };
 
 TeddyCompilationData compile_teddy_data(

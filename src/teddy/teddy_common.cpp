@@ -369,10 +369,40 @@ TeddyCompilationData compile_teddy_data(
 
 TeddyCompilationMetadata get_teddy_compilation_metadata(
     const TeddyCompilationData& data) {
+    uint64_t total_score = 0;
+    if (!data.group_keys.empty() && data.sigma > 0) {
+        for (size_t group = 0; group < data.group_keys.size(); ++group) {
+            const uint8_t group_bit = static_cast<uint8_t>(1u << group);
+            uint32_t group_score = 1;
+
+            for (int i = 0; i < data.sigma; ++i) {
+                uint8_t merged = 0;
+                for (int nibble = 0; nibble < 16; ++nibble) {
+                    const bool low_present =
+                        (data.low_table[i][nibble] & group_bit) == 0;
+                    const bool high_present =
+                        (data.high_table[i][nibble] & group_bit) == 0;
+
+                    if (low_present) {
+                        merged |= static_cast<uint8_t>(nibble);
+                    }
+                    if (high_present) {
+                        merged |= static_cast<uint8_t>(nibble << 4);
+                    }
+                }
+
+                group_score *= __builtin_popcount(merged);
+            }
+
+            total_score += group_score;
+        }
+    }
+
     return {
         .sigma = data.sigma,
         .num_groups = data.num_groups,
         .dfa_nodes = data.dfa.nodes.size(),
         .max_key_len = data.dfa.max_key_len,
+        .total_score = total_score,
     };
 }
