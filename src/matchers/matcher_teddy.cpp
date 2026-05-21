@@ -7,12 +7,9 @@
 
 #include <tmmintrin.h>
 
-#include <cctype>
 #include <cstdint>
 #include <cstring>
 
-#include <algorithm>
-#include <array>
 #include <vector>
 
 template <int Sigma>

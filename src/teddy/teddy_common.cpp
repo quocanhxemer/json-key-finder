@@ -3,7 +3,6 @@
 #include "teddy/teddy_verify.h"
 
 #include <algorithm>
-#include <array>
 
 static inline size_t teddy_virtual_length(
     std::string_view key,
