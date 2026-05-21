@@ -22,10 +22,15 @@ add_library(find_json_key_warnings INTERFACE)
 target_compile_options(find_json_key_warnings INTERFACE -Wall -Wextra -Wpedantic)
 
 add_library(find_json_key_utils STATIC src/io/mmap_file.cpp)
-
 target_include_directories(find_json_key_utils PUBLIC src)
-
 target_link_libraries(find_json_key_utils PUBLIC find_json_key_warnings)
+
+add_library(findkey_cli STATIC
+    src/cli/args.cpp
+    src/cli/reporting.cpp
+)
+target_include_directories(findkey_cli PUBLIC include src)
+target_link_libraries(findkey_cli PUBLIC find_json_key_warnings)
 
 add_library(find_json_key STATIC
     src/core/findkey.cpp
@@ -69,7 +74,7 @@ endif()
 
 add_executable(findkey src/main.cpp)
 target_include_directories(findkey PRIVATE include src)
-target_link_libraries(findkey PRIVATE find_json_key find_json_key_utils)
+target_link_libraries(findkey PRIVATE find_json_key find_json_key_utils findkey_cli)
 
 add_executable(gen_keys tools/gen_keys.cpp)
 target_include_directories(gen_keys PRIVATE include src)
