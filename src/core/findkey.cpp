@@ -7,7 +7,9 @@
 #endif
 
 #include <algorithm>
+#include <chrono>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 static inline bool bad_args(const uint8_t* data,
@@ -52,6 +54,15 @@ static inline bool bad_args_stats(const uint8_t* data,
     return false;
 }
 
+template <typename Fn>
+static uint64_t measure_ns(Fn&& task) {
+    const auto start = std::chrono::steady_clock::now();
+    std::forward<Fn>(task)();
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
+        .count();
+}
+
 extern "C" size_t findkey(const uint8_t* data,
                           size_t len,
                           const uint8_t* const* keys,
@@ -61,9 +72,13 @@ extern "C" size_t findkey(const uint8_t* data,
                           const struct findkey_teddy_config* teddy_config,
                           struct findkey_result* out_results,
                           size_t max_out_positions,
-                          int* out_status) {
+                          int* out_status,
+                          struct findkey_timing* out_timing) {
     if (out_status) {
         *out_status = FINDKEY_OK;
+    }
+    if (out_timing) {
+        *out_timing = {};
     }
 
     if (bad_args(data, len, keys, key_lens, num_keys, out_results)) {
@@ -89,27 +104,59 @@ extern "C" size_t findkey(const uint8_t* data,
         teddy_config ? *teddy_config : default_teddy_config;
 
     switch (algo) {
-        case SCALAR:
-            results = matcher_scalar(data_sv, key_svs);
+        case SCALAR: {
+            if (out_timing) {
+                out_timing->match_ns = measure_ns(
+                    [&] { results = matcher_scalar(data_sv, key_svs); });
+            } else {
+                results = matcher_scalar(data_sv, key_svs);
+            }
             break;
+        }
 
         case TEDDY:
 #if COMPILER_SUPPORTS_TEDDY
-            results = matcher_teddy(data_sv, key_svs, config);
+        {
+            TeddyCompilationData teddy_data;
+            if (out_timing) {
+                out_timing->compile_ns = measure_ns(
+                    [&] { teddy_data = compile_teddy_data(key_svs, config); });
+                out_timing->match_ns = measure_ns([&] {
+                    results = matcher_teddy_compiled(data_sv, teddy_data);
+                });
+            } else {
+                teddy_data = compile_teddy_data(key_svs, config);
+                results = matcher_teddy_compiled(data_sv, teddy_data);
+            }
             break;
+        }
 #else
             (void)config;
             (void)out_results;
             (void)max_out_positions;
+            (void)out_timing;
 
             if (out_status) {
                 *out_status = FINDKEY_TEDDY_NOT_SUPPORTED;
             }
             return 0;
 #endif
-        case TEDDY_BASELINE:
-            results = matcher_teddy_baseline(data_sv, key_svs, config);
+        case TEDDY_BASELINE: {
+            TeddyCompilationData teddy_data;
+            if (out_timing) {
+                out_timing->compile_ns = measure_ns(
+                    [&] { teddy_data = compile_teddy_data(key_svs, config); });
+                out_timing->match_ns = measure_ns([&] {
+                    results = matcher_teddy_baseline_compiled(data_sv, key_svs,
+                                                              teddy_data);
+                });
+            } else {
+                teddy_data = compile_teddy_data(key_svs, config);
+                results = matcher_teddy_baseline_compiled(data_sv, key_svs,
+                                                          teddy_data);
+            }
             break;
+        }
         default:
             if (out_status) {
                 *out_status = FINDKEY_ERR_UNKNOWN_ALGO;
@@ -134,12 +181,14 @@ extern "C" size_t findkey_with_stats(
     size_t num_keys,
     const struct findkey_teddy_config* teddy_config,
     struct findkey_teddy_stats* teddy_stats,
-    int* out_status) {
+    int* out_status,
+    struct findkey_timing* out_timing) {
     if (out_status) {
         *out_status = FINDKEY_OK;
     }
-
-    *teddy_stats = {};
+    if (out_timing) {
+        *out_timing = {};
+    }
 
     if (bad_args_stats(data, len, keys, key_lens, num_keys, teddy_stats)) {
         if (out_status) {
@@ -147,6 +196,8 @@ extern "C" size_t findkey_with_stats(
         }
         return 0;
     }
+
+    *teddy_stats = {};
 
     const char* str = reinterpret_cast<const char*>(data);
     std::string_view data_sv(str ? str : "", len);
@@ -161,8 +212,20 @@ extern "C" size_t findkey_with_stats(
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
 
-    std::vector<findkey_result> results =
-        matcher_teddy_baseline(data_sv, key_svs, config, teddy_stats);
+    TeddyCompilationData teddy_data;
+    std::vector<findkey_result> results;
+    if (out_timing) {
+        out_timing->compile_ns = measure_ns(
+            [&] { teddy_data = compile_teddy_data(key_svs, config); });
+        out_timing->match_ns = measure_ns([&] {
+            results = matcher_teddy_baseline_compiled(data_sv, key_svs,
+                                                      teddy_data, teddy_stats);
+        });
+    } else {
+        teddy_data = compile_teddy_data(key_svs, config);
+        results = matcher_teddy_baseline_compiled(data_sv, key_svs, teddy_data,
+                                                  teddy_stats);
+    }
 
     return results.size();
 }

@@ -41,6 +41,11 @@ struct findkey_teddy_stats {
     uint64_t exact_matches;
 };
 
+struct findkey_timing {
+    uint64_t compile_ns;
+    uint64_t match_ns;
+};
+
 enum findkey_teddy_compile_grouping_strategy {
     TEDDY_COMPILE_GREEDY = 0,  // strategy stated in the original teddy paper
     TEDDY_COMPILE_HASH = 1,
@@ -77,7 +82,8 @@ size_t findkey(const uint8_t* data,
                const struct findkey_teddy_config* teddy_config,
                struct findkey_result* out_results,
                size_t max_out_positions,
-               int* out_status);
+               int* out_status,
+               struct findkey_timing* out_timing);
 
 // statistics collection for teddy
 size_t findkey_with_stats(const uint8_t* data,
@@ -87,7 +93,8 @@ size_t findkey_with_stats(const uint8_t* data,
                           size_t num_keys,
                           const struct findkey_teddy_config* teddy_config,
                           struct findkey_teddy_stats* teddy_stats,
-                          int* out_status);
+                          int* out_status,
+                          struct findkey_timing* out_timing);
 
 #ifdef __cplusplus
 }

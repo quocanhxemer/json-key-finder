@@ -4,15 +4,12 @@
 #include "io/mmap_file.h"
 #include "teddy/teddy_common.h"
 
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include <chrono>
 
 static std::vector<std::string> read_keys_from_file(const char* keys_file) {
     std::ifstream infile(keys_file);
@@ -62,6 +59,7 @@ int main(int argc, char** argv) {
     std::vector<findkey_result> positions(POSITIONS_CAPACITY);
     int status = 0;
     findkey_teddy_stats teddy_stats = {};
+    findkey_timing timing = {};
     TeddyCompilationMetadata teddy_compilation_metadata = {};
 
     if (args.collect_stats) {
@@ -70,30 +68,29 @@ int main(int argc, char** argv) {
         teddy_compilation_metadata = get_teddy_compilation_metadata(teddy_data);
     }
 
-    auto start_time = std::chrono::steady_clock::now();
-
     size_t num_found =
         args.collect_stats
             ? findkey_with_stats(
                   reinterpret_cast<const uint8_t*>(mmap_file.data()),
                   mmap_file.size(), key_ptrs.data(), key_lens.data(),
-                  key_ptrs.size(), &args.teddy_config, &teddy_stats, &status)
+                  key_ptrs.size(), &args.teddy_config, &teddy_stats, &status,
+                  &timing)
             : findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
                       mmap_file.size(), key_ptrs.data(), key_lens.data(),
                       key_ptrs.size(), args.algo, &args.teddy_config,
-                      positions.data(), positions.size(), &status);
+                      positions.data(), positions.size(), &status, &timing);
 
-    auto end_time = std::chrono::steady_clock::now();
-
-    const auto duration_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end_time -
-                                                             start_time)
-            .count();
-    const double duration_s = duration_ns / 1e9;
+    const uint64_t total_ns = timing.compile_ns + timing.match_ns;
+    const double total_duration_s = total_ns / 1e9;
+    const double match_duration_s = timing.match_ns / 1e9;
 
     const double bytes = mmap_file.size();
-    const double mbps =
-        duration_s > 0 ? (bytes / (1024.0 * 1024.0)) / duration_s : 0.0;
+    const double mbps = match_duration_s > 0
+                            ? (bytes / (1024.0 * 1024.0)) / match_duration_s
+                            : 0.0;
+    const double end_to_end_mbps =
+        total_duration_s > 0 ? (bytes / (1024.0 * 1024.0)) / total_duration_s
+                             : 0.0;
 
     switch (status) {
         case FINDKEY_ERR_BAD_ARGS:
@@ -126,9 +123,13 @@ int main(int argc, char** argv) {
         print_teddy_runtime_stats(teddy_stats, mmap_file.size());
     }
 
-    std::printf("Time taken: %.2f ns\n", static_cast<double>(duration_ns));
+    std::printf("Compile time: %.2f ns\n",
+                static_cast<double>(timing.compile_ns));
+    std::printf("Match time: %.2f ns\n", static_cast<double>(timing.match_ns));
+    std::printf("Time taken: %.2f ns\n", static_cast<double>(total_ns));
     std::printf("Data size: %.2f MiB\n", bytes / (1024.0 * 1024.0));
     std::printf("Throughput: %.2f MiB/s\n", mbps);
+    std::printf("End-to-end throughput: %.2f MiB/s\n", end_to_end_mbps);
 
     return 0;
 }
