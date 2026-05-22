@@ -47,8 +47,9 @@ struct findkey_timing {
 };
 
 enum findkey_teddy_compile_grouping_strategy {
-    TEDDY_COMPILE_GREEDY = 0,  // strategy stated in the original teddy paper
-    TEDDY_COMPILE_HASH = 1,
+    TEDDY_COMPILE_PAPER_GREEDY = 0,
+    TEDDY_COMPILE_PAPER_IMPROVED_GREEDY = 1,
+    TEDDY_COMPILE_HASH = 2,
 };
 
 enum findkey_teddy_compile_hash_algorithm {
@@ -66,7 +67,7 @@ enum findkey_teddy_suffix_mode {
 
 struct findkey_teddy_config {
     enum findkey_teddy_compile_grouping_strategy grouping_strategy =
-        TEDDY_COMPILE_GREEDY;
+        TEDDY_COMPILE_PAPER_GREEDY;
 
     // only used if grouping_strategy is TEDDY_COMPILE_HASH
     enum findkey_teddy_compile_hash_algorithm hash_algorithm = TEDDY_HASH_STD;

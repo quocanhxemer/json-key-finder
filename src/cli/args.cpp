@@ -29,8 +29,10 @@ namespace {
         "\n"
         "Teddy options:\n"
         "  --teddy-grouping-strategy <name>\n"
-        "                             Values: greedy, hash\n"
-        "                             Default: greedy\n"
+        "                             Values: paper_greedy, improved_greedy, "
+        "hash\n"
+        "                             Alias: greedy = paper_greedy\n"
+        "                             Default: paper_greedy\n"
         "  --teddy-hash-algo <name>   Used only with grouping strategy 'hash'\n"
         "                             Values: std, adler32, crc32, xxhash, "
         "fnv1a\n"
@@ -67,8 +69,12 @@ findkey_algo parse_algo(const char* algo) {
 
 findkey_teddy_compile_grouping_strategy parse_grouping_strategy(
     const char* strategy) {
-    if (std::strcmp(strategy, "greedy") == 0) {
-        return TEDDY_COMPILE_GREEDY;
+    if (std::strcmp(strategy, "paper_greedy") == 0 ||
+        std::strcmp(strategy, "greedy") == 0) {
+        return TEDDY_COMPILE_PAPER_GREEDY;
+    }
+    if (std::strcmp(strategy, "improved_greedy") == 0) {
+        return TEDDY_COMPILE_PAPER_IMPROVED_GREEDY;
     }
     if (std::strcmp(strategy, "hash") == 0) {
         return TEDDY_COMPILE_HASH;

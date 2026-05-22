@@ -101,7 +101,8 @@ static DFA buildDFA(const std::vector<std::string_view>& keys,
 
 static TeddyCompilationData compile_teddy_data_greedy(
     const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config) {
+    const findkey_teddy_config& config,
+    bool paper_early_exit) {
     struct Group {
         std::vector<uint32_t> key_ids;
         uint8_t b[MAX_SIGMA];
@@ -164,7 +165,6 @@ static TeddyCompilationData compile_teddy_data_greedy(
         uint32_t best = UINT32_MAX;
         int best_i = -1;
         int best_j = -1;
-        bool perfect_found = false;
         uint32_t merge_score = 0;
 
         for (size_t i = 0; i < groups.size(); ++i) {
@@ -172,11 +172,10 @@ static TeddyCompilationData compile_teddy_data_greedy(
                 uint32_t new_score =
                     Group::merge_score(groups[i], groups[j], data.sigma);
                 uint32_t old_score = groups[i].score + groups[j].score;
-                if (new_score < old_score) {
+                if (paper_early_exit && new_score < old_score) {
                     best_i = i;
                     best_j = j;
                     merge_score = new_score;
-                    perfect_found = true;
                     break;
                 }
 
@@ -186,9 +185,6 @@ static TeddyCompilationData compile_teddy_data_greedy(
                     best_j = j;
                     merge_score = new_score;
                 }
-            }
-            if (perfect_found) {
-                break;
             }
         }
 
@@ -357,8 +353,10 @@ TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     const findkey_teddy_config& config) {
     switch (config.grouping_strategy) {
-        case TEDDY_COMPILE_GREEDY:
-            return compile_teddy_data_greedy(keys, config);
+        case TEDDY_COMPILE_PAPER_GREEDY:
+            return compile_teddy_data_greedy(keys, config, true);
+        case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
+            return compile_teddy_data_greedy(keys, config, false);
         case TEDDY_COMPILE_HASH:
             return compile_teddy_data_hash(keys, config);
         default:
