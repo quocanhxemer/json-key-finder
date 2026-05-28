@@ -2,9 +2,11 @@
 
 #include <getopt.h>
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 
 namespace {
 
@@ -40,6 +42,9 @@ namespace {
         "  --teddy-suffix-mode <name>\n"
         "                             Values: raw, quote-suffix\n"
         "                             Default: raw\n"
+        "  --sigma <n>                Suffix length for teddy keys grouping\n"
+        "                             Range: 1..4\n"
+        "                             Default: 3\n"
         "\n"
         "Notes:\n"
         "  - --collect-stats always uses the Teddy baseline matcher\n"
@@ -112,6 +117,26 @@ findkey_teddy_compile_hash_algorithm parse_hash_algorithm(
     return invalid_enum_value<findkey_teddy_compile_hash_algorithm>();
 }
 
+static int parse_sigma(const char* raw) {
+    if (!raw || !*raw) {
+        return -1;
+    }
+
+    char* end = nullptr;
+    errno = 0;
+    const long value = std::strtol(raw, &end, 10);
+    if (errno != 0 || end == raw || *end != '\0') {
+        return -1;
+    }
+
+    if (value <= 0 || value > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH ||
+        value > std::numeric_limits<int>::max()) {
+        return -1;
+    }
+
+    return static_cast<int>(value);
+}
+
 template <typename Enum>
 void validate_enum_or_exit(Enum value,
                            Enum invalid_value,
@@ -131,6 +156,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
         {"teddy-grouping-strategy", required_argument, nullptr, 'g'},
         {"teddy-hash-algo", required_argument, nullptr, 'h'},
         {"teddy-suffix-mode", required_argument, nullptr, 's'},
+        {"sigma", required_argument, nullptr, 'm'},
         {"keys", required_argument, nullptr, 'k'},
         {"data", required_argument, nullptr, 'd'},
         {"collect-stats", no_argument, nullptr, 'c'},
@@ -161,6 +187,9 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                 break;
             case 's':
                 args.teddy_config.suffix_mode = parse_suffix_mode(optarg);
+                break;
+            case 'm':
+                args.teddy_config.sigma = parse_sigma(optarg);
                 break;
             case 'k':
                 args.keys_path = optarg;
@@ -196,6 +225,8 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
         args.teddy_config.hash_algorithm,
         invalid_enum_value<findkey_teddy_compile_hash_algorithm>(),
         "Unknown teddy hash algorithm specified", argv[0]);
+    validate_enum_or_exit(args.teddy_config.sigma, -1,
+                          "Invalid sigma specified", argv[0]);
 
     if (!args.keys_path || !args.data_path) {
         print_usage_and_exit(argv[0]);

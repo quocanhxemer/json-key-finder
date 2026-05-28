@@ -11,6 +11,8 @@ Result dispatch_teddy_sigma(int sigma, Fn&& fn) {
             return fn.template operator()<3>();
         case 4:
             return fn.template operator()<4>();
+        case 5:
+            return fn.template operator()<5>();
         default:
             return Result{};
     }

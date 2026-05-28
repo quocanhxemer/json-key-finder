@@ -6,6 +6,11 @@
 extern "C" {
 #endif
 
+#define FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH 3
+#define FINDKEY_TEDDY_MAX_SUFFIX_LENGTH 4
+
+#define FINDKEY_TEDDY_MAX_SIGMA 5
+
 enum findkey_status {
     FINDKEY_OK = 0,
     FINDKEY_ERR_BAD_ARGS = 1,
@@ -71,10 +76,13 @@ struct findkey_teddy_config {
     // only used if grouping_strategy is TEDDY_COMPILE_HASH
     enum findkey_teddy_compile_hash_algorithm hash_algorithm;
     enum findkey_teddy_suffix_mode suffix_mode;
+
+    int sigma;
 };
 
-#define FINDKEY_TEDDY_CONFIG_INIT \
-    {TEDDY_COMPILE_PAPER_GREEDY, TEDDY_HASH_STD, TEDDY_SUFFIX_RAW}
+#define FINDKEY_TEDDY_CONFIG_INIT                                  \
+    {TEDDY_COMPILE_PAPER_GREEDY, TEDDY_HASH_STD, TEDDY_SUFFIX_RAW, \
+     FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH}
 
 size_t findkey(const uint8_t* data,
                size_t len,

@@ -103,6 +103,16 @@ extern "C" size_t findkey(const uint8_t* data,
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
 
+    if (algo != SCALAR) {
+        if (config.sigma < 0 ||
+            config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
+            if (out_status) {
+                *out_status = FINDKEY_ERR_BAD_ARGS;
+            }
+            return 0;
+        }
+    }
+
     switch (algo) {
         case SCALAR: {
             if (out_timing) {
@@ -209,6 +219,13 @@ extern "C" size_t findkey_with_stats(
     const findkey_teddy_config default_teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
+
+    if (config.sigma < 0 || config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
+        if (out_status) {
+            *out_status = FINDKEY_ERR_BAD_ARGS;
+        }
+        return 0;
+    }
 
     TeddyCompilationData teddy_data;
     std::vector<findkey_result> results;

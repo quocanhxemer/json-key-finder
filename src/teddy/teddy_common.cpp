@@ -103,7 +103,7 @@ static void build_teddy_compilation_data_tables(
     TeddyCompilationData& data,
     const std::vector<std::string_view>& keys,
     findkey_teddy_suffix_mode suffix_mode) {
-    for (int i = 0; i < MAX_SIGMA; ++i) {
+    for (int i = 0; i < FINDKEY_TEDDY_MAX_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {
             data.low_table[i][j] = 0xFF;
             data.high_table[i][j] = 0xFF;
@@ -145,7 +145,7 @@ static void compile_teddy_data_greedy(const std::vector<std::string_view>& keys,
                                       bool paper_early_exit) {
     struct Group {
         std::vector<uint32_t> key_ids;
-        uint8_t b[MAX_SIGMA];
+        uint8_t b[FINDKEY_TEDDY_MAX_SIGMA];
 
         uint32_t score;
 
@@ -242,7 +242,7 @@ static void compile_teddy_data_hash(const std::vector<std::string_view>& keys,
     // partition
     std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
-        uint8_t suffix_buf[MAX_SIGMA];
+        uint8_t suffix_buf[FINDKEY_TEDDY_MAX_SIGMA];
         for (int i = 0; i < data.sigma; ++i) {
             suffix_buf[i] = teddy_suffix_byte(keys[key_id], data.sigma, i,
                                               config.suffix_mode);
@@ -287,10 +287,11 @@ TeddyCompilationData compile_teddy_data(
             std::min(min_len, teddy_virtual_length(key, config.suffix_mode));
     }
 
-    data.sigma =
-        std::min(static_cast<int>(min_len),
-                 config.suffix_mode == TEDDY_SUFFIX_QUOTED ? DEFAULT_SIGMA + 1
-                                                           : DEFAULT_SIGMA);
+    const int compiled_sigma = (config.suffix_mode == TEDDY_SUFFIX_QUOTED)
+                                   ? (config.sigma + 1)
+                                   : config.sigma;
+
+    data.sigma = std::min(static_cast<int>(min_len), compiled_sigma);
     data.end_quote_offset = (config.suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
 
     // edge case: empty keys should be filtered out earlier

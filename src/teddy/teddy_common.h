@@ -7,8 +7,6 @@
 #include <string_view>
 #include <vector>
 
-static constexpr int DEFAULT_SIGMA = 3;
-static constexpr int MAX_SIGMA = DEFAULT_SIGMA + 1;
 static constexpr int MAX_GROUPS = 8;  // must be power of 2
 
 struct TrieNode {
@@ -34,8 +32,8 @@ struct TeddyCompilationData {
     // 0 for QUOTED mode
     size_t end_quote_offset = 1;
 
-    alignas(16) uint8_t low_table[MAX_SIGMA][16] = {};
-    alignas(16) uint8_t high_table[MAX_SIGMA][16] = {};
+    alignas(16) uint8_t low_table[FINDKEY_TEDDY_MAX_SIGMA][16] = {};
+    alignas(16) uint8_t high_table[FINDKEY_TEDDY_MAX_SIGMA][16] = {};
 
     std::vector<std::vector<uint32_t>> group_keys;
 
