@@ -3,6 +3,7 @@
 #if COMPILER_SUPPORTS_TEDDY
 
 #include "teddy/teddy_common.h"
+#include "teddy/teddy_dispatch.h"
 #include "teddy/teddy_verify.h"
 
 #include <tmmintrin.h>
@@ -112,48 +113,21 @@ std::vector<findkey_result> matcher_teddy_impl(
 
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config) {
-    const TeddyCompilationData teddy_data = compile_teddy_data(keys, config);
-
-    return matcher_teddy_compiled(data, teddy_data);
-}
-
-std::vector<findkey_result> matcher_teddy_compiled(
-    std::string_view data,
     const TeddyCompilationData& teddy_data) {
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
         return {};
     }
 
-    switch (teddy_data.sigma) {
-        case 1:
-            return matcher_teddy_impl<1>(data, teddy_data);
-        case 2:
-            return matcher_teddy_impl<2>(data, teddy_data);
-        case 3:
-            return matcher_teddy_impl<3>(data, teddy_data);
-        case 4:
-            return matcher_teddy_impl<4>(data, teddy_data);
-        default:
-            return {};
-    }
+    return dispatch_teddy_sigma<std::vector<findkey_result>>(
+        teddy_data.sigma, [&]<int Sigma>() {
+            return matcher_teddy_impl<Sigma>(data, teddy_data);
+        });
 }
 
 #else
 
 std::vector<findkey_result> matcher_teddy(
-    std::string_view data,
-    const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config) {
-    (void)data;
-    (void)keys;
-    (void)config;
-    return {};
-}
-
-std::vector<findkey_result> matcher_teddy_compiled(
     std::string_view data,
     const TeddyCompilationData& teddy_data) {
     (void)data;

@@ -4,7 +4,7 @@
 
 struct ParsedCliArgs {
     findkey_algo algo = SCALAR;
-    findkey_teddy_config teddy_config = {};
+    findkey_teddy_config teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     const char* keys_path = nullptr;
     const char* data_path = nullptr;
     bool collect_stats = false;

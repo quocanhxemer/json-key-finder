@@ -99,10 +99,50 @@ static DFA buildDFA(const std::vector<std::string_view>& keys,
     return dfa;
 }
 
-static TeddyCompilationData compile_teddy_data_greedy(
+static void build_teddy_compilation_data_tables(
+    TeddyCompilationData& data,
     const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config,
-    bool paper_early_exit) {
+    findkey_teddy_suffix_mode suffix_mode) {
+    for (int i = 0; i < MAX_SIGMA; ++i) {
+        for (int j = 0; j < 16; ++j) {
+            data.low_table[i][j] = 0xFF;
+            data.high_table[i][j] = 0xFF;
+        }
+    }
+
+    for (int i = 0; i < data.sigma; ++i) {
+        for (int group = 0; group < data.num_groups; ++group) {
+            bool low_filled[16] = {false};
+            bool high_filled[16] = {false};
+
+            for (uint32_t key_id : data.group_keys[group]) {
+                const std::string_view key = keys[key_id];
+                const uint8_t c =
+                    teddy_suffix_byte(key, data.sigma, i, suffix_mode);
+
+                uint8_t low_nibble = c & 0x0F;
+                uint8_t high_nibble = (c >> 4) & 0x0F;
+                low_filled[low_nibble] = true;
+                high_filled[high_nibble] = true;
+            }
+
+            const uint8_t mask = ~static_cast<uint8_t>(1u << group);
+            for (int nibble = 0; nibble < 16; ++nibble) {
+                if (low_filled[nibble]) {
+                    data.low_table[i][nibble] &= mask;
+                }
+                if (high_filled[nibble]) {
+                    data.high_table[i][nibble] &= mask;
+                }
+            }
+        }
+    }
+}
+
+static void compile_teddy_data_greedy(const std::vector<std::string_view>& keys,
+                                      const findkey_teddy_config& config,
+                                      TeddyCompilationData& data,
+                                      bool paper_early_exit) {
     struct Group {
         std::vector<uint32_t> key_ids;
         uint8_t b[MAX_SIGMA];
@@ -131,33 +171,10 @@ static TeddyCompilationData compile_teddy_data_greedy(
         }
     };
 
-    TeddyCompilationData data;
-    const findkey_teddy_suffix_mode suffix_mode = config.suffix_mode;
-    data.suffix_mode = suffix_mode;
-
-    if (keys.empty()) {
-        return data;
-    }
-
-    size_t min_len = teddy_virtual_length(keys[0], suffix_mode);
-    for (std::string_view key : keys) {
-        min_len = std::min(min_len, teddy_virtual_length(key, suffix_mode));
-    }
-
-    data.sigma = std::min(
-        static_cast<int>(min_len),
-        suffix_mode == TEDDY_SUFFIX_QUOTED ? DEFAULT_SIGMA + 1 : DEFAULT_SIGMA);
-    data.end_quote_offset = (suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
-
-    // edge case: empty keys should be filtered out earlier
-    if (data.sigma <= 0) {
-        return data;
-    }
-
     std::vector<Group> groups;
     groups.reserve(keys.size());
     for (uint32_t i = 0; i < keys.size(); ++i) {
-        groups.emplace_back(i, keys[i], data.sigma, suffix_mode);
+        groups.emplace_back(i, keys[i], data.sigma, config.suffix_mode);
     }
 
     while (groups.size() > MAX_GROUPS) {
@@ -212,82 +229,23 @@ static TeddyCompilationData compile_teddy_data_greedy(
 
     data.num_groups = static_cast<int>(data.group_keys.size());
     if (!data.num_groups) {
-        return data;
+        return;
     }
 
     data.dfa = buildDFA(keys, data.group_keys);
-
-    for (int i = 0; i < MAX_SIGMA; ++i) {
-        for (int j = 0; j < 16; ++j) {
-            data.low_table[i][j] = 0xFF;
-            data.high_table[i][j] = 0xFF;
-        }
-    }
-
-    for (int i = 0; i < data.sigma; ++i) {
-        for (int group = 0; group < data.num_groups; ++group) {
-            bool low_filled[16] = {false};
-            bool high_filled[16] = {false};
-
-            for (uint32_t key_id : data.group_keys[group]) {
-                const std::string_view key = keys[key_id];
-                const uint8_t c =
-                    teddy_suffix_byte(key, data.sigma, i, suffix_mode);
-
-                uint8_t low_nibble = c & 0x0F;
-                uint8_t high_nibble = (c >> 4) & 0x0F;
-                low_filled[low_nibble] = true;
-                high_filled[high_nibble] = true;
-            }
-
-            const uint8_t mask = ~static_cast<uint8_t>(1u << group);
-            for (int nibble = 0; nibble < 16; ++nibble) {
-                if (low_filled[nibble]) {
-                    data.low_table[i][nibble] &= mask;
-                }
-                if (high_filled[nibble]) {
-                    data.high_table[i][nibble] &= mask;
-                }
-            }
-        }
-    }
-
-    return data;
+    build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
 }
 
-static TeddyCompilationData compile_teddy_data_hash(
-    const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config) {
-    TeddyCompilationData data;
-    const findkey_teddy_suffix_mode suffix_mode = config.suffix_mode;
-    data.suffix_mode = suffix_mode;
-
-    if (keys.empty()) {
-        return data;
-    }
-
-    size_t min_len = teddy_virtual_length(keys[0], suffix_mode);
-    for (std::string_view key : keys) {
-        min_len = std::min(min_len, teddy_virtual_length(key, suffix_mode));
-    }
-
-    data.sigma = std::min(
-        static_cast<int>(min_len),
-        suffix_mode == TEDDY_SUFFIX_QUOTED ? DEFAULT_SIGMA + 1 : DEFAULT_SIGMA);
-    data.end_quote_offset = (suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
-
-    // edge case: empty keys should be filtered out earlier
-    if (data.sigma <= 0) {
-        return data;
-    }
-
+static void compile_teddy_data_hash(const std::vector<std::string_view>& keys,
+                                    const findkey_teddy_config& config,
+                                    TeddyCompilationData& data) {
     // partition
     std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
         uint8_t suffix_buf[MAX_SIGMA];
         for (int i = 0; i < data.sigma; ++i) {
-            suffix_buf[i] =
-                teddy_suffix_byte(keys[key_id], data.sigma, i, suffix_mode);
+            suffix_buf[i] = teddy_suffix_byte(keys[key_id], data.sigma, i,
+                                              config.suffix_mode);
         }
         const uint32_t hash =
             hash_teddy_suffix(suffix_buf, data.sigma, config.hash_algorithm);
@@ -306,62 +264,55 @@ static TeddyCompilationData compile_teddy_data_hash(
 
     data.num_groups = static_cast<int>(data.group_keys.size());
     if (!data.num_groups) {
-        return data;
+        return;
     }
 
     data.dfa = buildDFA(keys, data.group_keys);
-
-    for (int i = 0; i < MAX_SIGMA; ++i) {
-        for (int j = 0; j < 16; ++j) {
-            data.low_table[i][j] = 0xFF;
-            data.high_table[i][j] = 0xFF;
-        }
-    }
-
-    for (int i = 0; i < data.sigma; ++i) {
-        for (int group = 0; group < data.num_groups; ++group) {
-            bool low_filled[16] = {false};
-            bool high_filled[16] = {false};
-
-            for (uint32_t key_id : data.group_keys[group]) {
-                const std::string_view key = keys[key_id];
-                const uint8_t c =
-                    teddy_suffix_byte(key, data.sigma, i, suffix_mode);
-
-                uint8_t low_nibble = c & 0x0F;
-                uint8_t high_nibble = (c >> 4) & 0x0F;
-                low_filled[low_nibble] = true;
-                high_filled[high_nibble] = true;
-            }
-
-            const uint8_t mask = ~static_cast<uint8_t>(1u << group);
-            for (int nibble = 0; nibble < 16; ++nibble) {
-                if (low_filled[nibble]) {
-                    data.low_table[i][nibble] &= mask;
-                }
-                if (high_filled[nibble]) {
-                    data.high_table[i][nibble] &= mask;
-                }
-            }
-        }
-    }
-
-    return data;
+    build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
 }
 
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     const findkey_teddy_config& config) {
+    TeddyCompilationData data{};
+    data.suffix_mode = config.suffix_mode;
+
+    if (keys.empty()) {
+        return data;
+    }
+
+    size_t min_len = teddy_virtual_length(keys[0], config.suffix_mode);
+    for (std::string_view key : keys) {
+        min_len =
+            std::min(min_len, teddy_virtual_length(key, config.suffix_mode));
+    }
+
+    data.sigma =
+        std::min(static_cast<int>(min_len),
+                 config.suffix_mode == TEDDY_SUFFIX_QUOTED ? DEFAULT_SIGMA + 1
+                                                           : DEFAULT_SIGMA);
+    data.end_quote_offset = (config.suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
+
+    // edge case: empty keys should be filtered out earlier
+    if (data.sigma <= 0) {
+        return data;
+    }
+
     switch (config.grouping_strategy) {
         case TEDDY_COMPILE_PAPER_GREEDY:
-            return compile_teddy_data_greedy(keys, config, true);
+            compile_teddy_data_greedy(keys, config, data, true);
+            break;
         case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
-            return compile_teddy_data_greedy(keys, config, false);
+            compile_teddy_data_greedy(keys, config, data, false);
+            break;
         case TEDDY_COMPILE_HASH:
-            return compile_teddy_data_hash(keys, config);
+            compile_teddy_data_hash(keys, config, data);
+            break;
         default:
             return {};
     }
+
+    return data;
 }
 
 TeddyCompilationMetadata get_teddy_compilation_metadata(

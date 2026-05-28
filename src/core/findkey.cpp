@@ -99,7 +99,7 @@ extern "C" size_t findkey(const uint8_t* data,
     }
 
     std::vector<findkey_result> results;
-    const findkey_teddy_config default_teddy_config = {};
+    const findkey_teddy_config default_teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
 
@@ -121,12 +121,11 @@ extern "C" size_t findkey(const uint8_t* data,
             if (out_timing) {
                 out_timing->compile_ns = measure_ns(
                     [&] { teddy_data = compile_teddy_data(key_svs, config); });
-                out_timing->match_ns = measure_ns([&] {
-                    results = matcher_teddy_compiled(data_sv, teddy_data);
-                });
+                out_timing->match_ns = measure_ns(
+                    [&] { results = matcher_teddy(data_sv, teddy_data); });
             } else {
                 teddy_data = compile_teddy_data(key_svs, config);
-                results = matcher_teddy_compiled(data_sv, teddy_data);
+                results = matcher_teddy(data_sv, teddy_data);
             }
             break;
         }
@@ -147,13 +146,12 @@ extern "C" size_t findkey(const uint8_t* data,
                 out_timing->compile_ns = measure_ns(
                     [&] { teddy_data = compile_teddy_data(key_svs, config); });
                 out_timing->match_ns = measure_ns([&] {
-                    results = matcher_teddy_baseline_compiled(data_sv, key_svs,
-                                                              teddy_data);
+                    results =
+                        matcher_teddy_baseline(data_sv, key_svs, teddy_data);
                 });
             } else {
                 teddy_data = compile_teddy_data(key_svs, config);
-                results = matcher_teddy_baseline_compiled(data_sv, key_svs,
-                                                          teddy_data);
+                results = matcher_teddy_baseline(data_sv, key_svs, teddy_data);
             }
             break;
         }
@@ -208,7 +206,7 @@ extern "C" size_t findkey_with_stats(
         const char* k = reinterpret_cast<const char*>(keys[i]);
         key_svs.emplace_back(k, key_lens[i]);
     }
-    const findkey_teddy_config default_teddy_config = {};
+    const findkey_teddy_config default_teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
 
@@ -218,13 +216,13 @@ extern "C" size_t findkey_with_stats(
         out_timing->compile_ns = measure_ns(
             [&] { teddy_data = compile_teddy_data(key_svs, config); });
         out_timing->match_ns = measure_ns([&] {
-            results = matcher_teddy_baseline_compiled(data_sv, key_svs,
-                                                      teddy_data, teddy_stats);
+            results = matcher_teddy_baseline(data_sv, key_svs, teddy_data,
+                                             teddy_stats);
         });
     } else {
         teddy_data = compile_teddy_data(key_svs, config);
-        results = matcher_teddy_baseline_compiled(data_sv, key_svs, teddy_data,
-                                                  teddy_stats);
+        results =
+            matcher_teddy_baseline(data_sv, key_svs, teddy_data, teddy_stats);
     }
 
     return results.size();

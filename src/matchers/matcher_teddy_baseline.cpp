@@ -1,5 +1,6 @@
 #include "matcher_teddy_baseline.h"
 #include "teddy/teddy_common.h"
+#include "teddy/teddy_dispatch.h"
 #include "teddy/teddy_verify.h"
 
 #include <algorithm>
@@ -114,41 +115,7 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
     return results;
 }
 
-template <bool CollectStats>
-std::vector<findkey_result> matcher_teddy_baseline_dispatch(
-    std::string_view data,
-    const std::vector<std::string_view>& keys,
-    const TeddyCompilationData& teddy_data,
-    struct findkey_teddy_stats* stats) {
-    switch (teddy_data.sigma) {
-        case 1:
-            return matcher_teddy_baseline_impl<1, CollectStats>(
-                data, keys, teddy_data, stats);
-        case 2:
-            return matcher_teddy_baseline_impl<2, CollectStats>(
-                data, keys, teddy_data, stats);
-        case 3:
-            return matcher_teddy_baseline_impl<3, CollectStats>(
-                data, keys, teddy_data, stats);
-        case 4:
-            return matcher_teddy_baseline_impl<4, CollectStats>(
-                data, keys, teddy_data, stats);
-        default:
-            return {};
-    }
-}
-
 std::vector<findkey_result> matcher_teddy_baseline(
-    std::string_view data,
-    const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config,
-    struct findkey_teddy_stats* stats) {
-    const TeddyCompilationData teddy_data = compile_teddy_data(keys, config);
-
-    return matcher_teddy_baseline_compiled(data, keys, teddy_data, stats);
-}
-
-std::vector<findkey_result> matcher_teddy_baseline_compiled(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data,
@@ -159,9 +126,15 @@ std::vector<findkey_result> matcher_teddy_baseline_compiled(
     }
 
     if (stats) {
-        return matcher_teddy_baseline_dispatch<true>(data, keys, teddy_data,
-                                                     stats);
+        return dispatch_teddy_sigma<std::vector<findkey_result>>(
+            teddy_data.sigma, [&]<int Sigma>() {
+                return matcher_teddy_baseline_impl<Sigma, true>(
+                    data, keys, teddy_data, stats);
+            });
     }
-    return matcher_teddy_baseline_dispatch<false>(data, keys, teddy_data,
-                                                  nullptr);
+    return dispatch_teddy_sigma<std::vector<findkey_result>>(
+        teddy_data.sigma, [&]<int Sigma>() {
+            return matcher_teddy_baseline_impl<Sigma, false>(
+                data, keys, teddy_data, nullptr);
+        });
 }

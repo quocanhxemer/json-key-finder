@@ -66,13 +66,15 @@ enum findkey_teddy_suffix_mode {
 };
 
 struct findkey_teddy_config {
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy =
-        TEDDY_COMPILE_PAPER_GREEDY;
+    enum findkey_teddy_compile_grouping_strategy grouping_strategy;
 
     // only used if grouping_strategy is TEDDY_COMPILE_HASH
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm = TEDDY_HASH_STD;
-    enum findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
+    enum findkey_teddy_compile_hash_algorithm hash_algorithm;
+    enum findkey_teddy_suffix_mode suffix_mode;
 };
+
+#define FINDKEY_TEDDY_CONFIG_INIT \
+    {TEDDY_COMPILE_PAPER_GREEDY, TEDDY_HASH_STD, TEDDY_SUFFIX_RAW}
 
 size_t findkey(const uint8_t* data,
                size_t len,
