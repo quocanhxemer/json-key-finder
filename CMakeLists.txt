@@ -76,9 +76,13 @@ add_executable(findkey src/main.cpp)
 target_include_directories(findkey PRIVATE include src)
 target_link_libraries(findkey PRIVATE find_json_key find_json_key_utils findkey_cli)
 
+add_library(find_key_generation STATIC tools/key_generation.cpp)
+target_include_directories(find_key_generation PUBLIC tools)
+target_link_libraries(find_key_generation PUBLIC find_json_key_warnings)
+
 add_executable(gen_keys tools/gen_keys.cpp)
-target_include_directories(gen_keys PRIVATE include src)
-target_link_libraries(gen_keys PRIVATE find_json_key_utils)
+target_include_directories(gen_keys PRIVATE include src tools)
+target_link_libraries(gen_keys PRIVATE find_json_key_utils find_key_generation)
 
 add_executable(reverse_keys tools/reverse_keys.cpp)
 target_include_directories(reverse_keys PRIVATE include src)
