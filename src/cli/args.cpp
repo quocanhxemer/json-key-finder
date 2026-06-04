@@ -1,12 +1,10 @@
 #include "cli/args.h"
+#include "core/findkey_options.h"
 
 #include <getopt.h>
 
-#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <limits>
 
 namespace {
 
@@ -54,100 +52,6 @@ namespace {
     std::exit(EXIT_FAILURE);
 }
 
-template <typename Enum>
-Enum invalid_enum_value() {
-    return static_cast<Enum>(-1);
-}
-
-findkey_algo parse_algo(const char* algo) {
-    if (std::strcmp(algo, "scalar") == 0) {
-        return SCALAR;
-    }
-    if (std::strcmp(algo, "teddy") == 0) {
-        return TEDDY;
-    }
-    if (std::strcmp(algo, "teddy_baseline") == 0) {
-        return TEDDY_BASELINE;
-    }
-    return invalid_enum_value<findkey_algo>();
-}
-
-findkey_teddy_compile_grouping_strategy parse_grouping_strategy(
-    const char* strategy) {
-    if (std::strcmp(strategy, "paper_greedy") == 0 ||
-        std::strcmp(strategy, "greedy") == 0) {
-        return TEDDY_COMPILE_PAPER_GREEDY;
-    }
-    if (std::strcmp(strategy, "improved_greedy") == 0) {
-        return TEDDY_COMPILE_PAPER_IMPROVED_GREEDY;
-    }
-    if (std::strcmp(strategy, "hash") == 0) {
-        return TEDDY_COMPILE_HASH;
-    }
-    return invalid_enum_value<findkey_teddy_compile_grouping_strategy>();
-}
-
-findkey_teddy_suffix_mode parse_suffix_mode(const char* mode) {
-    if (std::strcmp(mode, "raw") == 0) {
-        return TEDDY_SUFFIX_RAW;
-    }
-    if (std::strcmp(mode, "quote-suffix") == 0) {
-        return TEDDY_SUFFIX_QUOTED;
-    }
-    return invalid_enum_value<findkey_teddy_suffix_mode>();
-}
-
-findkey_teddy_compile_hash_algorithm parse_hash_algorithm(
-    const char* algorithm) {
-    if (std::strcmp(algorithm, "std") == 0) {
-        return TEDDY_HASH_STD;
-    }
-    if (std::strcmp(algorithm, "adler32") == 0) {
-        return TEDDY_HASH_ADLER32;
-    }
-    if (std::strcmp(algorithm, "crc32") == 0) {
-        return TEDDY_HASH_CRC32;
-    }
-    if (std::strcmp(algorithm, "xxhash") == 0) {
-        return TEDDY_HASH_XXHASH;
-    }
-    if (std::strcmp(algorithm, "fnv1a") == 0) {
-        return TEDDY_HASH_FNV1A;
-    }
-    return invalid_enum_value<findkey_teddy_compile_hash_algorithm>();
-}
-
-static int parse_sigma(const char* raw) {
-    if (!raw || !*raw) {
-        return -1;
-    }
-
-    char* end = nullptr;
-    errno = 0;
-    const long value = std::strtol(raw, &end, 10);
-    if (errno != 0 || end == raw || *end != '\0') {
-        return -1;
-    }
-
-    if (value <= 0 || value > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH ||
-        value > std::numeric_limits<int>::max()) {
-        return -1;
-    }
-
-    return static_cast<int>(value);
-}
-
-template <typename Enum>
-void validate_enum_or_exit(Enum value,
-                           Enum invalid_value,
-                           const char* error_message,
-                           const char* prog_name) {
-    if (value == invalid_value) {
-        std::fprintf(stderr, "%s\n", error_message);
-        print_usage_and_exit(prog_name);
-    }
-}
-
 }  // namespace
 
 ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
@@ -175,22 +79,56 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
         }
 
         switch (option_value) {
-            case 'a':
-                args.algo = parse_algo(optarg);
+            case 'a': {
+                const auto parsed = findkey_options::parse_algo(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr, "Unknown algorithm specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.algo = *parsed;
                 break;
-            case 'g':
-                args.teddy_config.grouping_strategy =
-                    parse_grouping_strategy(optarg);
+            }
+            case 'g': {
+                const auto parsed =
+                    findkey_options::parse_grouping_strategy(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr,
+                                 "Unknown teddy grouping strategy specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.teddy_config.grouping_strategy = *parsed;
                 break;
-            case 'h':
-                args.teddy_config.hash_algorithm = parse_hash_algorithm(optarg);
+            }
+            case 'h': {
+                const auto parsed =
+                    findkey_options::parse_hash_algorithm(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr,
+                                 "Unknown teddy hash algorithm specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.teddy_config.hash_algorithm = *parsed;
                 break;
-            case 's':
-                args.teddy_config.suffix_mode = parse_suffix_mode(optarg);
+            }
+            case 's': {
+                const auto parsed = findkey_options::parse_suffix_mode(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr,
+                                 "Unknown teddy suffix mode specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.teddy_config.suffix_mode = *parsed;
                 break;
-            case 'm':
-                args.teddy_config.sigma = parse_sigma(optarg);
+            }
+            case 'm': {
+                const auto parsed = findkey_options::parse_sigma(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr, "Invalid sigma specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.teddy_config.sigma = *parsed;
                 break;
+            }
             case 'k':
                 args.keys_path = optarg;
                 break;
@@ -211,22 +149,6 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
     if (optind != argc) {
         print_usage_and_exit(argv[0]);
     }
-
-    validate_enum_or_exit(args.algo, invalid_enum_value<findkey_algo>(),
-                          "Unknown algorithm specified", argv[0]);
-    validate_enum_or_exit(
-        args.teddy_config.grouping_strategy,
-        invalid_enum_value<findkey_teddy_compile_grouping_strategy>(),
-        "Unknown teddy grouping strategy specified", argv[0]);
-    validate_enum_or_exit(args.teddy_config.suffix_mode,
-                          invalid_enum_value<findkey_teddy_suffix_mode>(),
-                          "Unknown teddy suffix mode specified", argv[0]);
-    validate_enum_or_exit(
-        args.teddy_config.hash_algorithm,
-        invalid_enum_value<findkey_teddy_compile_hash_algorithm>(),
-        "Unknown teddy hash algorithm specified", argv[0]);
-    validate_enum_or_exit(args.teddy_config.sigma, -1,
-                          "Invalid sigma specified", argv[0]);
 
     if (!args.keys_path || !args.data_path) {
         print_usage_and_exit(argv[0]);

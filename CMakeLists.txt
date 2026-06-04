@@ -25,12 +25,16 @@ add_library(find_json_key_utils STATIC src/io/mmap_file.cpp)
 target_include_directories(find_json_key_utils PUBLIC src)
 target_link_libraries(find_json_key_utils PUBLIC find_json_key_warnings)
 
+add_library(findkey_options STATIC src/core/findkey_options.cpp)
+target_include_directories(findkey_options PUBLIC include src)
+target_link_libraries(findkey_options PUBLIC find_json_key_warnings)
+
 add_library(findkey_cli STATIC
     src/cli/args.cpp
     src/cli/reporting.cpp
 )
 target_include_directories(findkey_cli PUBLIC include src)
-target_link_libraries(findkey_cli PUBLIC find_json_key_warnings)
+target_link_libraries(findkey_cli PUBLIC find_json_key_warnings findkey_options)
 
 add_library(find_json_key STATIC
     src/core/findkey.cpp
