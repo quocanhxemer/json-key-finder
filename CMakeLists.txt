@@ -38,6 +38,7 @@ target_link_libraries(findkey_cli PUBLIC find_json_key_warnings findkey_options)
 
 add_library(find_json_key STATIC
     src/core/findkey.cpp
+    src/core/prepared_keys.cpp
 
     src/teddy/teddy_common.cpp
     src/teddy/teddy_hash.cpp
@@ -84,9 +85,18 @@ add_library(find_key_generation STATIC tools/key_generation.cpp)
 target_include_directories(find_key_generation PUBLIC tools)
 target_link_libraries(find_key_generation PUBLIC find_json_key_warnings)
 
+add_library(find_json_input STATIC tools/json_input.cpp)
+target_include_directories(find_json_input PUBLIC src tools)
+target_link_libraries(
+    find_json_input
+    PUBLIC
+    find_json_key_utils
+    find_key_generation
+)
+
 add_executable(gen_keys tools/gen_keys.cpp)
 target_include_directories(gen_keys PRIVATE include src tools)
-target_link_libraries(gen_keys PRIVATE find_json_key_utils find_key_generation)
+target_link_libraries(gen_keys PRIVATE find_json_input find_key_generation)
 
 add_executable(reverse_keys tools/reverse_keys.cpp)
 target_include_directories(reverse_keys PRIVATE include src)

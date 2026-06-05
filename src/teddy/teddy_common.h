@@ -45,6 +45,7 @@ struct TeddyCompilationMetadata {
     int num_groups = 0;
     size_t dfa_nodes = 0;
     size_t max_key_len = 0;
+    std::vector<uint64_t> group_scores;
     uint64_t total_score = 0;
 };
 

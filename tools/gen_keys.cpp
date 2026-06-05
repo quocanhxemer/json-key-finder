@@ -1,4 +1,4 @@
-#include "io/mmap_file.h"
+#include "json_input.h"
 #include "key_generation.h"
 
 #include <cstdlib>
@@ -6,7 +6,6 @@
 #include <iostream>
 #include <random>
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace {
@@ -63,17 +62,10 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    MMapFile mmap(json_file.c_str());
-    std::string_view json_data(mmap.data(), mmap.size());
-
-    if (json_data.empty()) {
-        std::cerr << "Error: File is empty.\n";
-        return EXIT_FAILURE;
-    }
-
-    const keygen::KeyCatalog catalog = keygen::build_key_catalog(json_data);
-    const std::vector<std::string> keys_to_write =
-        keygen::generate_keys(catalog, *key_type, num_keys, seed);
+    const json_input::LoadedJson loaded_json =
+        json_input::load_json_or_exit(json_file);
+    const std::vector<std::string> keys_to_write = keygen::generate_keys(
+        loaded_json.key_catalog(), *key_type, num_keys, seed);
 
     if (!write_keys_to_file(keys_to_write, output_file)) {
         return EXIT_FAILURE;

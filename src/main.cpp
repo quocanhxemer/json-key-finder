@@ -1,5 +1,6 @@
 #include "cli/args.h"
 #include "cli/reporting.h"
+#include "core/prepared_keys.h"
 #include "findkey.h"
 #include "io/mmap_file.h"
 #include "teddy/teddy_common.h"
@@ -8,7 +9,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
-#include <string_view>
 #include <vector>
 
 static std::vector<std::string> read_keys_from_file(const char* keys_file) {
@@ -40,17 +40,11 @@ static std::vector<std::string> read_keys_from_file(const char* keys_file) {
 int main(int argc, char** argv) {
     const ParsedCliArgs args = parse_cli_args_or_exit(argc, argv);
 
-    std::vector<std::string> keys = read_keys_from_file(args.keys_path);
-    std::vector<const uint8_t*> key_ptrs;
-    key_ptrs.reserve(keys.size());
-    std::vector<size_t> key_lens;
-    key_lens.reserve(keys.size());
-    std::vector<std::string_view> key_svs;
-    key_svs.reserve(keys.size());
-    for (const auto& key : keys) {
-        key_ptrs.push_back(reinterpret_cast<const uint8_t*>(key.data()));
-        key_lens.push_back(key.size());
-        key_svs.emplace_back(key);
+    PreparedKeys keys = prepare_keys(read_keys_from_file(args.keys_path));
+    if (keys.keys.empty()) {
+        std::fprintf(stderr, "No keys found in keys file: %s\n",
+                     args.keys_path);
+        std::exit(EXIT_FAILURE);
     }
 
     MMapFile mmap_file(args.data_path);
@@ -64,7 +58,7 @@ int main(int argc, char** argv) {
 
     if (args.collect_stats) {
         const TeddyCompilationData teddy_data =
-            compile_teddy_data(key_svs, args.teddy_config);
+            compile_teddy_data(keys.views, args.teddy_config);
         teddy_compilation_metadata = get_teddy_compilation_metadata(teddy_data);
     }
 
@@ -72,12 +66,12 @@ int main(int argc, char** argv) {
         args.collect_stats
             ? findkey_with_stats(
                   reinterpret_cast<const uint8_t*>(mmap_file.data()),
-                  mmap_file.size(), key_ptrs.data(), key_lens.data(),
-                  key_ptrs.size(), &args.teddy_config, &teddy_stats, &status,
+                  mmap_file.size(), keys.ptrs.data(), keys.lens.data(),
+                  keys.ptrs.size(), &args.teddy_config, &teddy_stats, &status,
                   &timing)
             : findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
-                      mmap_file.size(), key_ptrs.data(), key_lens.data(),
-                      key_ptrs.size(), args.algo, &args.teddy_config,
+                      mmap_file.size(), keys.ptrs.data(), keys.lens.data(),
+                      keys.ptrs.size(), args.algo, &args.teddy_config,
                       positions.data(), positions.size(), &status, &timing);
 
     const uint64_t total_ns = timing.compile_ns + timing.match_ns;
@@ -111,7 +105,8 @@ int main(int argc, char** argv) {
     if (args.print_positions) {
         for (size_t i = 0; i < num_found && i < positions.size(); ++i) {
             std::printf("\tPosition: %zu\n", positions[i].position);
-            std::printf("\tKey: \"%s\"\n", keys[positions[i].key_id].c_str());
+            std::printf("\tKey: \"%s\"\n",
+                        keys.keys[positions[i].key_id].c_str());
         }
         if (num_found > positions.size()) {
             std::printf("  ... and %zu more\n", num_found - positions.size());

@@ -3,6 +3,7 @@
 #include "teddy/teddy_verify.h"
 
 #include <algorithm>
+#include <utility>
 
 static inline size_t teddy_virtual_length(
     std::string_view key,
@@ -318,8 +319,10 @@ TeddyCompilationData compile_teddy_data(
 
 TeddyCompilationMetadata get_teddy_compilation_metadata(
     const TeddyCompilationData& data) {
+    std::vector<uint64_t> group_scores;
     uint64_t total_score = 0;
     if (!data.group_keys.empty() && data.sigma > 0) {
+        group_scores.reserve(data.group_keys.size());
         for (size_t group = 0; group < data.group_keys.size(); ++group) {
             const uint8_t group_bit = static_cast<uint8_t>(1u << group);
             uint32_t group_score = 1;
@@ -343,6 +346,7 @@ TeddyCompilationMetadata get_teddy_compilation_metadata(
                 group_score *= __builtin_popcount(merged);
             }
 
+            group_scores.push_back(group_score);
             total_score += group_score;
         }
     }
@@ -352,6 +356,7 @@ TeddyCompilationMetadata get_teddy_compilation_metadata(
         .num_groups = data.num_groups,
         .dfa_nodes = data.dfa.nodes.size(),
         .max_key_len = data.dfa.max_key_len,
+        .group_scores = std::move(group_scores),
         .total_score = total_score,
     };
 }

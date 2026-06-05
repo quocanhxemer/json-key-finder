@@ -71,6 +71,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
     ParsedCliArgs args;
 
     opterr = 0;
+    optind = 1;
     while (true) {
         const int option_value =
             getopt_long(argc, argv, "", long_options, nullptr);
