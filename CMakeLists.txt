@@ -94,9 +94,36 @@ target_link_libraries(
     find_key_generation
 )
 
+add_library(find_bench_tools STATIC
+    tools/bench/bench_args.cpp
+    tools/bench/bench_csv.cpp
+    tools/bench/bench_runner.cpp
+)
+target_include_directories(find_bench_tools PUBLIC include src tools)
+target_link_libraries(
+    find_bench_tools
+    PUBLIC
+    find_json_key_warnings
+    find_json_key
+    findkey_options
+    find_key_generation
+)
+
 add_executable(gen_keys tools/gen_keys.cpp)
 target_include_directories(gen_keys PRIVATE include src tools)
 target_link_libraries(gen_keys PRIVATE find_json_input find_key_generation)
+
+add_executable(bench_matrix tools/bench_matrix.cpp)
+target_include_directories(bench_matrix PRIVATE include src tools)
+target_link_libraries(
+    bench_matrix
+    PRIVATE
+    find_json_key
+    find_json_input
+    find_key_generation
+    findkey_options
+    find_bench_tools
+)
 
 add_executable(reverse_keys tools/reverse_keys.cpp)
 target_include_directories(reverse_keys PRIVATE include src)
