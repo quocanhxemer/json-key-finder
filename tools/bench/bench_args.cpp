@@ -63,9 +63,8 @@ std::optional<size_t> parse_size(std::string_view raw) {
         << "  --algo <name>                    Repeatable. Defaults: scalar, "
            "teddy, teddy_baseline\n"
         << "  --grouping <name>                Repeatable. Defaults: "
-           "paper_greedy, improved_greedy, hash\n"
-        << "  --hash-algo <name>               Repeatable. Defaults: std, "
-           "xxhash, crc32, fnv1a\n"
+           "paper_greedy, improved_greedy, hash_std, hash_xxhash, "
+           "hash_crc32, hash_fnv1a\n"
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
            "quote-suffix\n"
         << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
@@ -90,7 +89,6 @@ Options parse_options(int argc, char** argv) {
         {"seed", required_argument, nullptr, 's'},
         {"algo", required_argument, nullptr, 'a'},
         {"grouping", required_argument, nullptr, 'g'},
-        {"hash-algo", required_argument, nullptr, 'h'},
         {"suffix-mode", required_argument, nullptr, 'f'},
         {"sigma", required_argument, nullptr, 'i'},
         {"repeats", required_argument, nullptr, 'r'},
@@ -172,16 +170,6 @@ Options parse_options(int argc, char** argv) {
                 options.grouping_strategies.push_back(*grouping);
                 break;
             }
-            case 'h': {
-                const auto hash_algorithm =
-                    findkey_options::parse_hash_algorithm(optarg);
-                if (!hash_algorithm) {
-                    std::cerr << "Invalid --hash-algo\n";
-                    print_usage_and_exit(argv[0]);
-                }
-                options.hash_algorithms.push_back(*hash_algorithm);
-                break;
-            }
             case 'f': {
                 const auto suffix_mode =
                     findkey_options::parse_suffix_mode(optarg);
@@ -249,13 +237,10 @@ Options parse_options(int argc, char** argv) {
         options.algos = {SCALAR, TEDDY, TEDDY_BASELINE};
     }
     if (options.grouping_strategies.empty()) {
-        options.grouping_strategies = {TEDDY_COMPILE_PAPER_GREEDY,
-                                       TEDDY_COMPILE_PAPER_IMPROVED_GREEDY,
-                                       TEDDY_COMPILE_HASH};
-    }
-    if (options.hash_algorithms.empty()) {
-        options.hash_algorithms = {TEDDY_HASH_STD, TEDDY_HASH_XXHASH,
-                                   TEDDY_HASH_CRC32, TEDDY_HASH_FNV1A};
+        options.grouping_strategies = {
+            TEDDY_COMPILE_PAPER_GREEDY, TEDDY_COMPILE_PAPER_IMPROVED_GREEDY,
+            TEDDY_COMPILE_HASH_STD,     TEDDY_COMPILE_HASH_XXHASH,
+            TEDDY_COMPILE_HASH_CRC32,   TEDDY_COMPILE_HASH_FNV1A};
     }
     if (options.suffix_modes.empty()) {
         options.suffix_modes = {TEDDY_SUFFIX_RAW, TEDDY_SUFFIX_QUOTED};
@@ -289,15 +274,7 @@ std::vector<TeddyConfigCase> make_teddy_configs(const Options& options) {
     for (const auto grouping_strategy : options.grouping_strategies) {
         for (const auto suffix_mode : options.suffix_modes) {
             for (const int sigma : options.sigmas) {
-                if (grouping_strategy == TEDDY_COMPILE_HASH) {
-                    for (const auto hash_algorithm : options.hash_algorithms) {
-                        configs.push_back({{grouping_strategy, hash_algorithm,
-                                            suffix_mode, sigma}});
-                    }
-                } else {
-                    configs.push_back({{grouping_strategy, TEDDY_HASH_STD,
-                                        suffix_mode, sigma}});
-                }
+                configs.push_back({{grouping_strategy, suffix_mode, sigma}});
             }
         }
     }

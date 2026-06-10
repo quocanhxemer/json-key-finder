@@ -249,7 +249,7 @@ static void compile_teddy_data_hash(const std::vector<std::string_view>& keys,
                                               config.suffix_mode);
         }
         const uint32_t hash =
-            hash_teddy_suffix(suffix_buf, data.sigma, config.hash_algorithm);
+            hash_teddy_suffix(suffix_buf, data.sigma, config.grouping_strategy);
 
         buckets[hash & (MAX_GROUPS - 1)].push_back(key_id);
     }
@@ -307,7 +307,11 @@ TeddyCompilationData compile_teddy_data(
         case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
             compile_teddy_data_greedy(keys, config, data, false);
             break;
-        case TEDDY_COMPILE_HASH:
+        case TEDDY_COMPILE_HASH_STD:
+        case TEDDY_COMPILE_HASH_ADLER32:
+        case TEDDY_COMPILE_HASH_CRC32:
+        case TEDDY_COMPILE_HASH_XXHASH:
+        case TEDDY_COMPILE_HASH_FNV1A:
             compile_teddy_data_hash(keys, config, data);
             break;
         default:

@@ -14,9 +14,9 @@
 namespace bench {
 namespace {
 
-constexpr size_t BENCH_COLUMN_COUNT = 19;
-constexpr size_t STATS_COLUMN_COUNT = 41;
-constexpr size_t BENCH_TEDDY_COLUMN_COUNT = 4;
+constexpr size_t BENCH_COLUMN_COUNT = 18;
+constexpr size_t STATS_COLUMN_COUNT = 40;
+constexpr size_t BENCH_TEDDY_COLUMN_COUNT = 3;
 
 // RFC4180 CSV escaping
 std::string csv_escape(std::string value) {
@@ -50,14 +50,6 @@ std::string to_string_double(double value) {
     out << std::setprecision(std::numeric_limits<double>::max_digits10)
         << value;
     return out.str();
-}
-
-std::string hash_column(const TeddyConfigCase& config_case) {
-    if (config_case.config.grouping_strategy != TEDDY_COMPILE_HASH) {
-        return "";
-    }
-    return std::string(findkey_options::hash_algorithm_name(
-        config_case.config.hash_algorithm));
 }
 
 std::string group_scores_column(const TeddyCompilationMetadata& metadata) {
@@ -126,7 +118,6 @@ void write_bench_header(std::ofstream& output) {
         "seed",
         "algo",
         "grouping_strategy",
-        "hash_algo",
         "suffix_mode",
         "requested_sigma",
         "repeat_index",
@@ -152,7 +143,6 @@ void write_stats_header(std::ofstream& output) {
         "actual_num_keys",
         "seed",
         "grouping_strategy",
-        "hash_algo",
         "suffix_mode",
         "requested_sigma",
         "compiled_sigma",
@@ -213,7 +203,6 @@ void write_bench_row(std::ofstream& output, const BenchCsvRow& row) {
 
         csv_row.push_back(std::string(findkey_options::grouping_strategy_name(
             row.teddy_config->config.grouping_strategy)));
-        csv_row.push_back(hash_column(*row.teddy_config));
         csv_row.push_back(std::string(findkey_options::suffix_mode_name(
             row.teddy_config->config.suffix_mode)));
         csv_row.push_back(std::to_string(row.teddy_config->config.sigma));
@@ -246,7 +235,6 @@ void write_stats_row(std::ofstream& output, const StatsCsvRow& row) {
     csv_row.push_back(std::to_string(row.key_case.seed));
     csv_row.push_back(std::string(findkey_options::grouping_strategy_name(
         row.teddy_config.config.grouping_strategy)));
-    csv_row.push_back(hash_column(row.teddy_config));
     csv_row.push_back(std::string(findkey_options::suffix_mode_name(
         row.teddy_config.config.suffix_mode)));
     csv_row.push_back(std::to_string(row.teddy_config.config.sigma));

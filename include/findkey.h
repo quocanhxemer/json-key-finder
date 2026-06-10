@@ -54,15 +54,11 @@ struct findkey_timing {
 enum findkey_teddy_compile_grouping_strategy {
     TEDDY_COMPILE_PAPER_GREEDY = 0,
     TEDDY_COMPILE_PAPER_IMPROVED_GREEDY = 1,
-    TEDDY_COMPILE_HASH = 2,
-};
-
-enum findkey_teddy_compile_hash_algorithm {
-    TEDDY_HASH_STD = 0,
-    TEDDY_HASH_ADLER32 = 1,
-    TEDDY_HASH_CRC32 = 2,
-    TEDDY_HASH_XXHASH = 3,
-    TEDDY_HASH_FNV1A = 4,
+    TEDDY_COMPILE_HASH_STD = 2,
+    TEDDY_COMPILE_HASH_ADLER32 = 3,
+    TEDDY_COMPILE_HASH_CRC32 = 4,
+    TEDDY_COMPILE_HASH_XXHASH = 5,
+    TEDDY_COMPILE_HASH_FNV1A = 6,
 };
 
 enum findkey_teddy_suffix_mode {
@@ -72,16 +68,13 @@ enum findkey_teddy_suffix_mode {
 
 struct findkey_teddy_config {
     enum findkey_teddy_compile_grouping_strategy grouping_strategy;
-
-    // only used if grouping_strategy is TEDDY_COMPILE_HASH
-    enum findkey_teddy_compile_hash_algorithm hash_algorithm;
     enum findkey_teddy_suffix_mode suffix_mode;
 
     int sigma;
 };
 
-#define FINDKEY_TEDDY_CONFIG_INIT                                  \
-    {TEDDY_COMPILE_PAPER_GREEDY, TEDDY_HASH_STD, TEDDY_SUFFIX_RAW, \
+#define FINDKEY_TEDDY_CONFIG_INIT                  \
+    {TEDDY_COMPILE_PAPER_GREEDY, TEDDY_SUFFIX_RAW, \
      FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH}
 
 size_t findkey(const uint8_t* data,

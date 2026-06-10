@@ -28,28 +28,20 @@ std::optional<findkey_teddy_compile_grouping_strategy> parse_grouping_strategy(
     if (raw == "improved_greedy") {
         return TEDDY_COMPILE_PAPER_IMPROVED_GREEDY;
     }
-    if (raw == "hash") {
-        return TEDDY_COMPILE_HASH;
+    if (raw == "hash_std" || raw == "std_hash" || raw == "std") {
+        return TEDDY_COMPILE_HASH_STD;
     }
-    return std::nullopt;
-}
-
-std::optional<findkey_teddy_compile_hash_algorithm> parse_hash_algorithm(
-    std::string_view raw) {
-    if (raw == "std") {
-        return TEDDY_HASH_STD;
+    if (raw == "hash_adler32" || raw == "adler32_hash" || raw == "adler32") {
+        return TEDDY_COMPILE_HASH_ADLER32;
     }
-    if (raw == "adler32") {
-        return TEDDY_HASH_ADLER32;
+    if (raw == "hash_crc32" || raw == "crc32_hash" || raw == "crc32") {
+        return TEDDY_COMPILE_HASH_CRC32;
     }
-    if (raw == "crc32") {
-        return TEDDY_HASH_CRC32;
+    if (raw == "hash_xxhash" || raw == "xxhash_hash" || raw == "xxhash") {
+        return TEDDY_COMPILE_HASH_XXHASH;
     }
-    if (raw == "xxhash") {
-        return TEDDY_HASH_XXHASH;
-    }
-    if (raw == "fnv1a") {
-        return TEDDY_HASH_FNV1A;
+    if (raw == "hash_fnv1a" || raw == "fnv1a_hash" || raw == "fnv1a") {
+        return TEDDY_COMPILE_HASH_FNV1A;
     }
     return std::nullopt;
 }
@@ -106,26 +98,16 @@ std::string_view grouping_strategy_name(
             return "paper_greedy";
         case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
             return "improved_greedy";
-        case TEDDY_COMPILE_HASH:
-            return "hash";
-        default:
-            return "unknown";
-    }
-}
-
-std::string_view hash_algorithm_name(
-    findkey_teddy_compile_hash_algorithm algorithm) {
-    switch (algorithm) {
-        case TEDDY_HASH_STD:
-            return "std";
-        case TEDDY_HASH_ADLER32:
-            return "adler32";
-        case TEDDY_HASH_CRC32:
-            return "crc32";
-        case TEDDY_HASH_XXHASH:
-            return "xxhash";
-        case TEDDY_HASH_FNV1A:
-            return "fnv1a";
+        case TEDDY_COMPILE_HASH_STD:
+            return "hash_std";
+        case TEDDY_COMPILE_HASH_ADLER32:
+            return "hash_adler32";
+        case TEDDY_COMPILE_HASH_CRC32:
+            return "hash_crc32";
+        case TEDDY_COMPILE_HASH_XXHASH:
+            return "hash_xxhash";
+        case TEDDY_COMPILE_HASH_FNV1A:
+            return "hash_fnv1a";
         default:
             return "unknown";
     }

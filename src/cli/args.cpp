@@ -30,13 +30,9 @@ namespace {
         "Teddy options:\n"
         "  --teddy-grouping-strategy <name>\n"
         "                             Values: paper_greedy, improved_greedy, "
-        "hash\n"
+        "hash_std, hash_adler32, hash_crc32, hash_xxhash, hash_fnv1a\n"
         "                             Alias: greedy = paper_greedy\n"
         "                             Default: paper_greedy\n"
-        "  --teddy-hash-algo <name>   Used only with grouping strategy 'hash'\n"
-        "                             Values: std, adler32, crc32, xxhash, "
-        "fnv1a\n"
-        "                             Default: std\n"
         "  --teddy-suffix-mode <name>\n"
         "                             Values: raw, quote-suffix\n"
         "                             Default: raw\n"
@@ -58,7 +54,6 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
     static constexpr option long_options[] = {
         {"algo", required_argument, nullptr, 'a'},
         {"teddy-grouping-strategy", required_argument, nullptr, 'g'},
-        {"teddy-hash-algo", required_argument, nullptr, 'h'},
         {"teddy-suffix-mode", required_argument, nullptr, 's'},
         {"sigma", required_argument, nullptr, 'm'},
         {"keys", required_argument, nullptr, 'k'},
@@ -98,17 +93,6 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.grouping_strategy = *parsed;
-                break;
-            }
-            case 'h': {
-                const auto parsed =
-                    findkey_options::parse_hash_algorithm(optarg);
-                if (!parsed) {
-                    std::fprintf(stderr,
-                                 "Unknown teddy hash algorithm specified\n");
-                    print_usage_and_exit(argv[0]);
-                }
-                args.teddy_config.hash_algorithm = *parsed;
                 break;
             }
             case 's': {
