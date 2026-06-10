@@ -64,7 +64,8 @@ std::optional<size_t> parse_size(std::string_view raw) {
            "teddy, teddy_baseline\n"
         << "  --grouping <name>                Repeatable. Defaults: "
            "paper_greedy, improved_greedy, hash_std, hash_xxhash, "
-           "hash_crc32, hash_fnv1a\n"
+           "hash_crc32, hash_fnv1a, sorted_suffix_round_robin, "
+           "sorted_suffix_partition\n"
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
            "quote-suffix\n"
         << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
@@ -237,10 +238,14 @@ Options parse_options(int argc, char** argv) {
         options.algos = {SCALAR, TEDDY, TEDDY_BASELINE};
     }
     if (options.grouping_strategies.empty()) {
-        options.grouping_strategies = {
-            TEDDY_COMPILE_PAPER_GREEDY, TEDDY_COMPILE_PAPER_IMPROVED_GREEDY,
-            TEDDY_COMPILE_HASH_STD,     TEDDY_COMPILE_HASH_XXHASH,
-            TEDDY_COMPILE_HASH_CRC32,   TEDDY_COMPILE_HASH_FNV1A};
+        options.grouping_strategies = {TEDDY_COMPILE_PAPER_GREEDY,
+                                       TEDDY_COMPILE_PAPER_IMPROVED_GREEDY,
+                                       TEDDY_COMPILE_HASH_STD,
+                                       TEDDY_COMPILE_HASH_XXHASH,
+                                       TEDDY_COMPILE_HASH_CRC32,
+                                       TEDDY_COMPILE_HASH_FNV1A,
+                                       TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN,
+                                       TEDDY_COMPILE_SORTED_SUFFIX_PARTITION};
     }
     if (options.suffix_modes.empty()) {
         options.suffix_modes = {TEDDY_SUFFIX_RAW, TEDDY_SUFFIX_QUOTED};

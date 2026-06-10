@@ -59,6 +59,8 @@ enum findkey_teddy_compile_grouping_strategy {
     TEDDY_COMPILE_HASH_CRC32 = 4,
     TEDDY_COMPILE_HASH_XXHASH = 5,
     TEDDY_COMPILE_HASH_FNV1A = 6,
+    TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN = 7,
+    TEDDY_COMPILE_SORTED_SUFFIX_PARTITION = 8,
 };
 
 enum findkey_teddy_suffix_mode {

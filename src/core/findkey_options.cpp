@@ -43,6 +43,14 @@ std::optional<findkey_teddy_compile_grouping_strategy> parse_grouping_strategy(
     if (raw == "hash_fnv1a" || raw == "fnv1a_hash" || raw == "fnv1a") {
         return TEDDY_COMPILE_HASH_FNV1A;
     }
+    if (raw == "sorted_suffix_round_robin" || raw == "round_robin_suffix" ||
+        raw == "sorted_round_robin") {
+        return TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN;
+    }
+    if (raw == "sorted_suffix_partition" || raw == "sort_partition" ||
+        raw == "sorted_partition") {
+        return TEDDY_COMPILE_SORTED_SUFFIX_PARTITION;
+    }
     return std::nullopt;
 }
 
@@ -108,6 +116,10 @@ std::string_view grouping_strategy_name(
             return "hash_xxhash";
         case TEDDY_COMPILE_HASH_FNV1A:
             return "hash_fnv1a";
+        case TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN:
+            return "sorted_suffix_round_robin";
+        case TEDDY_COMPILE_SORTED_SUFFIX_PARTITION:
+            return "sorted_suffix_partition";
         default:
             return "unknown";
     }

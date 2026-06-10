@@ -3,6 +3,7 @@
 #include "teddy/teddy_verify.h"
 
 #include <algorithm>
+#include <numeric>
 #include <utility>
 
 static inline size_t teddy_virtual_length(
@@ -140,10 +141,10 @@ static void build_teddy_compilation_data_tables(
     }
 }
 
-static void compile_teddy_data_greedy(const std::vector<std::string_view>& keys,
-                                      const findkey_teddy_config& config,
-                                      TeddyCompilationData& data,
-                                      bool paper_early_exit) {
+static void build_greedy_groups(const std::vector<std::string_view>& keys,
+                                const findkey_teddy_config& config,
+                                TeddyCompilationData& data,
+                                bool paper_early_exit) {
     struct Group {
         std::vector<uint32_t> key_ids;
         uint8_t b[FINDKEY_TEDDY_MAX_SIGMA];
@@ -227,19 +228,11 @@ static void compile_teddy_data_greedy(const std::vector<std::string_view>& keys,
     for (auto& group : groups) {
         data.group_keys.push_back(std::move(group.key_ids));
     }
-
-    data.num_groups = static_cast<int>(data.group_keys.size());
-    if (!data.num_groups) {
-        return;
-    }
-
-    data.dfa = buildDFA(keys, data.group_keys);
-    build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
 }
 
-static void compile_teddy_data_hash(const std::vector<std::string_view>& keys,
-                                    const findkey_teddy_config& config,
-                                    TeddyCompilationData& data) {
+static void build_hash_groups(const std::vector<std::string_view>& keys,
+                              const findkey_teddy_config& config,
+                              TeddyCompilationData& data) {
     // partition
     std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
@@ -262,14 +255,75 @@ static void compile_teddy_data_hash(const std::vector<std::string_view>& keys,
 
         data.group_keys.push_back(std::move(buckets[group]));
     }
+}
 
-    data.num_groups = static_cast<int>(data.group_keys.size());
-    if (!data.num_groups) {
-        return;
+static std::vector<uint32_t> sorted_key_ids_by_suffix(
+    const std::vector<std::string_view>& keys,
+    const findkey_teddy_config& config,
+    const TeddyCompilationData& data) {
+    std::vector<uint32_t> sorted_key_ids(keys.size());
+    std::iota(sorted_key_ids.begin(), sorted_key_ids.end(), uint32_t{0});
+
+    std::sort(sorted_key_ids.begin(), sorted_key_ids.end(),
+              [&](uint32_t left_key_id, uint32_t right_key_id) {
+                  for (int suffix_index = 0; suffix_index < data.sigma;
+                       ++suffix_index) {
+                      const uint8_t left_byte =
+                          teddy_suffix_byte(keys[left_key_id], data.sigma,
+                                            suffix_index, config.suffix_mode);
+                      const uint8_t right_byte =
+                          teddy_suffix_byte(keys[right_key_id], data.sigma,
+                                            suffix_index, config.suffix_mode);
+                      if (left_byte != right_byte) {
+                          return left_byte < right_byte;
+                      }
+                  }
+                  return left_key_id < right_key_id;
+              });
+
+    return sorted_key_ids;
+}
+
+static void build_sorted_suffix_round_robin_groups(
+    const std::vector<std::string_view>& keys,
+    const findkey_teddy_config& config,
+    TeddyCompilationData& data) {
+    const std::vector<uint32_t> sorted_key_ids =
+        sorted_key_ids_by_suffix(keys, config, data);
+    const size_t num_groups =
+        std::min(sorted_key_ids.size(), static_cast<size_t>(MAX_GROUPS));
+
+    data.group_keys.resize(num_groups);
+    for (size_t key_index = 0; key_index < sorted_key_ids.size(); ++key_index) {
+        data.group_keys[key_index % num_groups].push_back(
+            sorted_key_ids[key_index]);
     }
+}
 
-    data.dfa = buildDFA(keys, data.group_keys);
-    build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
+static void build_sorted_suffix_partition_groups(
+    const std::vector<std::string_view>& keys,
+    const findkey_teddy_config& config,
+    TeddyCompilationData& data) {
+    const std::vector<uint32_t> sorted_key_ids =
+        sorted_key_ids_by_suffix(keys, config, data);
+    const size_t num_groups =
+        std::min(sorted_key_ids.size(), static_cast<size_t>(MAX_GROUPS));
+
+    data.group_keys.reserve(num_groups);
+    for (size_t group_index = 0; group_index < num_groups; ++group_index) {
+        const size_t begin_index =
+            group_index * sorted_key_ids.size() / num_groups;
+        const size_t end_index =
+            (group_index + 1) * sorted_key_ids.size() / num_groups;
+
+        std::vector<uint32_t> group;
+        group.reserve(end_index - begin_index);
+        for (size_t key_index = begin_index; key_index < end_index;
+             ++key_index) {
+            group.push_back(sorted_key_ids[key_index]);
+        }
+        data.group_keys.push_back(std::move(group));
+    }
 }
 
 TeddyCompilationData compile_teddy_data(
@@ -279,7 +333,7 @@ TeddyCompilationData compile_teddy_data(
     data.suffix_mode = config.suffix_mode;
 
     if (keys.empty()) {
-        return data;
+        return {};
     }
 
     size_t min_len = teddy_virtual_length(keys[0], config.suffix_mode);
@@ -297,26 +351,40 @@ TeddyCompilationData compile_teddy_data(
 
     // edge case: empty keys should be filtered out earlier
     if (data.sigma <= 0) {
-        return data;
+        return {};
     }
 
     switch (config.grouping_strategy) {
         case TEDDY_COMPILE_PAPER_GREEDY:
-            compile_teddy_data_greedy(keys, config, data, true);
+            build_greedy_groups(keys, config, data, true);
             break;
         case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
-            compile_teddy_data_greedy(keys, config, data, false);
+            build_greedy_groups(keys, config, data, false);
             break;
         case TEDDY_COMPILE_HASH_STD:
         case TEDDY_COMPILE_HASH_ADLER32:
         case TEDDY_COMPILE_HASH_CRC32:
         case TEDDY_COMPILE_HASH_XXHASH:
         case TEDDY_COMPILE_HASH_FNV1A:
-            compile_teddy_data_hash(keys, config, data);
+            build_hash_groups(keys, config, data);
+            break;
+        case TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN:
+            build_sorted_suffix_round_robin_groups(keys, config, data);
+            break;
+        case TEDDY_COMPILE_SORTED_SUFFIX_PARTITION:
+            build_sorted_suffix_partition_groups(keys, config, data);
             break;
         default:
             return {};
     }
+
+    data.num_groups = static_cast<int>(data.group_keys.size());
+    if (!data.num_groups) {
+        return {};
+    }
+
+    data.dfa = buildDFA(keys, data.group_keys);
+    build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
 
     return data;
 }
