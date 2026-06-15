@@ -53,9 +53,7 @@ std::optional<size_t> parse_size(std::string_view raw) {
         << "  --dry-run                        Print matrix size and exit\n\n"
         << "Key generation options:\n"
         << "  --key-type <type>                Repeatable. Defaults: highest, "
-           "mixed, no_match\n"
-        << "                                  Values: highest, lowest, "
-           "no_match, all_match, mixed, all\n"
+           "lowest, no_match, all_match, mixed, all\n"
         << "  --num-keys <n>                   Repeatable. Defaults: 16, 32, "
            "60\n"
         << "  --seed <n>                       Repeatable. Default: 1\n\n"
@@ -225,8 +223,10 @@ Options parse_options(int argc, char** argv) {
         print_usage_and_exit(argv[0]);
     }
     if (options.key_types.empty()) {
-        options.key_types = {keygen::KeyType::Highest, keygen::KeyType::Mixed,
-                             keygen::KeyType::NoMatch};
+        options.key_types = {
+            keygen::KeyType::Highest, keygen::KeyType::Lowest,
+            keygen::KeyType::NoMatch, keygen::KeyType::AllMatch,
+            keygen::KeyType::Mixed,   keygen::KeyType::All};
     }
     if (options.num_keys.empty()) {
         options.num_keys = {16, 32, 60};
