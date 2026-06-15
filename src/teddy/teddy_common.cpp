@@ -3,6 +3,7 @@
 #include "teddy/teddy_verify.h"
 
 #include <algorithm>
+#include <climits>
 #include <numeric>
 #include <utility>
 
@@ -35,6 +36,36 @@ static inline uint8_t teddy_suffix_byte(
     // the closing quote (")
     return '"';
 }
+
+struct TeddySuffixGroup {
+    std::vector<uint32_t> key_ids;
+    uint8_t b[FINDKEY_TEDDY_MAX_SIGMA];
+
+    uint32_t score;
+
+    TeddySuffixGroup(uint32_t key_id,
+                     const std::string_view& key,
+                     int sigma,
+                     enum findkey_teddy_suffix_mode suffix_mode) {
+        key_ids.push_back(key_id);
+        score = 1;
+        for (int i = 0; i < sigma; ++i) {
+            b[i] = teddy_suffix_byte(key, sigma, i, suffix_mode);
+            score *= __builtin_popcount(b[i]);
+        }
+    }
+
+    static uint32_t merge_score(const TeddySuffixGroup& a,
+                                const TeddySuffixGroup& b,
+                                int sigma) {
+        uint32_t s = 1;
+        for (int i = 0; i < sigma; ++i) {
+            uint8_t merged = a.b[i] | b.b[i];
+            s *= __builtin_popcount(merged);
+        }
+        return s;
+    }
+};
 
 bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
                             const TeddyCompilationData& data,
@@ -145,35 +176,7 @@ static void build_greedy_groups(const std::vector<std::string_view>& keys,
                                 const findkey_teddy_config& config,
                                 TeddyCompilationData& data,
                                 bool paper_early_exit) {
-    struct Group {
-        std::vector<uint32_t> key_ids;
-        uint8_t b[FINDKEY_TEDDY_MAX_SIGMA];
-
-        uint32_t score;
-
-        Group(uint32_t key_id,
-              const std::string_view& key,
-              int sigma,
-              enum findkey_teddy_suffix_mode suffix_mode) {
-            key_ids.push_back(key_id);
-            score = 1;
-            for (int i = 0; i < sigma; ++i) {
-                b[i] = teddy_suffix_byte(key, sigma, i, suffix_mode);
-                score *= __builtin_popcount(b[i]);
-            }
-        }
-
-        static uint32_t merge_score(const Group& a, const Group& b, int sigma) {
-            uint32_t s = 1;
-            for (int i = 0; i < sigma; ++i) {
-                uint8_t merged = a.b[i] | b.b[i];
-                s *= __builtin_popcount(merged);
-            }
-            return s;
-        }
-    };
-
-    std::vector<Group> groups;
+    std::vector<TeddySuffixGroup> groups;
     groups.reserve(keys.size());
     for (uint32_t i = 0; i < keys.size(); ++i) {
         groups.emplace_back(i, keys[i], data.sigma, config.suffix_mode);
@@ -181,16 +184,16 @@ static void build_greedy_groups(const std::vector<std::string_view>& keys,
 
     while (groups.size() > MAX_GROUPS) {
         // find best pair to merge
-        uint32_t best = UINT32_MAX;
+        int best = INT_MAX;
         int best_i = -1;
         int best_j = -1;
-        uint32_t merge_score = 0;
+        int merge_score = 0;
 
         for (size_t i = 0; i < groups.size(); ++i) {
             for (size_t j = i + 1; j < groups.size(); ++j) {
-                uint32_t new_score =
-                    Group::merge_score(groups[i], groups[j], data.sigma);
-                uint32_t old_score = groups[i].score + groups[j].score;
+                int new_score = TeddySuffixGroup::merge_score(
+                    groups[i], groups[j], data.sigma);
+                int old_score = groups[i].score + groups[j].score;
                 if (paper_early_exit && new_score < old_score) {
                     best_i = i;
                     best_j = j;
@@ -212,8 +215,8 @@ static void build_greedy_groups(const std::vector<std::string_view>& keys,
             break;
         }
 
-        Group& target = groups[best_i];
-        Group& source = groups[best_j];
+        TeddySuffixGroup& target = groups[best_i];
+        TeddySuffixGroup& source = groups[best_j];
 
         for (int i = 0; i < data.sigma; ++i) {
             target.b[i] |= source.b[i];
