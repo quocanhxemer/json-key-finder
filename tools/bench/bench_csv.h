@@ -2,7 +2,7 @@
 
 #include "bench/bench_args.h"
 #include "findkey.h"
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 
 #include <cstddef>
 #include <cstdint>

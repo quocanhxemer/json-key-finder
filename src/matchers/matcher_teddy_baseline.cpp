@@ -1,5 +1,5 @@
 #include "matcher_teddy_baseline.h"
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 #include "teddy/teddy_dispatch.h"
 #include "teddy/teddy_verify.h"
 

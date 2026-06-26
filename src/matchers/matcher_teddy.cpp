@@ -2,7 +2,7 @@
 
 #if COMPILER_SUPPORTS_TEDDY
 
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 #include "teddy/teddy_dispatch.h"
 #include "teddy/teddy_verify.h"
 

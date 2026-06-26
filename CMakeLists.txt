@@ -40,7 +40,8 @@ add_library(find_json_key STATIC
     src/core/findkey.cpp
     src/core/prepared_keys.cpp
 
-    src/teddy/teddy_common.cpp
+    src/teddy/teddy_compile.cpp
+    src/teddy/teddy_grouping.cpp
     src/teddy/teddy_hash.cpp
 
     src/matchers/matcher_scalar.cpp

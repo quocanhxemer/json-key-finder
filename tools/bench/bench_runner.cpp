@@ -1,7 +1,7 @@
 #include "bench/bench_runner.h"
 
 #include "bench/bench_csv.h"
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 
 #include <vector>
 

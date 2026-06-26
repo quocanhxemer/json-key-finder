@@ -1,7 +1,7 @@
 #pragma once
 
 #include "findkey.h"
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 
 #include <stddef.h>
 

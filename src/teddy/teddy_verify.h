@@ -1,6 +1,6 @@
 #pragma once
 
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 
 #include <cctype>
 #include <cstdint>

@@ -3,7 +3,7 @@
 #include "core/prepared_keys.h"
 #include "findkey.h"
 #include "io/mmap_file.h"
-#include "teddy/teddy_common.h"
+#include "teddy/teddy_compile.h"
 
 #include <cstdio>
 #include <cstdlib>
