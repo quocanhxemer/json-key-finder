@@ -104,7 +104,7 @@ extern "C" size_t findkey(const uint8_t* data,
         teddy_config ? *teddy_config : default_teddy_config;
 
     if (algo != SCALAR) {
-        if (config.sigma < 0 ||
+        if (config.sigma <= 0 ||
             config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
             if (out_status) {
                 *out_status = FINDKEY_ERR_BAD_ARGS;
@@ -220,7 +220,7 @@ extern "C" size_t findkey_with_stats(
     const findkey_teddy_config& config =
         teddy_config ? *teddy_config : default_teddy_config;
 
-    if (config.sigma < 0 || config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
+    if (config.sigma <= 0 || config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
         if (out_status) {
             *out_status = FINDKEY_ERR_BAD_ARGS;
         }
