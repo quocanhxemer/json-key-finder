@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key_dfa.h"
 #include "findkey.h"
 #include "teddy/teddy_compile.h"
 
@@ -14,4 +15,5 @@
 */
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const TeddyCompilationData& teddy_data);
+    const TeddyCompilationData& teddy_data,
+    const DFA& dfa);

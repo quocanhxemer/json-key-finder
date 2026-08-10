@@ -38,6 +38,7 @@ target_link_libraries(findkey_cli PUBLIC find_json_key_warnings findkey_options)
 
 add_library(find_json_key STATIC
     src/core/findkey.cpp
+    src/core/key_dfa.cpp
     src/core/prepared_keys.cpp
 
     src/teddy/teddy_compile.cpp

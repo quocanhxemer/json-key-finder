@@ -1,6 +1,7 @@
 #include "bench/bench_runner.h"
 
 #include "bench/bench_csv.h"
+#include "core/key_dfa.h"
 #include "teddy/teddy_compile.h"
 
 #include <vector>
@@ -8,11 +9,20 @@
 namespace bench {
 namespace {
 
-TeddyCompilationMetadata compile_metadata(const PreparedKeys& keys,
-                                          const TeddyConfigCase& config_case) {
+struct CompilationMetadata {
+    TeddyCompilationMetadata teddy;
+    DFACompilationMetadata dfa;
+};
+
+CompilationMetadata compile_metadata(const PreparedKeys& keys,
+                                     const TeddyConfigCase& config_case) {
     const TeddyCompilationData teddy_data =
         compile_teddy_data(keys.views, config_case.config);
-    return get_teddy_compilation_metadata(teddy_data);
+    const DFA dfa = compile_key_dfa(keys.views);
+    return {
+        .teddy = get_teddy_compilation_metadata(teddy_data),
+        .dfa = get_dfa_compilation_metadata(dfa),
+    };
 }
 
 }  // namespace
@@ -76,7 +86,7 @@ void run_stats_case(std::ofstream& output,
                     const TeddyConfigCase& teddy_config_case,
                     size_t repeat_count,
                     size_t warmup_count) {
-    const TeddyCompilationMetadata metadata =
+    const CompilationMetadata metadata =
         compile_metadata(keys, teddy_config_case);
 
     const size_t total_iterations = repeat_count + warmup_count;
@@ -120,10 +130,11 @@ void run_stats_case(std::ofstream& output,
 
         const size_t repeat_index = iteration - warmup_count;
         write_stats_row(
-            output, {key_case, keys.keys.size(), teddy_config_case, metadata,
-                     repeat_index, status, total_found, timing, data.size(),
-                     stats, hit_lane_ratio, avg_hit_groups, exact_match_ratio,
-                     fp_type1_ratio, fp_type2_ratio});
+            output,
+            {key_case, keys.keys.size(), teddy_config_case, metadata.teddy,
+             metadata.dfa, repeat_index, status, total_found, timing,
+             data.size(), stats, hit_lane_ratio, avg_hit_groups,
+             exact_match_ratio, fp_type1_ratio, fp_type2_ratio});
     }
 }
 

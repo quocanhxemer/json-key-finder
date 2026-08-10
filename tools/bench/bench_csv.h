@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bench/bench_args.h"
+#include "core/key_dfa.h"
 #include "findkey.h"
 #include "teddy/teddy_compile.h"
 
@@ -30,6 +31,7 @@ struct StatsCsvRow {
     size_t actual_num_keys = 0;
     TeddyConfigCase teddy_config;
     TeddyCompilationMetadata metadata = {};
+    DFACompilationMetadata dfa_metadata = {};
     size_t repeat_index = 0;
     int status = FINDKEY_OK;
     size_t total_found = 0;

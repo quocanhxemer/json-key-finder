@@ -2,14 +2,15 @@
 
 #include <cstdio>
 
-void print_teddy_compilation_stats(const TeddyCompilationMetadata& metadata) {
-    std::printf("Teddy Compilation Stats:\n");
-    std::printf("\tSigma: %d\n", metadata.sigma);
-    std::printf("\tGroups: %d\n", metadata.num_groups);
-    std::printf("\tDFA nodes: %zu\n", metadata.dfa_nodes);
-    std::printf("\tMax key length: %zu\n", metadata.max_key_len);
+void print_compilation_stats(const TeddyCompilationMetadata& teddy_metadata,
+                             const DFACompilationMetadata& dfa_metadata) {
+    std::printf("Compilation Stats:\n");
+    std::printf("\tSigma: %d\n", teddy_metadata.sigma);
+    std::printf("\tGroups: %d\n", teddy_metadata.num_groups);
+    std::printf("\tDFA nodes: %zu\n", dfa_metadata.nodes);
+    std::printf("\tMax key length: %zu\n", dfa_metadata.max_key_len);
     std::printf("\tTotal group score: %llu\n",
-                static_cast<unsigned long long>(metadata.total_score));
+                static_cast<unsigned long long>(teddy_metadata.total_score));
 }
 
 void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,

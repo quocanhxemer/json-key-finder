@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key_dfa.h"
 #include "teddy/teddy_compile.h"
 
 #include <cctype>
@@ -39,12 +40,10 @@ static inline bool is_valid_quote(const char* str, size_t pos) {
     return (backslash_count % 2) == 0;
 }
 
-static inline candidate_result verify_json_key_candidate(
-    const char* str,
-    size_t len,
-    size_t end_quote,
-    const DFA& dfa,
-    uint8_t candidate_groups) {
+static inline candidate_result verify_json_key_candidate(const char* str,
+                                                         size_t len,
+                                                         size_t end_quote,
+                                                         const DFA& dfa) {
     if (end_quote >= len || str[end_quote] != '"') {
         return {CANDIDATE_BAD_END_QUOTE, 0, 0};
     }
@@ -64,7 +63,6 @@ static inline candidate_result verify_json_key_candidate(
 
     int32_t current_node = 0;
     size_t consumed = 0;
-    uint8_t active_groups = candidate_groups;
 
     for (size_t position = end_quote; position > 0;) {
         --position;
@@ -88,10 +86,6 @@ static inline candidate_result verify_json_key_candidate(
         }
 
         current_node = next_node;
-        active_groups &= dfa.node_group_masks[current_node];
-        if (!active_groups) {
-            return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
-        }
         ++consumed;
     }
 

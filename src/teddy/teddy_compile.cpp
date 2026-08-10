@@ -29,48 +29,6 @@ bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
     return false;
 }
 
-static DFA buildDFA(const std::vector<std::string_view>& keys,
-                    const std::vector<std::vector<uint32_t>>& group_keys) {
-    DFA dfa;
-    dfa.nodes.emplace_back();  // root
-    dfa.node_group_masks.push_back(0);
-    std::vector<uint8_t> key_groups(keys.size(), 0);
-
-    for (uint32_t group = 0; group < group_keys.size(); ++group) {
-        const uint8_t group_bit = static_cast<uint8_t>(1u << group);
-        for (uint32_t key_id : group_keys[group]) {
-            key_groups[key_id] |= group_bit;
-        }
-    }
-
-    for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
-        const std::string_view key = keys[key_id];
-        const uint8_t key_group_mask = key_groups[key_id];
-        dfa.max_key_len = std::max(dfa.max_key_len, key.size());
-
-        int32_t current_node = 0;
-        for (size_t i = key.size(); i > 0; --i) {
-            const uint8_t c = static_cast<uint8_t>(key[i - 1]);
-            if (dfa.nodes[current_node].children[c] == -1) {
-                dfa.nodes[current_node].children[c] =
-                    static_cast<int32_t>(dfa.nodes.size());
-                dfa.nodes.emplace_back();
-                dfa.node_group_masks.push_back(0);
-            }
-            current_node = dfa.nodes[current_node].children[c];
-            dfa.node_group_masks[current_node] |= key_group_mask;
-        }
-
-        if (dfa.nodes[current_node].key_id != -1) {  // duplicated key
-            continue;
-        }
-
-        dfa.nodes[current_node].key_id = key_id;
-    }
-
-    return dfa;
-}
-
 static void build_teddy_compilation_data_tables(
     TeddyCompilationData& data,
     const std::vector<std::string_view>& keys,
@@ -146,7 +104,6 @@ TeddyCompilationData compile_teddy_data(
         return {};
     }
 
-    data.dfa = buildDFA(keys, data.group_keys);
     build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
 
     return data;
@@ -189,8 +146,6 @@ TeddyCompilationMetadata get_teddy_compilation_metadata(
     return {
         .sigma = data.sigma,
         .num_groups = data.num_groups,
-        .dfa_nodes = data.dfa.nodes.size(),
-        .max_key_len = data.dfa.max_key_len,
         .group_scores = std::move(group_scores),
         .total_score = total_score,
     };

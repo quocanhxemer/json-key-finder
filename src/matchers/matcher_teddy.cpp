@@ -16,7 +16,8 @@
 template <int Sigma>
 std::vector<findkey_result> matcher_teddy_impl(
     std::string_view data,
-    const TeddyCompilationData& teddy_data) {
+    const TeddyCompilationData& teddy_data,
+    const DFA& dfa) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
 
@@ -82,8 +83,6 @@ std::vector<findkey_result> matcher_teddy_impl(
         __m128i match = _mm_andnot_si128(shift_or, group_mask_vector);
         __m128i is_zero = _mm_cmpeq_epi8(match, zero_vector);
         uint16_t hit_mask = ~static_cast<uint16_t>(_mm_movemask_epi8(is_zero));
-        alignas(16) uint8_t hit_groups[16];
-        _mm_storeu_si128(reinterpret_cast<__m128i*>(hit_groups), match);
 
         while (hit_mask) {
             const int i = __builtin_ctz(hit_mask);
@@ -96,8 +95,8 @@ std::vector<findkey_result> matcher_teddy_impl(
             const size_t last_char = base + i;
             const size_t end_quote = last_char + teddy_data.end_quote_offset;
 
-            const candidate_result cr = verify_json_key_candidate(
-                str, len, end_quote, teddy_data.dfa, hit_groups[i]);
+            const candidate_result cr =
+                verify_json_key_candidate(str, len, end_quote, dfa);
             if (cr.type == CANDIDATE_TYPE_MATCH) {
                 results.push_back({cr.position, cr.key_id});
             }
@@ -113,7 +112,8 @@ std::vector<findkey_result> matcher_teddy_impl(
 
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const TeddyCompilationData& teddy_data) {
+    const TeddyCompilationData& teddy_data,
+    const DFA& dfa) {
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
         return {};
@@ -121,7 +121,7 @@ std::vector<findkey_result> matcher_teddy(
 
     return dispatch_teddy_sigma<std::vector<findkey_result>>(
         teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_teddy_impl<Sigma>(data, teddy_data);
+            return matcher_teddy_impl<Sigma>(data, teddy_data, dfa);
         });
 }
 
@@ -129,9 +129,11 @@ std::vector<findkey_result> matcher_teddy(
 
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const TeddyCompilationData& teddy_data) {
+    const TeddyCompilationData& teddy_data,
+    const DFA& dfa) {
     (void)data;
     (void)teddy_data;
+    (void)dfa;
     return {};
 }
 

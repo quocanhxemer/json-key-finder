@@ -1,5 +1,6 @@
 #include "cli/args.h"
 #include "cli/reporting.h"
+#include "core/key_dfa.h"
 #include "core/prepared_keys.h"
 #include "findkey.h"
 #include "io/mmap_file.h"
@@ -55,11 +56,14 @@ int main(int argc, char** argv) {
     findkey_teddy_stats teddy_stats = {};
     findkey_timing timing = {};
     TeddyCompilationMetadata teddy_compilation_metadata = {};
+    DFACompilationMetadata dfa_compilation_metadata = {};
 
     if (args.collect_stats) {
         const TeddyCompilationData teddy_data =
             compile_teddy_data(keys.views, args.teddy_config);
+        const DFA dfa = compile_key_dfa(keys.views);
         teddy_compilation_metadata = get_teddy_compilation_metadata(teddy_data);
+        dfa_compilation_metadata = get_dfa_compilation_metadata(dfa);
     }
 
     size_t num_found =
@@ -114,7 +118,8 @@ int main(int argc, char** argv) {
     }
 
     if (args.collect_stats) {
-        print_teddy_compilation_stats(teddy_compilation_metadata);
+        print_compilation_stats(teddy_compilation_metadata,
+                                dfa_compilation_metadata);
         print_teddy_runtime_stats(teddy_stats, mmap_file.size());
     }
 

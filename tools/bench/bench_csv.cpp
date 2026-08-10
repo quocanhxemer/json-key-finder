@@ -240,8 +240,8 @@ void write_stats_row(std::ofstream& output, const StatsCsvRow& row) {
     csv_row.push_back(std::to_string(row.teddy_config.config.sigma));
     csv_row.push_back(std::to_string(row.metadata.sigma));
     csv_row.push_back(std::to_string(row.metadata.num_groups));
-    csv_row.push_back(std::to_string(row.metadata.dfa_nodes));
-    csv_row.push_back(std::to_string(row.metadata.max_key_len));
+    csv_row.push_back(std::to_string(row.dfa_metadata.nodes));
+    csv_row.push_back(std::to_string(row.dfa_metadata.max_key_len));
     csv_row.push_back(std::to_string(row.metadata.total_score));
     csv_row.push_back(group_scores_column(row.metadata));
     csv_row.push_back(std::to_string(min_group_score(row.metadata)));

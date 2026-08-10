@@ -14,6 +14,7 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data,
+    const DFA& dfa,
     struct findkey_teddy_stats* stats) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
@@ -70,8 +71,8 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
         }
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
-        const candidate_result cr = verify_json_key_candidate(
-            str, len, end_quote, teddy_data.dfa, hits);
+        const candidate_result cr =
+            verify_json_key_candidate(str, len, end_quote, dfa);
 
         if (cr.type == CANDIDATE_TYPE_MATCH) {
             results.push_back({cr.position, cr.key_id});
@@ -119,6 +120,7 @@ std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
     const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data,
+    const DFA& dfa,
     struct findkey_teddy_stats* stats) {
     // shouldn't happen
     if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
@@ -129,12 +131,12 @@ std::vector<findkey_result> matcher_teddy_baseline(
         return dispatch_teddy_sigma<std::vector<findkey_result>>(
             teddy_data.sigma, [&]<int Sigma>() {
                 return matcher_teddy_baseline_impl<Sigma, true>(
-                    data, keys, teddy_data, stats);
+                    data, keys, teddy_data, dfa, stats);
             });
     }
     return dispatch_teddy_sigma<std::vector<findkey_result>>(
         teddy_data.sigma, [&]<int Sigma>() {
             return matcher_teddy_baseline_impl<Sigma, false>(
-                data, keys, teddy_data, nullptr);
+                data, keys, teddy_data, dfa, nullptr);
         });
 }
