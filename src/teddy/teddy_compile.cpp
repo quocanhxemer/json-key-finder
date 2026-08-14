@@ -1,38 +1,9 @@
 #include "teddy_compile.h"
 #include "teddy/teddy_grouping.h"
-#include "teddy/teddy_suffix.h"
-#include "teddy/teddy_verify.h"
 
-#include <algorithm>
 #include <utility>
 
-bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
-                            const TeddyCompilationData& data,
-                            uint32_t group,
-                            const uint8_t* suffix) {
-    for (uint32_t key_id : data.group_keys[group]) {
-        bool found = true;
-        for (int i = 0; i < data.sigma; ++i) {
-            uint8_t suffix_byte = teddy_suffix_byte(keys[key_id], data.sigma, i,
-                                                    data.suffix_mode);
-            if (suffix_byte != suffix[i]) {
-                found = false;
-                break;
-            }
-        }
-
-        if (found) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static void build_teddy_compilation_data_tables(
-    TeddyCompilationData& data,
-    const std::vector<std::string_view>& keys,
-    findkey_teddy_suffix_mode suffix_mode) {
+static void build_teddy_compilation_data_tables(TeddyCompilationData& data) {
     for (int i = 0; i < FINDKEY_TEDDY_MAX_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {
             data.low_table[i][j] = 0xFF;
@@ -45,10 +16,8 @@ static void build_teddy_compilation_data_tables(
             bool low_filled[16] = {false};
             bool high_filled[16] = {false};
 
-            for (uint32_t key_id : data.group_keys[group]) {
-                const std::string_view key = keys[key_id];
-                const uint8_t c =
-                    teddy_suffix_byte(key, data.sigma, i, suffix_mode);
+            for (uint32_t suffix_id : data.group_suffix_ids[group]) {
+                const uint8_t c = data.suffixes[suffix_id][i];
 
                 uint8_t low_nibble = c & 0x0F;
                 uint8_t high_nibble = (c >> 4) & 0x0F;
@@ -72,39 +41,31 @@ static void build_teddy_compilation_data_tables(
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     const findkey_teddy_config& config) {
+    TeddySuffixSet suffixes = prepare_teddy_suffixes(keys, config);
+    return compile_teddy_data(std::move(suffixes), config.grouping_strategy);
+}
+
+TeddyCompilationData compile_teddy_data(
+    TeddySuffixSet suffixes,
+    findkey_teddy_compile_grouping_strategy grouping_strategy) {
     TeddyCompilationData data{};
-    data.suffix_mode = config.suffix_mode;
 
-    if (keys.empty()) {
+    if (suffixes.sigma <= 0 || suffixes.data.empty()) {
         return {};
     }
 
-    size_t min_len = teddy_virtual_length(keys[0], config.suffix_mode);
-    for (std::string_view key : keys) {
-        min_len =
-            std::min(min_len, teddy_virtual_length(key, config.suffix_mode));
-    }
+    data.sigma = suffixes.sigma;
+    data.end_quote_offset = suffixes.end_quote_offset;
+    data.suffixes = std::move(suffixes.data);
+    data.group_suffix_ids =
+        build_teddy_groups(data.suffixes, grouping_strategy, data.sigma);
 
-    const int compiled_sigma = (config.suffix_mode == TEDDY_SUFFIX_QUOTED)
-                                   ? (config.sigma + 1)
-                                   : config.sigma;
-
-    data.sigma = std::min(static_cast<int>(min_len), compiled_sigma);
-    data.end_quote_offset = (config.suffix_mode == TEDDY_SUFFIX_QUOTED) ? 0 : 1;
-
-    // edge case: empty keys should be filtered out earlier
-    if (data.sigma <= 0) {
-        return {};
-    }
-
-    data.group_keys = build_teddy_groups(keys, config, data.sigma);
-
-    data.num_groups = static_cast<int>(data.group_keys.size());
+    data.num_groups = static_cast<int>(data.group_suffix_ids.size());
     if (!data.num_groups) {
         return {};
     }
 
-    build_teddy_compilation_data_tables(data, keys, config.suffix_mode);
+    build_teddy_compilation_data_tables(data);
 
     return data;
 }
@@ -113,9 +74,9 @@ TeddyCompilationMetadata get_teddy_compilation_metadata(
     const TeddyCompilationData& data) {
     std::vector<uint64_t> group_scores;
     uint64_t total_score = 0;
-    if (!data.group_keys.empty() && data.sigma > 0) {
-        group_scores.reserve(data.group_keys.size());
-        for (size_t group = 0; group < data.group_keys.size(); ++group) {
+    if (!data.group_suffix_ids.empty() && data.sigma > 0) {
+        group_scores.reserve(data.group_suffix_ids.size());
+        for (size_t group = 0; group < data.group_suffix_ids.size(); ++group) {
             const uint8_t group_bit = static_cast<uint8_t>(1u << group);
             uint32_t group_score = 1;
 

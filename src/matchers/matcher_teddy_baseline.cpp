@@ -12,7 +12,6 @@
 template <int Sigma, bool CollectStats>
 std::vector<findkey_result> matcher_teddy_baseline_impl(
     std::string_view data,
-    const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats) {
@@ -60,8 +59,7 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
                     const uint32_t group = __builtin_ctz(group_hits);
                     group_hits &= group_hits - 1;
 
-                    if (group_has_exact_suffix(keys, teddy_data, group,
-                                               suffix)) {
+                    if (group_has_exact_suffix(teddy_data, group, suffix)) {
                         any_exact_suffix = true;
                     } else {
                         ++stats->fp_type1_groups;
@@ -118,7 +116,6 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
 
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
-    const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats) {
@@ -131,12 +128,12 @@ std::vector<findkey_result> matcher_teddy_baseline(
         return dispatch_teddy_sigma<std::vector<findkey_result>>(
             teddy_data.sigma, [&]<int Sigma>() {
                 return matcher_teddy_baseline_impl<Sigma, true>(
-                    data, keys, teddy_data, dfa, stats);
+                    data, teddy_data, dfa, stats);
             });
     }
     return dispatch_teddy_sigma<std::vector<findkey_result>>(
         teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_teddy_baseline_impl<Sigma, false>(
-                data, keys, teddy_data, dfa, nullptr);
+            return matcher_teddy_baseline_impl<Sigma, false>(data, teddy_data,
+                                                             dfa, nullptr);
         });
 }

@@ -13,7 +13,6 @@
 
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
-    const std::vector<std::string_view>& keys,
     const TeddyCompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats = nullptr);

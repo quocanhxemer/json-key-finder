@@ -1,6 +1,7 @@
 #pragma once
 
 #include "findkey.h"
+#include "teddy/teddy_suffix.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -12,7 +13,6 @@ static constexpr int MAX_GROUPS = 8;  // must be power of 2
 struct TeddyCompilationData {
     int sigma = 0;
     int num_groups = 0;
-    findkey_teddy_suffix_mode suffix_mode = TEDDY_SUFFIX_RAW;
 
     // offset from last character to the closing quote
     // 1 for RAW mode
@@ -22,7 +22,8 @@ struct TeddyCompilationData {
     alignas(16) uint8_t low_table[FINDKEY_TEDDY_MAX_SIGMA][16] = {};
     alignas(16) uint8_t high_table[FINDKEY_TEDDY_MAX_SIGMA][16] = {};
 
-    std::vector<std::vector<uint32_t>> group_keys;
+    std::vector<TeddySuffix> suffixes;
+    std::vector<std::vector<uint32_t>> group_suffix_ids;
 };
 
 struct TeddyCompilationMetadata {
@@ -35,6 +36,10 @@ struct TeddyCompilationMetadata {
 TeddyCompilationData compile_teddy_data(
     const std::vector<std::string_view>& keys,
     const findkey_teddy_config& config);
+
+TeddyCompilationData compile_teddy_data(
+    TeddySuffixSet suffixes,
+    findkey_teddy_compile_grouping_strategy grouping_strategy);
 
 TeddyCompilationMetadata get_teddy_compilation_metadata(
     const TeddyCompilationData& data);

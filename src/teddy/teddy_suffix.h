@@ -2,36 +2,20 @@
 
 #include "findkey.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <vector>
 
-static inline size_t teddy_virtual_length(
-    std::string_view key,
-    enum findkey_teddy_suffix_mode suffix_mode) {
-    switch (suffix_mode) {
-        case TEDDY_SUFFIX_RAW:
-            return key.size();
-        case TEDDY_SUFFIX_QUOTED:
-            return key.size() + 1;
-        default:
-            return -1;
-    }
-}
+using TeddySuffix = std::array<uint8_t, FINDKEY_TEDDY_MAX_SIGMA>;
 
-static inline uint8_t teddy_suffix_byte(
-    std::string_view key,
-    int sigma,
-    int i,
-    enum findkey_teddy_suffix_mode suffix_mode) {
-    const size_t virtual_len = teddy_virtual_length(key, suffix_mode);
-    const size_t idx = virtual_len - sigma + i;
+struct TeddySuffixSet {
+    int sigma = 0;
+    size_t end_quote_offset = 1;
 
-    if (idx < key.size()) {
-        return static_cast<uint8_t>(key[idx]);
-    }
+    std::vector<TeddySuffix> data;
+};
 
-    // for QUOTED mode, the virtual suffix byte after the last character is
-    // the closing quote (")
-    return '"';
-}
+TeddySuffixSet prepare_teddy_suffixes(const std::vector<std::string_view>& keys,
+                                      const findkey_teddy_config& config);

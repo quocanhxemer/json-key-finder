@@ -3,7 +3,6 @@
 #include "teddy/teddy_compile.h"
 #include "teddy/teddy_dispatch.h"
 #include "teddy/teddy_hash.h"
-#include "teddy/teddy_suffix.h"
 
 #include <algorithm>
 #include <array>
@@ -13,17 +12,15 @@
 
 template <int Sigma>
 struct TeddySuffixGroup {
-    std::vector<uint32_t> key_ids;
+    std::vector<uint32_t> suffix_ids;
     std::array<uint8_t, Sigma> b{};
 
     uint32_t score = 1;
 
-    TeddySuffixGroup(uint32_t key_id,
-                     const std::string_view& key,
-                     enum findkey_teddy_suffix_mode suffix_mode) {
-        key_ids.push_back(key_id);
+    TeddySuffixGroup(uint32_t suffix_id, const TeddySuffix& suffix) {
+        suffix_ids.push_back(suffix_id);
         for (int i = 0; i < Sigma; ++i) {
-            b[i] = teddy_suffix_byte(key, Sigma, i, suffix_mode);
+            b[i] = suffix[i];
             score *= __builtin_popcount(b[i]);
         }
     }
@@ -43,9 +40,9 @@ struct TeddySuffixGroup {
             b[i] |= source.b[i];
         }
 
-        key_ids.reserve(key_ids.size() + source.key_ids.size());
-        key_ids.insert(key_ids.end(), source.key_ids.begin(),
-                       source.key_ids.end());
+        suffix_ids.reserve(suffix_ids.size() + source.suffix_ids.size());
+        suffix_ids.insert(suffix_ids.end(), source.suffix_ids.begin(),
+                          source.suffix_ids.end());
         score = merged_score;
     }
 };
@@ -53,12 +50,13 @@ struct TeddySuffixGroup {
 template <int Sigma>
 class TeddyGroupingBuilder {
    public:
-    TeddyGroupingBuilder(const std::vector<std::string_view>& keys,
-                         const findkey_teddy_config& config)
-        : keys_(keys), config_(config) {}
+    TeddyGroupingBuilder(
+        const std::vector<TeddySuffix>& suffixes,
+        findkey_teddy_compile_grouping_strategy grouping_strategy)
+        : suffixes_(suffixes), grouping_strategy_(grouping_strategy) {}
 
     std::vector<std::vector<uint32_t>> build() const {
-        switch (config_.grouping_strategy) {
+        switch (grouping_strategy_) {
             case TEDDY_COMPILE_PAPER_GREEDY:
                 return build_greedy_groups(true);
             case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
@@ -81,17 +79,12 @@ class TeddyGroupingBuilder {
    private:
     using Group = TeddySuffixGroup<Sigma>;
 
-    uint8_t suffix_byte(uint32_t key_id, int suffix_index) const {
-        return teddy_suffix_byte(keys_[key_id], Sigma, suffix_index,
-                                 config_.suffix_mode);
-    }
-
     std::vector<std::vector<uint32_t>> build_greedy_groups(
         bool paper_early_exit) const {
         std::vector<Group> groups;
-        groups.reserve(keys_.size());
-        for (uint32_t i = 0; i < keys_.size(); ++i) {
-            groups.emplace_back(i, keys_[i], config_.suffix_mode);
+        groups.reserve(suffixes_.size());
+        for (uint32_t i = 0; i < suffixes_.size(); ++i) {
+            groups.emplace_back(i, suffixes_[i]);
         }
 
         while (groups.size() > MAX_GROUPS) {
@@ -135,113 +128,111 @@ class TeddyGroupingBuilder {
             groups.erase(groups.begin() + best_j);
         }
 
-        std::vector<std::vector<uint32_t>> group_keys;
-        group_keys.reserve(groups.size());
+        std::vector<std::vector<uint32_t>> group_suffix_ids;
+        group_suffix_ids.reserve(groups.size());
         for (auto& group : groups) {
-            group_keys.push_back(std::move(group.key_ids));
+            group_suffix_ids.push_back(std::move(group.suffix_ids));
         }
-        return group_keys;
+        return group_suffix_ids;
     }
 
     std::vector<std::vector<uint32_t>> build_hash_groups() const {
         // partition
         std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
-        for (uint32_t key_id = 0; key_id < keys_.size(); ++key_id) {
-            std::array<uint8_t, Sigma> suffix_buf{};
-            for (int i = 0; i < Sigma; ++i) {
-                suffix_buf[i] = suffix_byte(key_id, i);
-            }
+        for (uint32_t suffix_id = 0; suffix_id < suffixes_.size();
+             ++suffix_id) {
             const uint32_t hash = hash_teddy_grouping_bytes(
-                suffix_buf.data(), Sigma, config_.grouping_strategy);
+                suffixes_[suffix_id].data(), Sigma, grouping_strategy_);
 
-            buckets[hash & (MAX_GROUPS - 1)].push_back(key_id);
+            buckets[hash & (MAX_GROUPS - 1)].push_back(suffix_id);
         }
 
         // compress into struct
-        std::vector<std::vector<uint32_t>> group_keys;
-        group_keys.reserve(MAX_GROUPS);
+        std::vector<std::vector<uint32_t>> group_suffix_ids;
+        group_suffix_ids.reserve(MAX_GROUPS);
         for (int group = 0; group < MAX_GROUPS; ++group) {
             if (buckets[group].empty()) {
                 continue;
             }
 
-            group_keys.push_back(std::move(buckets[group]));
+            group_suffix_ids.push_back(std::move(buckets[group]));
         }
-        return group_keys;
+        return group_suffix_ids;
     }
 
-    std::vector<uint32_t> sorted_key_ids_by_suffix() const {
-        std::vector<uint32_t> sorted_key_ids(keys_.size());
-        std::iota(sorted_key_ids.begin(), sorted_key_ids.end(), uint32_t{0});
+    std::vector<uint32_t> sorted_suffix_ids() const {
+        std::vector<uint32_t> suffix_ids(suffixes_.size());
+        std::iota(suffix_ids.begin(), suffix_ids.end(), uint32_t{0});
 
-        std::sort(sorted_key_ids.begin(), sorted_key_ids.end(),
-                  [&](uint32_t left_key_id, uint32_t right_key_id) {
+        std::sort(suffix_ids.begin(), suffix_ids.end(),
+                  [&](uint32_t left_suffix_id, uint32_t right_suffix_id) {
                       for (int suffix_index = 0; suffix_index < Sigma;
                            ++suffix_index) {
                           const uint8_t left_byte =
-                              suffix_byte(left_key_id, suffix_index);
+                              suffixes_[left_suffix_id][suffix_index];
                           const uint8_t right_byte =
-                              suffix_byte(right_key_id, suffix_index);
+                              suffixes_[right_suffix_id][suffix_index];
                           if (left_byte != right_byte) {
                               return left_byte < right_byte;
                           }
                       }
-                      return left_key_id < right_key_id;
+                      return left_suffix_id < right_suffix_id;
                   });
 
-        return sorted_key_ids;
+        return suffix_ids;
     }
 
     std::vector<std::vector<uint32_t>> build_sorted_suffix_round_robin_groups()
         const {
-        const std::vector<uint32_t> sorted_key_ids = sorted_key_ids_by_suffix();
+        const std::vector<uint32_t> suffix_ids = sorted_suffix_ids();
         const size_t num_groups =
-            std::min(sorted_key_ids.size(), static_cast<size_t>(MAX_GROUPS));
+            std::min(suffix_ids.size(), static_cast<size_t>(MAX_GROUPS));
 
-        std::vector<std::vector<uint32_t>> group_keys(num_groups);
-        for (size_t key_index = 0; key_index < sorted_key_ids.size();
-             ++key_index) {
-            group_keys[key_index % num_groups].push_back(
-                sorted_key_ids[key_index]);
+        std::vector<std::vector<uint32_t>> group_suffix_ids(num_groups);
+        for (size_t suffix_index = 0; suffix_index < suffix_ids.size();
+             ++suffix_index) {
+            group_suffix_ids[suffix_index % num_groups].push_back(
+                suffix_ids[suffix_index]);
         }
-        return group_keys;
+        return group_suffix_ids;
     }
 
     std::vector<std::vector<uint32_t>> build_sorted_suffix_partition_groups()
         const {
-        const std::vector<uint32_t> sorted_key_ids = sorted_key_ids_by_suffix();
+        const std::vector<uint32_t> suffix_ids = sorted_suffix_ids();
         const size_t num_groups =
-            std::min(sorted_key_ids.size(), static_cast<size_t>(MAX_GROUPS));
+            std::min(suffix_ids.size(), static_cast<size_t>(MAX_GROUPS));
 
-        std::vector<std::vector<uint32_t>> group_keys;
-        group_keys.reserve(num_groups);
+        std::vector<std::vector<uint32_t>> group_suffix_ids;
+        group_suffix_ids.reserve(num_groups);
         for (size_t group_index = 0; group_index < num_groups; ++group_index) {
             const size_t begin_index =
-                group_index * sorted_key_ids.size() / num_groups;
+                group_index * suffix_ids.size() / num_groups;
             const size_t end_index =
-                (group_index + 1) * sorted_key_ids.size() / num_groups;
+                (group_index + 1) * suffix_ids.size() / num_groups;
 
             std::vector<uint32_t> group;
             group.reserve(end_index - begin_index);
-            for (size_t key_index = begin_index; key_index < end_index;
-                 ++key_index) {
-                group.push_back(sorted_key_ids[key_index]);
+            for (size_t suffix_index = begin_index; suffix_index < end_index;
+                 ++suffix_index) {
+                group.push_back(suffix_ids[suffix_index]);
             }
-            group_keys.push_back(std::move(group));
+            group_suffix_ids.push_back(std::move(group));
         }
-        return group_keys;
+        return group_suffix_ids;
     }
 
-    const std::vector<std::string_view>& keys_;
-    const findkey_teddy_config& config_;
+    const std::vector<TeddySuffix>& suffixes_;
+    findkey_teddy_compile_grouping_strategy grouping_strategy_;
 };
 
 std::vector<std::vector<uint32_t>> build_teddy_groups(
-    const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config,
+    const std::vector<TeddySuffix>& suffixes,
+    findkey_teddy_compile_grouping_strategy grouping_strategy,
     int sigma) {
     return dispatch_teddy_sigma<std::vector<std::vector<uint32_t>>>(
         sigma, [&]<int Sigma>() {
-            return TeddyGroupingBuilder<Sigma>(keys, config).build();
+            return TeddyGroupingBuilder<Sigma>(suffixes, grouping_strategy)
+                .build();
         });
 }

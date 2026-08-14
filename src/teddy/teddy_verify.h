@@ -22,10 +22,25 @@ struct candidate_result {
     uint32_t key_id = 0;
 };
 
-bool group_has_exact_suffix(const std::vector<std::string_view>& keys,
-                            const TeddyCompilationData& data,
-                            uint32_t group,
-                            const uint8_t* suffix);
+static inline bool group_has_exact_suffix(const TeddyCompilationData& data,
+                                          uint32_t group,
+                                          const uint8_t* suffix) {
+    for (uint32_t suffix_id : data.group_suffix_ids[group]) {
+        bool found = true;
+        for (int i = 0; i < data.sigma; ++i) {
+            if (data.suffixes[suffix_id][i] != suffix[i]) {
+                found = false;
+                break;
+            }
+        }
+
+        if (found) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 // quote with even number of backslashes
 static inline bool is_valid_quote(const char* str, size_t pos) {

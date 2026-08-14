@@ -44,6 +44,7 @@ add_library(find_json_key STATIC
     src/teddy/teddy_compile.cpp
     src/teddy/teddy_grouping.cpp
     src/teddy/teddy_hash.cpp
+    src/teddy/teddy_suffix.cpp
 
     src/matchers/matcher_scalar.cpp
     src/matchers/matcher_teddy_baseline.cpp

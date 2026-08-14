@@ -2,6 +2,7 @@
 #include "core/key_dfa.h"
 #include "matchers/matcher_scalar.h"
 #include "matchers/matcher_teddy_baseline.h"
+#include "teddy/teddy_compile.h"
 
 #if COMPILER_SUPPORTS_TEDDY
 #include "matchers/matcher_teddy.h"
@@ -164,14 +165,12 @@ extern "C" size_t findkey(const uint8_t* data,
                     dfa = compile_key_dfa(key_svs);
                 });
                 out_timing->match_ns = measure_ns([&] {
-                    results = matcher_teddy_baseline(data_sv, key_svs,
-                                                     teddy_data, dfa);
+                    results = matcher_teddy_baseline(data_sv, teddy_data, dfa);
                 });
             } else {
                 teddy_data = compile_teddy_data(key_svs, config);
                 dfa = compile_key_dfa(key_svs);
-                results =
-                    matcher_teddy_baseline(data_sv, key_svs, teddy_data, dfa);
+                results = matcher_teddy_baseline(data_sv, teddy_data, dfa);
             }
             break;
         }
@@ -246,14 +245,13 @@ extern "C" size_t findkey_with_stats(
             dfa = compile_key_dfa(key_svs);
         });
         out_timing->match_ns = measure_ns([&] {
-            results = matcher_teddy_baseline(data_sv, key_svs, teddy_data, dfa,
-                                             teddy_stats);
+            results =
+                matcher_teddy_baseline(data_sv, teddy_data, dfa, teddy_stats);
         });
     } else {
         teddy_data = compile_teddy_data(key_svs, config);
         dfa = compile_key_dfa(key_svs);
-        results = matcher_teddy_baseline(data_sv, key_svs, teddy_data, dfa,
-                                         teddy_stats);
+        results = matcher_teddy_baseline(data_sv, teddy_data, dfa, teddy_stats);
     }
 
     return results.size();
