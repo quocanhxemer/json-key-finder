@@ -1,5 +1,7 @@
 #include "teddy/teddy_suffix.h"
 
+#include "core/findkey_error.h"
+
 #include <algorithm>
 #include <unordered_set>
 
@@ -13,7 +15,8 @@ size_t virtual_key_length(std::string_view key,
         case TEDDY_SUFFIX_QUOTED:
             return key.size() + 1;
         default:
-            return 0;
+            throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                               "Unknown Teddy suffix mode");
     }
 }
 
@@ -47,14 +50,25 @@ TeddySuffixSet prepare_teddy_suffixes(const std::vector<std::string_view>& keys,
                                       const findkey_teddy_config& config) {
     TeddySuffixSet prepared;
 
-    if (keys.empty() || config.sigma <= 0 ||
-        config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
-        return prepared;
+    if (keys.empty()) {
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Teddy requires at least one key");
+    }
+    if (config.sigma <= 0 || config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Teddy suffix length is out of range");
     }
 
     if (config.suffix_mode != TEDDY_SUFFIX_RAW &&
         config.suffix_mode != TEDDY_SUFFIX_QUOTED) {
-        return prepared;
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Unknown Teddy suffix mode");
+    }
+
+    if (std::any_of(keys.begin(), keys.end(),
+                    [](std::string_view key) { return key.empty(); })) {
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Teddy keys must not be empty");
     }
 
     size_t min_len = virtual_key_length(keys[0], config.suffix_mode);
@@ -69,10 +83,6 @@ TeddySuffixSet prepare_teddy_suffixes(const std::vector<std::string_view>& keys,
     prepared.sigma = std::min(static_cast<int>(min_len), requested_sigma);
     prepared.end_quote_offset =
         config.suffix_mode == TEDDY_SUFFIX_QUOTED ? 0 : 1;
-
-    if (prepared.sigma <= 0) {
-        return {};
-    }
 
     prepared.data.reserve(keys.size());
     std::unordered_set<uint64_t> seen;

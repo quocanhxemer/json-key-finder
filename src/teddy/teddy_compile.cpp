@@ -1,4 +1,6 @@
 #include "teddy_compile.h"
+
+#include "core/findkey_error.h"
 #include "teddy/teddy_grouping.h"
 
 #include <utility>
@@ -50,8 +52,17 @@ TeddyCompilationData compile_teddy_data(
     findkey_teddy_compile_grouping_strategy grouping_strategy) {
     TeddyCompilationData data{};
 
-    if (suffixes.sigma <= 0 || suffixes.data.empty()) {
-        return {};
+    if (suffixes.sigma <= 0 || suffixes.sigma > FINDKEY_TEDDY_MAX_SIGMA) {
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Compiled Teddy suffix length is out of range");
+    }
+    if (suffixes.data.empty()) {
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Teddy requires at least one suffix");
+    }
+    if (suffixes.end_quote_offset > 1) {
+        throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                           "Invalid Teddy end quote offset");
     }
 
     data.sigma = suffixes.sigma;
@@ -61,9 +72,6 @@ TeddyCompilationData compile_teddy_data(
         build_teddy_groups(data.suffixes, grouping_strategy, data.sigma);
 
     data.num_groups = static_cast<int>(data.group_suffix_ids.size());
-    if (!data.num_groups) {
-        return {};
-    }
 
     build_teddy_compilation_data_tables(data);
 

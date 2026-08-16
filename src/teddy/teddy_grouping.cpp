@@ -1,5 +1,6 @@
 #include "teddy/teddy_grouping.h"
 
+#include "core/findkey_error.h"
 #include "teddy/teddy_compile.h"
 #include "teddy/teddy_dispatch.h"
 #include "teddy/teddy_hash.h"
@@ -72,7 +73,8 @@ class TeddyGroupingBuilder {
             case TEDDY_COMPILE_SORTED_SUFFIX_PARTITION:
                 return build_sorted_suffix_partition_groups();
             default:
-                return {};
+                throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                                   "Unknown Teddy grouping strategy");
         }
     }
 

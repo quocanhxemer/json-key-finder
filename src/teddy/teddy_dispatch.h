@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/findkey_error.h"
+
 template <typename Result, typename Fn>
 Result dispatch_teddy_sigma(int sigma, Fn&& fn) {
     switch (sigma) {
@@ -14,6 +16,7 @@ Result dispatch_teddy_sigma(int sigma, Fn&& fn) {
         case 5:
             return fn.template operator()<5>();
         default:
-            return Result{};
+            throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                               "Teddy suffix length is out of range");
     }
 }

@@ -1,5 +1,7 @@
 #include "teddy/teddy_hash.h"
 
+#include "core/findkey_error.h"
+
 #include <xxhash.h>
 #include <zlib.h>
 #include <cstddef>
@@ -35,6 +37,7 @@ uint32_t hash_teddy_grouping_bytes(
         case TEDDY_COMPILE_HASH_FNV1A:
             return fnv1a_hash(data, len);
         default:
-            return 0;
+            throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
+                               "Invalid Teddy hash grouping strategy");
     }
 }

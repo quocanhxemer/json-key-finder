@@ -119,11 +119,6 @@ std::vector<findkey_result> matcher_teddy_baseline(
     const TeddyCompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats) {
-    // shouldn't happen
-    if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
-        return {};
-    }
-
     if (stats) {
         return dispatch_teddy_sigma<std::vector<findkey_result>>(
             teddy_data.sigma, [&]<int Sigma>() {

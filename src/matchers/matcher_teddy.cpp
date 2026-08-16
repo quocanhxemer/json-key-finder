@@ -1,5 +1,7 @@
 #include "matcher_teddy.h"
 
+#include "core/findkey_error.h"
+
 #if COMPILER_SUPPORTS_TEDDY
 
 #include "teddy/teddy_compile.h"
@@ -114,11 +116,6 @@ std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const TeddyCompilationData& teddy_data,
     const DFA& dfa) {
-    // shouldn't happen
-    if (teddy_data.sigma <= 0 || teddy_data.num_groups <= 0) {
-        return {};
-    }
-
     return dispatch_teddy_sigma<std::vector<findkey_result>>(
         teddy_data.sigma, [&]<int Sigma>() {
             return matcher_teddy_impl<Sigma>(data, teddy_data, dfa);
@@ -134,7 +131,8 @@ std::vector<findkey_result> matcher_teddy(
     (void)data;
     (void)teddy_data;
     (void)dfa;
-    return {};
+    throw FindkeyError(FindkeyErrorCode::NOT_SUPPORTED,
+                       "Teddy is not supported by this compiler");
 }
 
 #endif
