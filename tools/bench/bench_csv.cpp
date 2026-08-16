@@ -52,7 +52,7 @@ std::string to_string_double(double value) {
     return out.str();
 }
 
-std::string group_scores_column(const TeddyCompilationMetadata& metadata) {
+std::string group_scores_column(const teddy::CompilationMetadata& metadata) {
     std::ostringstream out;
     for (size_t i = 0; i < metadata.group_scores.size(); ++i) {
         if (i != 0) {
@@ -63,7 +63,7 @@ std::string group_scores_column(const TeddyCompilationMetadata& metadata) {
     return out.str();
 }
 
-uint64_t min_group_score(const TeddyCompilationMetadata& metadata) {
+uint64_t min_group_score(const teddy::CompilationMetadata& metadata) {
     if (metadata.group_scores.empty()) {
         return 0;
     }
@@ -71,7 +71,7 @@ uint64_t min_group_score(const TeddyCompilationMetadata& metadata) {
                              metadata.group_scores.end());
 }
 
-uint64_t max_group_score(const TeddyCompilationMetadata& metadata) {
+uint64_t max_group_score(const teddy::CompilationMetadata& metadata) {
     if (metadata.group_scores.empty()) {
         return 0;
     }
@@ -79,7 +79,7 @@ uint64_t max_group_score(const TeddyCompilationMetadata& metadata) {
                              metadata.group_scores.end());
 }
 
-double avg_group_score(const TeddyCompilationMetadata& metadata) {
+double avg_group_score(const teddy::CompilationMetadata& metadata) {
     if (metadata.group_scores.empty()) {
         return 0.0;
     }

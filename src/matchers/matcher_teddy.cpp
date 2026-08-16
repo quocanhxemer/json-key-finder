@@ -4,9 +4,9 @@
 
 #if COMPILER_SUPPORTS_TEDDY
 
-#include "teddy/teddy_compile.h"
-#include "teddy/teddy_dispatch.h"
-#include "teddy/teddy_verify.h"
+#include "teddy/compile.h"
+#include "teddy/dispatch.h"
+#include "teddy/verify.h"
 
 #include <tmmintrin.h>
 
@@ -15,10 +15,12 @@
 
 #include <vector>
 
+namespace {
+
 template <int Sigma>
-std::vector<findkey_result> matcher_teddy_impl(
+std::vector<findkey_result> matcher_impl(
     std::string_view data,
-    const TeddyCompilationData& teddy_data,
+    const teddy::CompilationData& teddy_data,
     const DFA& dfa) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
@@ -97,9 +99,9 @@ std::vector<findkey_result> matcher_teddy_impl(
             const size_t last_char = base + i;
             const size_t end_quote = last_char + teddy_data.end_quote_offset;
 
-            const candidate_result cr =
-                verify_json_key_candidate(str, len, end_quote, dfa);
-            if (cr.type == CANDIDATE_TYPE_MATCH) {
+            const teddy::candidate_result cr =
+                teddy::verify_json_key_candidate(str, len, end_quote, dfa);
+            if (cr.type == teddy::CANDIDATE_TYPE_MATCH) {
                 results.push_back({cr.position, cr.key_id});
             }
         }
@@ -112,13 +114,15 @@ std::vector<findkey_result> matcher_teddy_impl(
     return results;
 }
 
+}  // namespace
+
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const TeddyCompilationData& teddy_data,
+    const teddy::CompilationData& teddy_data,
     const DFA& dfa) {
-    return dispatch_teddy_sigma<std::vector<findkey_result>>(
+    return teddy::dispatch_sigma<std::vector<findkey_result>>(
         teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_teddy_impl<Sigma>(data, teddy_data, dfa);
+            return matcher_impl<Sigma>(data, teddy_data, dfa);
         });
 }
 
@@ -126,7 +130,7 @@ std::vector<findkey_result> matcher_teddy(
 
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
-    const TeddyCompilationData& teddy_data,
+    const teddy::CompilationData& teddy_data,
     const DFA& dfa) {
     (void)data;
     (void)teddy_data;

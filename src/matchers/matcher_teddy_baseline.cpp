@@ -1,7 +1,7 @@
 #include "matcher_teddy_baseline.h"
-#include "teddy/teddy_compile.h"
-#include "teddy/teddy_dispatch.h"
-#include "teddy/teddy_verify.h"
+#include "teddy/compile.h"
+#include "teddy/dispatch.h"
+#include "teddy/verify.h"
 
 #include <algorithm>
 #include <cctype>
@@ -9,10 +9,12 @@
 #include <string_view>
 #include <vector>
 
+namespace {
+
 template <int Sigma, bool CollectStats>
-std::vector<findkey_result> matcher_teddy_baseline_impl(
+std::vector<findkey_result> matcher_impl(
     std::string_view data,
-    const TeddyCompilationData& teddy_data,
+    const teddy::CompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats) {
     std::vector<findkey_result> results;
@@ -59,7 +61,8 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
                     const uint32_t group = __builtin_ctz(group_hits);
                     group_hits &= group_hits - 1;
 
-                    if (group_has_exact_suffix(teddy_data, group, suffix)) {
+                    if (teddy::group_has_exact_suffix(teddy_data, group,
+                                                      suffix)) {
                         any_exact_suffix = true;
                     } else {
                         ++stats->fp_type1_groups;
@@ -69,10 +72,10 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
         }
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
-        const candidate_result cr =
-            verify_json_key_candidate(str, len, end_quote, dfa);
+        const teddy::candidate_result cr =
+            teddy::verify_json_key_candidate(str, len, end_quote, dfa);
 
-        if (cr.type == CANDIDATE_TYPE_MATCH) {
+        if (cr.type == teddy::CANDIDATE_TYPE_MATCH) {
             results.push_back({cr.position, cr.key_id});
             if constexpr (CollectStats) {
                 if (stats) {
@@ -83,19 +86,19 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
             if constexpr (CollectStats) {
                 if (stats) {
                     switch (cr.type) {
-                        case CANDIDATE_BAD_END_QUOTE:
+                        case teddy::CANDIDATE_BAD_END_QUOTE:
                             ++stats->reject_bad_end_quote;
                             break;
-                        case CANDIDATE_INVALID_QUOTE:
+                        case teddy::CANDIDATE_INVALID_QUOTE:
                             ++stats->reject_invalid_quote;
                             break;
-                        case CANDIDATE_MISSING_COLON:
+                        case teddy::CANDIDATE_MISSING_COLON:
                             ++stats->reject_missing_colon;
                             break;
-                        case CANDIDATE_MISSING_OPEN_QUOTE:
+                        case teddy::CANDIDATE_MISSING_OPEN_QUOTE:
                             ++stats->reject_missing_open_quote;
                             break;
-                        case CANDIDATE_KEY_NOT_FOUND:
+                        case teddy::CANDIDATE_KEY_NOT_FOUND:
                             ++stats->reject_key_not_found;
                             break;
                         default:
@@ -114,21 +117,21 @@ std::vector<findkey_result> matcher_teddy_baseline_impl(
     return results;
 }
 
+}  // namespace
+
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
-    const TeddyCompilationData& teddy_data,
+    const teddy::CompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats) {
     if (stats) {
-        return dispatch_teddy_sigma<std::vector<findkey_result>>(
+        return teddy::dispatch_sigma<std::vector<findkey_result>>(
             teddy_data.sigma, [&]<int Sigma>() {
-                return matcher_teddy_baseline_impl<Sigma, true>(
-                    data, teddy_data, dfa, stats);
+                return matcher_impl<Sigma, true>(data, teddy_data, dfa, stats);
             });
     }
-    return dispatch_teddy_sigma<std::vector<findkey_result>>(
+    return teddy::dispatch_sigma<std::vector<findkey_result>>(
         teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_teddy_baseline_impl<Sigma, false>(data, teddy_data,
-                                                             dfa, nullptr);
+            return matcher_impl<Sigma, false>(data, teddy_data, dfa, nullptr);
         });
 }

@@ -2,8 +2,10 @@
 
 #include "core/findkey_error.h"
 
+namespace teddy {
+
 template <typename Result, typename Fn>
-Result dispatch_teddy_sigma(int sigma, Fn&& fn) {
+Result dispatch_sigma(int sigma, Fn&& fn) {
     switch (sigma) {
         case 1:
             return fn.template operator()<1>();
@@ -20,3 +22,5 @@ Result dispatch_teddy_sigma(int sigma, Fn&& fn) {
                                "Teddy suffix length is out of range");
     }
 }
+
+}  // namespace teddy

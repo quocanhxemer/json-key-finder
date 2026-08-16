@@ -3,7 +3,7 @@
 #include "bench/bench_args.h"
 #include "core/key_dfa.h"
 #include "findkey.h"
-#include "teddy/teddy_compile.h"
+#include "teddy/compile.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -30,7 +30,7 @@ struct StatsCsvRow {
     const KeyCase& key_case;
     size_t actual_num_keys = 0;
     TeddyConfigCase teddy_config;
-    TeddyCompilationMetadata metadata = {};
+    teddy::CompilationMetadata metadata = {};
     DFACompilationMetadata dfa_metadata = {};
     size_t repeat_index = 0;
     int status = FINDKEY_OK;

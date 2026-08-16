@@ -2,7 +2,7 @@
 
 #include "bench/bench_csv.h"
 #include "core/key_dfa.h"
-#include "teddy/teddy_compile.h"
+#include "teddy/compile.h"
 
 #include <vector>
 
@@ -10,17 +10,17 @@ namespace bench {
 namespace {
 
 struct CompilationMetadata {
-    TeddyCompilationMetadata teddy;
+    teddy::CompilationMetadata teddy;
     DFACompilationMetadata dfa;
 };
 
 CompilationMetadata compile_metadata(const PreparedKeys& keys,
                                      const TeddyConfigCase& config_case) {
-    const TeddyCompilationData teddy_data =
-        compile_teddy_data(keys.views, config_case.config);
+    const teddy::CompilationData teddy_compilation_data =
+        teddy::compile(keys.views, config_case.config);
     const DFA dfa = compile_key_dfa(keys.views);
     return {
-        .teddy = get_teddy_compilation_metadata(teddy_data),
+        .teddy = teddy::get_compilation_metadata(teddy_compilation_data),
         .dfa = get_dfa_compilation_metadata(dfa),
     };
 }

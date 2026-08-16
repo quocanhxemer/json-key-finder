@@ -1,9 +1,9 @@
-#include "teddy/teddy_grouping.h"
+#include "teddy/grouping.h"
 
 #include "core/findkey_error.h"
-#include "teddy/teddy_compile.h"
-#include "teddy/teddy_dispatch.h"
-#include "teddy/teddy_hash.h"
+#include "teddy/compile.h"
+#include "teddy/dispatch.h"
+#include "teddy/hash.h"
 
 #include <algorithm>
 #include <array>
@@ -11,14 +11,16 @@
 #include <numeric>
 #include <utility>
 
+namespace teddy {
+
 template <int Sigma>
-struct TeddySuffixGroup {
+struct SuffixGroup {
     std::vector<uint32_t> suffix_ids;
     std::array<uint8_t, Sigma> b{};
 
     uint32_t score = 1;
 
-    TeddySuffixGroup(uint32_t suffix_id, const TeddySuffix& suffix) {
+    SuffixGroup(uint32_t suffix_id, const Suffix& suffix) {
         suffix_ids.push_back(suffix_id);
         for (int i = 0; i < Sigma; ++i) {
             b[i] = suffix[i];
@@ -26,8 +28,7 @@ struct TeddySuffixGroup {
         }
     }
 
-    static uint32_t merge_score(const TeddySuffixGroup& a,
-                                const TeddySuffixGroup& b) {
+    static uint32_t merge_score(const SuffixGroup& a, const SuffixGroup& b) {
         uint32_t s = 1;
         for (int i = 0; i < Sigma; ++i) {
             uint8_t merged = a.b[i] | b.b[i];
@@ -36,7 +37,7 @@ struct TeddySuffixGroup {
         return s;
     }
 
-    void merge_from(const TeddySuffixGroup& source, uint32_t merged_score) {
+    void merge_from(const SuffixGroup& source, uint32_t merged_score) {
         for (int i = 0; i < Sigma; ++i) {
             b[i] |= source.b[i];
         }
@@ -49,11 +50,10 @@ struct TeddySuffixGroup {
 };
 
 template <int Sigma>
-class TeddyGroupingBuilder {
+class GroupingBuilder {
    public:
-    TeddyGroupingBuilder(
-        const std::vector<TeddySuffix>& suffixes,
-        findkey_teddy_compile_grouping_strategy grouping_strategy)
+    GroupingBuilder(const std::vector<Suffix>& suffixes,
+                    findkey_teddy_compile_grouping_strategy grouping_strategy)
         : suffixes_(suffixes), grouping_strategy_(grouping_strategy) {}
 
     std::vector<std::vector<uint32_t>> build() const {
@@ -79,7 +79,7 @@ class TeddyGroupingBuilder {
     }
 
    private:
-    using Group = TeddySuffixGroup<Sigma>;
+    using Group = SuffixGroup<Sigma>;
 
     std::vector<std::vector<uint32_t>> build_greedy_groups(
         bool paper_early_exit) const {
@@ -143,7 +143,7 @@ class TeddyGroupingBuilder {
         std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
         for (uint32_t suffix_id = 0; suffix_id < suffixes_.size();
              ++suffix_id) {
-            const uint32_t hash = hash_teddy_grouping_bytes(
+            const uint32_t hash = hash_grouping_bytes(
                 suffixes_[suffix_id].data(), Sigma, grouping_strategy_);
 
             buckets[hash & (MAX_GROUPS - 1)].push_back(suffix_id);
@@ -224,17 +224,18 @@ class TeddyGroupingBuilder {
         return group_suffix_ids;
     }
 
-    const std::vector<TeddySuffix>& suffixes_;
+    const std::vector<Suffix>& suffixes_;
     findkey_teddy_compile_grouping_strategy grouping_strategy_;
 };
 
-std::vector<std::vector<uint32_t>> build_teddy_groups(
-    const std::vector<TeddySuffix>& suffixes,
+std::vector<std::vector<uint32_t>> build_groups(
+    const std::vector<Suffix>& suffixes,
     findkey_teddy_compile_grouping_strategy grouping_strategy,
     int sigma) {
-    return dispatch_teddy_sigma<std::vector<std::vector<uint32_t>>>(
+    return dispatch_sigma<std::vector<std::vector<uint32_t>>>(
         sigma, [&]<int Sigma>() {
-            return TeddyGroupingBuilder<Sigma>(suffixes, grouping_strategy)
-                .build();
+            return GroupingBuilder<Sigma>(suffixes, grouping_strategy).build();
         });
 }
+
+}  // namespace teddy

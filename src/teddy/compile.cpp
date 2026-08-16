@@ -1,11 +1,13 @@
-#include "teddy_compile.h"
+#include "teddy/compile.h"
 
 #include "core/findkey_error.h"
-#include "teddy/teddy_grouping.h"
+#include "teddy/grouping.h"
 
 #include <utility>
 
-static void build_teddy_compilation_data_tables(TeddyCompilationData& data) {
+namespace teddy {
+
+static void build_compilation_tables(CompilationData& data) {
     for (int i = 0; i < FINDKEY_TEDDY_MAX_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {
             data.low_table[i][j] = 0xFF;
@@ -40,17 +42,16 @@ static void build_teddy_compilation_data_tables(TeddyCompilationData& data) {
     }
 }
 
-TeddyCompilationData compile_teddy_data(
-    const std::vector<std::string_view>& keys,
-    const findkey_teddy_config& config) {
-    TeddySuffixSet suffixes = prepare_teddy_suffixes(keys, config);
-    return compile_teddy_data(std::move(suffixes), config.grouping_strategy);
+CompilationData compile(const std::vector<std::string_view>& keys,
+                        const findkey_teddy_config& config) {
+    SuffixSet suffixes = prepare_suffixes(keys, config);
+    return compile(std::move(suffixes), config.grouping_strategy);
 }
 
-TeddyCompilationData compile_teddy_data(
-    TeddySuffixSet suffixes,
+CompilationData compile(
+    SuffixSet suffixes,
     findkey_teddy_compile_grouping_strategy grouping_strategy) {
-    TeddyCompilationData data{};
+    CompilationData data{};
 
     if (suffixes.sigma <= 0 || suffixes.sigma > FINDKEY_TEDDY_MAX_SIGMA) {
         throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
@@ -69,17 +70,16 @@ TeddyCompilationData compile_teddy_data(
     data.end_quote_offset = suffixes.end_quote_offset;
     data.suffixes = std::move(suffixes.data);
     data.group_suffix_ids =
-        build_teddy_groups(data.suffixes, grouping_strategy, data.sigma);
+        build_groups(data.suffixes, grouping_strategy, data.sigma);
 
     data.num_groups = static_cast<int>(data.group_suffix_ids.size());
 
-    build_teddy_compilation_data_tables(data);
+    build_compilation_tables(data);
 
     return data;
 }
 
-TeddyCompilationMetadata get_teddy_compilation_metadata(
-    const TeddyCompilationData& data) {
+CompilationMetadata get_compilation_metadata(const CompilationData& data) {
     std::vector<uint64_t> group_scores;
     uint64_t total_score = 0;
     if (!data.group_suffix_ids.empty() && data.sigma > 0) {
@@ -119,3 +119,5 @@ TeddyCompilationMetadata get_teddy_compilation_metadata(
         .total_score = total_score,
     };
 }
+
+}  // namespace teddy

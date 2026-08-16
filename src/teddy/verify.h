@@ -1,11 +1,13 @@
 #pragma once
 
 #include "core/key_dfa.h"
-#include "teddy/teddy_compile.h"
+#include "teddy/compile.h"
 
 #include <cctype>
 #include <cstdint>
 #include <vector>
+
+namespace teddy {
 
 enum candidate_type {
     CANDIDATE_TYPE_MATCH = 0,
@@ -22,7 +24,7 @@ struct candidate_result {
     uint32_t key_id = 0;
 };
 
-static inline bool group_has_exact_suffix(const TeddyCompilationData& data,
+static inline bool group_has_exact_suffix(const CompilationData& data,
                                           uint32_t group,
                                           const uint8_t* suffix) {
     for (uint32_t suffix_id : data.group_suffix_ids[group]) {
@@ -106,3 +108,5 @@ static inline candidate_result verify_json_key_candidate(const char* str,
 
     return {CANDIDATE_MISSING_OPEN_QUOTE, 0, 0};
 }
+
+}  // namespace teddy

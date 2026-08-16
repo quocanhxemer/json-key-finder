@@ -2,7 +2,7 @@
 
 #include "core/key_dfa.h"
 #include "findkey.h"
-#include "teddy/teddy_compile.h"
+#include "teddy/compile.h"
 
 #include <string_view>
 #include <vector>
@@ -13,6 +13,6 @@
 
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
-    const TeddyCompilationData& teddy_data,
+    const teddy::CompilationData& teddy_data,
     const DFA& dfa,
     struct findkey_teddy_stats* stats = nullptr);

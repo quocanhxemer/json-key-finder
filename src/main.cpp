@@ -4,7 +4,7 @@
 #include "core/prepared_keys.h"
 #include "findkey.h"
 #include "io/mmap_file.h"
-#include "teddy/teddy_compile.h"
+#include "teddy/compile.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -55,14 +55,15 @@ int main(int argc, char** argv) {
     int status = 0;
     findkey_teddy_stats teddy_stats = {};
     findkey_timing timing = {};
-    TeddyCompilationMetadata teddy_compilation_metadata = {};
+    teddy::CompilationMetadata teddy_compilation_metadata = {};
     DFACompilationMetadata dfa_compilation_metadata = {};
 
     if (args.collect_stats) {
-        const TeddyCompilationData teddy_data =
-            compile_teddy_data(keys.views, args.teddy_config);
+        const teddy::CompilationData teddy_data =
+            teddy::compile(keys.views, args.teddy_config);
         const DFA dfa = compile_key_dfa(keys.views);
-        teddy_compilation_metadata = get_teddy_compilation_metadata(teddy_data);
+        teddy_compilation_metadata =
+            teddy::get_compilation_metadata(teddy_data);
         dfa_compilation_metadata = get_dfa_compilation_metadata(dfa);
     }
 

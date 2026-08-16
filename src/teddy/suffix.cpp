@@ -1,10 +1,11 @@
-#include "teddy/teddy_suffix.h"
+#include "teddy/suffix.h"
 
 #include "core/findkey_error.h"
 
 #include <algorithm>
 #include <unordered_set>
 
+namespace teddy {
 namespace {
 
 size_t virtual_key_length(std::string_view key,
@@ -36,7 +37,7 @@ uint8_t suffix_byte(std::string_view key,
     return '"';
 }
 
-uint64_t encode_suffix(const TeddySuffix& suffix, int sigma) {
+uint64_t encode_suffix(const Suffix& suffix, int sigma) {
     uint64_t encoded = 0;
     for (int i = 0; i < sigma; ++i) {
         encoded = (encoded << 8) | suffix[i];
@@ -46,9 +47,9 @@ uint64_t encode_suffix(const TeddySuffix& suffix, int sigma) {
 
 }  // namespace
 
-TeddySuffixSet prepare_teddy_suffixes(const std::vector<std::string_view>& keys,
-                                      const findkey_teddy_config& config) {
-    TeddySuffixSet prepared;
+SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
+                           const findkey_teddy_config& config) {
+    SuffixSet prepared;
 
     if (keys.empty()) {
         throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
@@ -89,7 +90,7 @@ TeddySuffixSet prepare_teddy_suffixes(const std::vector<std::string_view>& keys,
     seen.reserve(keys.size());
 
     for (std::string_view key : keys) {
-        TeddySuffix suffix{};
+        Suffix suffix{};
         for (int i = 0; i < prepared.sigma; ++i) {
             suffix[i] = suffix_byte(key, prepared.sigma, i, config.suffix_mode);
         }
@@ -101,3 +102,5 @@ TeddySuffixSet prepare_teddy_suffixes(const std::vector<std::string_view>& keys,
 
     return prepared;
 }
+
+}  // namespace teddy

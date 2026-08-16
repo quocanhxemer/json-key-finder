@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-void print_compilation_stats(const TeddyCompilationMetadata& teddy_metadata,
+void print_compilation_stats(const teddy::CompilationMetadata& teddy_metadata,
                              const DFACompilationMetadata& dfa_metadata) {
     std::printf("Compilation Stats:\n");
     std::printf("\tSigma: %d\n", teddy_metadata.sigma);

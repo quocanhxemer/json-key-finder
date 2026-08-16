@@ -1,4 +1,4 @@
-#include "teddy/teddy_hash.h"
+#include "teddy/hash.h"
 
 #include "core/findkey_error.h"
 
@@ -9,6 +9,8 @@
 #include <functional>
 #include <string_view>
 
+namespace teddy {
+
 static inline uint32_t fnv1a_hash(const uint8_t* data, size_t len) {
     uint32_t hash = 2166136261u;
     for (size_t i = 0; i < len; ++i) {
@@ -18,7 +20,7 @@ static inline uint32_t fnv1a_hash(const uint8_t* data, size_t len) {
     return hash;
 }
 
-uint32_t hash_teddy_grouping_bytes(
+uint32_t hash_grouping_bytes(
     const uint8_t* data,
     size_t len,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy) {
@@ -41,3 +43,5 @@ uint32_t hash_teddy_grouping_bytes(
                                "Invalid Teddy hash grouping strategy");
     }
 }
+
+}  // namespace teddy
