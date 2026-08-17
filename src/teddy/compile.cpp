@@ -1,12 +1,14 @@
 #include "teddy/compile.h"
 
 #include "core/findkey_error.h"
+#include "teddy/dispatch.h"
 #include "teddy/grouping.h"
 
 #include <utility>
 
 namespace teddy {
 
+template <int Sigma>
 static void build_compilation_tables(CompilationData& data) {
     for (int i = 0; i < FINDKEY_TEDDY_MAX_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {
@@ -15,7 +17,7 @@ static void build_compilation_tables(CompilationData& data) {
         }
     }
 
-    for (int i = 0; i < data.sigma; ++i) {
+    for (int i = 0; i < Sigma; ++i) {
         for (int group = 0; group < data.num_groups; ++group) {
             bool low_filled[16] = {false};
             bool high_filled[16] = {false};
@@ -74,7 +76,9 @@ CompilationData compile(
 
     data.num_groups = static_cast<int>(data.group_suffix_ids.size());
 
-    build_compilation_tables(data);
+    dispatch_sigma<void>(data.sigma, [&]<int Sigma>() {
+        build_compilation_tables<Sigma>(data);
+    });
 
     return data;
 }

@@ -24,12 +24,13 @@ struct candidate_result {
     uint32_t key_id = 0;
 };
 
+template <int Sigma>
 static inline bool group_has_exact_suffix(const CompilationData& data,
                                           uint32_t group,
                                           const uint8_t* suffix) {
     for (uint32_t suffix_id : data.group_suffix_ids[group]) {
         bool found = true;
-        for (int i = 0; i < data.sigma; ++i) {
+        for (int i = 0; i < Sigma; ++i) {
             if (data.suffixes[suffix_id][i] != suffix[i]) {
                 found = false;
                 break;

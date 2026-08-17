@@ -22,9 +22,8 @@ class HashGroupingBuilder final : public GroupingBuilder<Sigma> {
         std::array<std::vector<uint32_t>, MAX_GROUPS> buckets;
         for (uint32_t suffix_id = 0; suffix_id < this->suffixes_.size();
              ++suffix_id) {
-            const uint32_t hash =
-                hash_grouping_bytes(this->suffixes_[suffix_id].data(), Sigma,
-                                    this->grouping_strategy_);
+            const uint32_t hash = hash_grouping_bytes<Sigma>(
+                this->suffixes_[suffix_id].data(), this->grouping_strategy_);
             buckets[hash & (MAX_GROUPS - 1)].push_back(suffix_id);
         }
 

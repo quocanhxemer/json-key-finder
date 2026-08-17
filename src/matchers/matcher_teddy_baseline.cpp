@@ -61,8 +61,8 @@ std::vector<findkey_result> matcher_impl(
                     const uint32_t group = __builtin_ctz(group_hits);
                     group_hits &= group_hits - 1;
 
-                    if (teddy::group_has_exact_suffix(teddy_data, group,
-                                                      suffix)) {
+                    if (teddy::group_has_exact_suffix<Sigma>(teddy_data, group,
+                                                             suffix)) {
                         any_exact_suffix = true;
                     } else {
                         ++stats->fp_type1_groups;
