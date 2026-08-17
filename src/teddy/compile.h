@@ -10,7 +10,10 @@
 
 namespace teddy {
 
-inline constexpr int MAX_GROUPS = 8;  // must be power of 2
+inline constexpr int MAX_GROUPS = 8;
+
+static_assert(MAX_GROUPS > 0 && (MAX_GROUPS & (MAX_GROUPS - 1)) == 0,
+              "Teddy group count must be a positive power of two");
 
 struct CompilationData {
     int sigma = 0;
