@@ -34,16 +34,13 @@ struct CompilationData {
 struct CompilationMetadata {
     int sigma = 0;
     int num_groups = 0;
-    std::vector<uint64_t> group_scores;
-    uint64_t total_score = 0;
 };
 
 CompilationData compile(const std::vector<std::string_view>& keys,
                         const findkey_teddy_config& config);
 
-CompilationData compile(
-    SuffixSet suffixes,
-    findkey_teddy_compile_grouping_strategy grouping_strategy);
+CompilationData compile(SuffixSet suffixes,
+                        findkey_teddy_grouping_config grouping_config);
 
 CompilationMetadata get_compilation_metadata(const CompilationData& data);
 

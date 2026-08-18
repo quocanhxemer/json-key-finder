@@ -1,6 +1,7 @@
 #include "bench/bench_args.h"
 
 #include "core/findkey_options.h"
+#include "teddy/grouping/strategy.h"
 
 #include <getopt.h>
 
@@ -61,9 +62,11 @@ std::optional<size_t> parse_size(std::string_view raw) {
         << "  --algo <name>                    Repeatable. Defaults: scalar, "
            "teddy, teddy_baseline\n"
         << "  --grouping <name>                Repeatable. Defaults: "
-           "paper_greedy, improved_greedy, hash_std, hash_xxhash, "
-           "hash_crc32, hash_fnv1a, sorted_suffix_round_robin, "
+           "greedy_paper_policy, greedy_min_delta, hash_std, hash_adler32, "
+           "hash_crc32, hash_xxhash, hash_fnv1a, sorted_suffix_round_robin, "
            "sorted_suffix_partition\n"
+        << "  --score <name>                   Repeatable. Defaults for "
+           "score-based strategies: paper, paper_nibble, nibble_count\n"
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
            "quote-suffix\n"
         << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
@@ -88,6 +91,7 @@ Options parse_options(int argc, char** argv) {
         {"seed", required_argument, nullptr, 's'},
         {"algo", required_argument, nullptr, 'a'},
         {"grouping", required_argument, nullptr, 'g'},
+        {"score", required_argument, nullptr, 'c'},
         {"suffix-mode", required_argument, nullptr, 'f'},
         {"sigma", required_argument, nullptr, 'i'},
         {"repeats", required_argument, nullptr, 'r'},
@@ -169,6 +173,16 @@ Options parse_options(int argc, char** argv) {
                 options.grouping_strategies.push_back(*grouping);
                 break;
             }
+            case 'c': {
+                const auto score =
+                    findkey_options::parse_grouping_score(optarg);
+                if (!score) {
+                    std::cerr << "Invalid --score\n";
+                    print_usage_and_exit(argv[0]);
+                }
+                options.grouping_scores.push_back(*score);
+                break;
+            }
             case 'f': {
                 const auto suffix_mode =
                     findkey_options::parse_suffix_mode(optarg);
@@ -238,14 +252,20 @@ Options parse_options(int argc, char** argv) {
         options.algos = {SCALAR, TEDDY, TEDDY_BASELINE};
     }
     if (options.grouping_strategies.empty()) {
-        options.grouping_strategies = {TEDDY_COMPILE_PAPER_GREEDY,
-                                       TEDDY_COMPILE_PAPER_IMPROVED_GREEDY,
+        options.grouping_strategies = {TEDDY_COMPILE_GREEDY_PAPER_POLICY,
+                                       TEDDY_COMPILE_GREEDY_MIN_DELTA,
                                        TEDDY_COMPILE_HASH_STD,
-                                       TEDDY_COMPILE_HASH_XXHASH,
+                                       TEDDY_COMPILE_HASH_ADLER32,
                                        TEDDY_COMPILE_HASH_CRC32,
+                                       TEDDY_COMPILE_HASH_XXHASH,
                                        TEDDY_COMPILE_HASH_FNV1A,
                                        TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN,
                                        TEDDY_COMPILE_SORTED_SUFFIX_PARTITION};
+    }
+    if (options.grouping_scores.empty()) {
+        options.grouping_scores = {TEDDY_GROUPING_SCORE_PAPER,
+                                   TEDDY_GROUPING_SCORE_PAPER_NIBBLE,
+                                   TEDDY_GROUPING_SCORE_NIBBLE_COUNT};
     }
     if (options.suffix_modes.empty()) {
         options.suffix_modes = {TEDDY_SUFFIX_RAW, TEDDY_SUFFIX_QUOTED};
@@ -277,9 +297,25 @@ std::vector<TeddyConfigCase> make_teddy_configs(const Options& options) {
     std::vector<TeddyConfigCase> configs;
 
     for (const auto grouping_strategy : options.grouping_strategies) {
-        for (const auto suffix_mode : options.suffix_modes) {
-            for (const int sigma : options.sigmas) {
-                configs.push_back({{grouping_strategy, suffix_mode, sigma}});
+        const bool uses_score =
+            teddy::grouping::grouping_strategy_uses_score(grouping_strategy);
+        const size_t score_count =
+            uses_score ? options.grouping_scores.size() : 1;
+
+        for (size_t score_index = 0; score_index < score_count; ++score_index) {
+            const findkey_teddy_grouping_score grouping_score =
+                uses_score ? options.grouping_scores[score_index]
+                           : TEDDY_GROUPING_SCORE_PAPER;
+
+            for (const auto suffix_mode : options.suffix_modes) {
+                for (const int sigma : options.sigmas) {
+                    TeddyConfigCase config_case;
+                    config_case.config.grouping = {grouping_strategy,
+                                                   grouping_score};
+                    config_case.config.suffix_mode = suffix_mode;
+                    config_case.config.sigma = sigma;
+                    configs.push_back(config_case);
+                }
             }
         }
     }

@@ -36,6 +36,7 @@ struct Options {
     std::vector<uint32_t> seeds;
     std::vector<findkey_algo> algos;
     std::vector<findkey_teddy_compile_grouping_strategy> grouping_strategies;
+    std::vector<findkey_teddy_grouping_score> grouping_scores;
     std::vector<findkey_teddy_suffix_mode> suffix_modes;
     std::vector<int> sigmas;
     size_t repeats = 5;

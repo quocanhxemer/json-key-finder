@@ -2,11 +2,9 @@
 
 #include "core/findkey_options.h"
 
-#include <algorithm>
 #include <cassert>
 #include <iomanip>
 #include <limits>
-#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -14,9 +12,9 @@
 namespace bench {
 namespace {
 
-constexpr size_t BENCH_COLUMN_COUNT = 18;
-constexpr size_t STATS_COLUMN_COUNT = 40;
-constexpr size_t BENCH_TEDDY_COLUMN_COUNT = 3;
+constexpr size_t BENCH_COLUMN_COUNT = 19;
+constexpr size_t STATS_COLUMN_COUNT = 36;
+constexpr size_t BENCH_TEDDY_COLUMN_COUNT = 4;
 
 // RFC4180 CSV escaping
 std::string csv_escape(std::string value) {
@@ -52,45 +50,6 @@ std::string to_string_double(double value) {
     return out.str();
 }
 
-std::string group_scores_column(const teddy::CompilationMetadata& metadata) {
-    std::ostringstream out;
-    for (size_t i = 0; i < metadata.group_scores.size(); ++i) {
-        if (i != 0) {
-            out << ';';
-        }
-        out << metadata.group_scores[i];
-    }
-    return out.str();
-}
-
-uint64_t min_group_score(const teddy::CompilationMetadata& metadata) {
-    if (metadata.group_scores.empty()) {
-        return 0;
-    }
-    return *std::min_element(metadata.group_scores.begin(),
-                             metadata.group_scores.end());
-}
-
-uint64_t max_group_score(const teddy::CompilationMetadata& metadata) {
-    if (metadata.group_scores.empty()) {
-        return 0;
-    }
-    return *std::max_element(metadata.group_scores.begin(),
-                             metadata.group_scores.end());
-}
-
-double avg_group_score(const teddy::CompilationMetadata& metadata) {
-    if (metadata.group_scores.empty()) {
-        return 0.0;
-    }
-
-    const uint64_t sum =
-        std::accumulate(metadata.group_scores.begin(),
-                        metadata.group_scores.end(), uint64_t{0});
-    return static_cast<double>(sum) /
-           static_cast<double>(metadata.group_scores.size());
-}
-
 void append_empty_columns(std::vector<std::string>& row, size_t count) {
     for (size_t i = 0; i < count; ++i) {
         row.push_back("");
@@ -118,6 +77,7 @@ void write_bench_header(std::ofstream& output) {
         "seed",
         "algo",
         "grouping_strategy",
+        "grouping_score",
         "suffix_mode",
         "requested_sigma",
         "repeat_index",
@@ -143,17 +103,13 @@ void write_stats_header(std::ofstream& output) {
         "actual_num_keys",
         "seed",
         "grouping_strategy",
+        "grouping_score",
         "suffix_mode",
         "requested_sigma",
         "compiled_sigma",
         "num_groups",
         "dfa_nodes",
         "max_key_len",
-        "total_score",
-        "group_scores",
-        "min_group_score",
-        "max_group_score",
-        "avg_group_score",
         "repeat_index",
         "status",
         "total_found",
@@ -202,7 +158,9 @@ void write_bench_row(std::ofstream& output, const BenchCsvRow& row) {
         assert(row.teddy_config.has_value());
 
         csv_row.push_back(std::string(findkey_options::grouping_strategy_name(
-            row.teddy_config->config.grouping_strategy)));
+            row.teddy_config->config.grouping.strategy)));
+        csv_row.push_back(std::string(findkey_options::grouping_score_name(
+            row.teddy_config->config.grouping.score)));
         csv_row.push_back(std::string(findkey_options::suffix_mode_name(
             row.teddy_config->config.suffix_mode)));
         csv_row.push_back(std::to_string(row.teddy_config->config.sigma));
@@ -234,7 +192,9 @@ void write_stats_row(std::ofstream& output, const StatsCsvRow& row) {
     csv_row.push_back(std::to_string(row.actual_num_keys));
     csv_row.push_back(std::to_string(row.key_case.seed));
     csv_row.push_back(std::string(findkey_options::grouping_strategy_name(
-        row.teddy_config.config.grouping_strategy)));
+        row.teddy_config.config.grouping.strategy)));
+    csv_row.push_back(std::string(findkey_options::grouping_score_name(
+        row.teddy_config.config.grouping.score)));
     csv_row.push_back(std::string(findkey_options::suffix_mode_name(
         row.teddy_config.config.suffix_mode)));
     csv_row.push_back(std::to_string(row.teddy_config.config.sigma));
@@ -242,11 +202,6 @@ void write_stats_row(std::ofstream& output, const StatsCsvRow& row) {
     csv_row.push_back(std::to_string(row.metadata.num_groups));
     csv_row.push_back(std::to_string(row.dfa_metadata.nodes));
     csv_row.push_back(std::to_string(row.dfa_metadata.max_key_len));
-    csv_row.push_back(std::to_string(row.metadata.total_score));
-    csv_row.push_back(group_scores_column(row.metadata));
-    csv_row.push_back(std::to_string(min_group_score(row.metadata)));
-    csv_row.push_back(std::to_string(max_group_score(row.metadata)));
-    csv_row.push_back(to_string_double(avg_group_score(row.metadata)));
     csv_row.push_back(std::to_string(row.repeat_index));
     csv_row.push_back(std::string(findkey_options::status_name(row.status)));
     csv_row.push_back(std::to_string(row.total_found));

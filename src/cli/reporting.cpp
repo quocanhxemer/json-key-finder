@@ -9,8 +9,6 @@ void print_compilation_stats(const teddy::CompilationMetadata& teddy_metadata,
     std::printf("\tGroups: %d\n", teddy_metadata.num_groups);
     std::printf("\tDFA nodes: %zu\n", dfa_metadata.nodes);
     std::printf("\tMax key length: %zu\n", dfa_metadata.max_key_len);
-    std::printf("\tTotal group score: %llu\n",
-                static_cast<unsigned long long>(teddy_metadata.total_score));
 }
 
 void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,

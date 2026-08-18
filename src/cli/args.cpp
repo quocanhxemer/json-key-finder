@@ -29,11 +29,15 @@ namespace {
         "\n"
         "Teddy options:\n"
         "  --teddy-grouping-strategy <name>\n"
-        "                             Values: paper_greedy, improved_greedy, "
+        "                             Values: greedy_paper_policy, "
+        "greedy_min_delta, "
         "hash_std, hash_adler32, hash_crc32, hash_xxhash, hash_fnv1a, "
         "sorted_suffix_round_robin, sorted_suffix_partition\n"
-        "                             Alias: greedy = paper_greedy\n"
-        "                             Default: paper_greedy\n"
+        "                             Default: greedy_paper_policy\n"
+        "  --teddy-grouping-score <name>\n"
+        "                             Values: paper, paper_nibble, "
+        "nibble_count\n"
+        "                             Default: paper\n"
         "  --teddy-suffix-mode <name>\n"
         "                             Values: raw, quote-suffix\n"
         "                             Default: raw\n"
@@ -55,6 +59,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
     static constexpr option long_options[] = {
         {"algo", required_argument, nullptr, 'a'},
         {"teddy-grouping-strategy", required_argument, nullptr, 'g'},
+        {"teddy-grouping-score", required_argument, nullptr, 'q'},
         {"teddy-suffix-mode", required_argument, nullptr, 's'},
         {"sigma", required_argument, nullptr, 'm'},
         {"keys", required_argument, nullptr, 'k'},
@@ -93,7 +98,18 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                                  "Unknown teddy grouping strategy specified\n");
                     print_usage_and_exit(argv[0]);
                 }
-                args.teddy_config.grouping_strategy = *parsed;
+                args.teddy_config.grouping.strategy = *parsed;
+                break;
+            }
+            case 'q': {
+                const auto parsed =
+                    findkey_options::parse_grouping_score(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr,
+                                 "Unknown teddy grouping score specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.teddy_config.grouping.score = *parsed;
                 break;
             }
             case 's': {

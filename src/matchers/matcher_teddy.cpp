@@ -120,10 +120,9 @@ std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
     const DFA& dfa) {
-    return teddy::dispatch_sigma<std::vector<findkey_result>>(
-        teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_impl<Sigma>(data, teddy_data, dfa);
-        });
+    return teddy::dispatch_sigma(teddy_data.sigma, [&]<int Sigma>() {
+        return matcher_impl<Sigma>(data, teddy_data, dfa);
+    });
 }
 
 #else

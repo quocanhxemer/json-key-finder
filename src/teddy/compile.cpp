@@ -47,12 +47,11 @@ static void build_compilation_tables(CompilationData& data) {
 CompilationData compile(const std::vector<std::string_view>& keys,
                         const findkey_teddy_config& config) {
     SuffixSet suffixes = prepare_suffixes(keys, config);
-    return compile(std::move(suffixes), config.grouping_strategy);
+    return compile(std::move(suffixes), config.grouping);
 }
 
-CompilationData compile(
-    SuffixSet suffixes,
-    findkey_teddy_compile_grouping_strategy grouping_strategy) {
+CompilationData compile(SuffixSet suffixes,
+                        findkey_teddy_grouping_config grouping_config) {
     CompilationData data{};
 
     if (suffixes.sigma <= 0 || suffixes.sigma > FINDKEY_TEDDY_MAX_SIGMA) {
@@ -72,55 +71,20 @@ CompilationData compile(
     data.end_quote_offset = suffixes.end_quote_offset;
     data.suffixes = std::move(suffixes.data);
     data.group_suffix_ids =
-        build_groups(data.suffixes, grouping_strategy, data.sigma);
+        build_groups(data.suffixes, grouping_config, data.sigma);
 
     data.num_groups = static_cast<int>(data.group_suffix_ids.size());
 
-    dispatch_sigma<void>(data.sigma, [&]<int Sigma>() {
-        build_compilation_tables<Sigma>(data);
-    });
+    dispatch_sigma(data.sigma,
+                   [&]<int Sigma>() { build_compilation_tables<Sigma>(data); });
 
     return data;
 }
 
 CompilationMetadata get_compilation_metadata(const CompilationData& data) {
-    std::vector<uint64_t> group_scores;
-    uint64_t total_score = 0;
-    if (!data.group_suffix_ids.empty() && data.sigma > 0) {
-        group_scores.reserve(data.group_suffix_ids.size());
-        for (size_t group = 0; group < data.group_suffix_ids.size(); ++group) {
-            const uint8_t group_bit = static_cast<uint8_t>(1u << group);
-            uint32_t group_score = 1;
-
-            for (int i = 0; i < data.sigma; ++i) {
-                uint8_t merged = 0;
-                for (int nibble = 0; nibble < 16; ++nibble) {
-                    const bool low_present =
-                        (data.low_table[i][nibble] & group_bit) == 0;
-                    const bool high_present =
-                        (data.high_table[i][nibble] & group_bit) == 0;
-
-                    if (low_present) {
-                        merged |= static_cast<uint8_t>(nibble);
-                    }
-                    if (high_present) {
-                        merged |= static_cast<uint8_t>(nibble << 4);
-                    }
-                }
-
-                group_score *= __builtin_popcount(merged);
-            }
-
-            group_scores.push_back(group_score);
-            total_score += group_score;
-        }
-    }
-
     return {
         .sigma = data.sigma,
         .num_groups = data.num_groups,
-        .group_scores = std::move(group_scores),
-        .total_score = total_score,
     };
 }
 

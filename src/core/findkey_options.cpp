@@ -22,11 +22,12 @@ std::optional<findkey_algo> parse_algo(std::string_view raw) {
 
 std::optional<findkey_teddy_compile_grouping_strategy> parse_grouping_strategy(
     std::string_view raw) {
-    if (raw == "paper_greedy" || raw == "greedy") {
-        return TEDDY_COMPILE_PAPER_GREEDY;
+    if (raw == "greedy_paper_policy" || raw == "paper_greedy" ||
+        raw == "greedy") {
+        return TEDDY_COMPILE_GREEDY_PAPER_POLICY;
     }
-    if (raw == "improved_greedy") {
-        return TEDDY_COMPILE_PAPER_IMPROVED_GREEDY;
+    if (raw == "greedy_min_delta" || raw == "improved_greedy") {
+        return TEDDY_COMPILE_GREEDY_MIN_DELTA;
     }
     if (raw == "hash_std" || raw == "std_hash" || raw == "std") {
         return TEDDY_COMPILE_HASH_STD;
@@ -50,6 +51,20 @@ std::optional<findkey_teddy_compile_grouping_strategy> parse_grouping_strategy(
     if (raw == "sorted_suffix_partition" || raw == "sort_partition" ||
         raw == "sorted_partition") {
         return TEDDY_COMPILE_SORTED_SUFFIX_PARTITION;
+    }
+    return std::nullopt;
+}
+
+std::optional<findkey_teddy_grouping_score> parse_grouping_score(
+    std::string_view raw) {
+    if (raw == "paper") {
+        return TEDDY_GROUPING_SCORE_PAPER;
+    }
+    if (raw == "paper_nibble") {
+        return TEDDY_GROUPING_SCORE_PAPER_NIBBLE;
+    }
+    if (raw == "nibble_count") {
+        return TEDDY_GROUPING_SCORE_NIBBLE_COUNT;
     }
     return std::nullopt;
 }
@@ -102,10 +117,10 @@ std::string_view algo_name(findkey_algo algo) {
 std::string_view grouping_strategy_name(
     findkey_teddy_compile_grouping_strategy strategy) {
     switch (strategy) {
-        case TEDDY_COMPILE_PAPER_GREEDY:
-            return "paper_greedy";
-        case TEDDY_COMPILE_PAPER_IMPROVED_GREEDY:
-            return "improved_greedy";
+        case TEDDY_COMPILE_GREEDY_PAPER_POLICY:
+            return "greedy_paper_policy";
+        case TEDDY_COMPILE_GREEDY_MIN_DELTA:
+            return "greedy_min_delta";
         case TEDDY_COMPILE_HASH_STD:
             return "hash_std";
         case TEDDY_COMPILE_HASH_ADLER32:
@@ -120,6 +135,19 @@ std::string_view grouping_strategy_name(
             return "sorted_suffix_round_robin";
         case TEDDY_COMPILE_SORTED_SUFFIX_PARTITION:
             return "sorted_suffix_partition";
+        default:
+            return "unknown";
+    }
+}
+
+std::string_view grouping_score_name(findkey_teddy_grouping_score score) {
+    switch (score) {
+        case TEDDY_GROUPING_SCORE_PAPER:
+            return "paper";
+        case TEDDY_GROUPING_SCORE_PAPER_NIBBLE:
+            return "paper_nibble";
+        case TEDDY_GROUPING_SCORE_NIBBLE_COUNT:
+            return "nibble_count";
         default:
             return "unknown";
     }

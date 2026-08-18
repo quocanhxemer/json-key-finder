@@ -4,7 +4,6 @@
 #include "teddy/grouping/builder.h"
 #include "teddy/grouping/group.h"
 #include "teddy/grouping/score.h"
-#include "teddy/grouping/scores/paper.h"
 
 #include <cstdint>
 #include <limits>
@@ -12,15 +11,20 @@
 
 namespace teddy::grouping {
 
-template <int Sigma, GroupingScore ScoreModel = PaperScore<Sigma>>
+enum class GreedySelectionPolicy {
+    Paper,
+    MinDelta,
+};
+
+template <int Sigma,
+          GroupingScore ScoreModel,
+          GreedySelectionPolicy SelectionPolicy>
 class GreedyGroupingBuilder final : public GroupingBuilder<Sigma> {
     using Group = SuffixGroup<ScoreModel>;
 
    public:
-    GreedyGroupingBuilder(
-        const std::vector<Suffix>& suffixes,
-        findkey_teddy_compile_grouping_strategy grouping_strategy)
-        : GroupingBuilder<Sigma>(suffixes, grouping_strategy) {}
+    explicit GreedyGroupingBuilder(const std::vector<Suffix>& suffixes)
+        : GroupingBuilder<Sigma>(suffixes, strategy()) {}
 
     GroupedSuffixIds build() const {
         std::vector<Group> groups;
@@ -61,11 +65,12 @@ class GreedyGroupingBuilder final : public GroupingBuilder<Sigma> {
                 const int64_t score_delta = static_cast<int64_t>(new_score) -
                                             static_cast<int64_t>(old_score);
 
-                if (this->grouping_strategy_ == TEDDY_COMPILE_PAPER_GREEDY &&
-                    new_score < old_score) {
-                    best_i = i;
-                    best_j = j;
-                    break;
+                if constexpr (SelectionPolicy == GreedySelectionPolicy::Paper) {
+                    if (new_score < old_score) {
+                        best_i = i;
+                        best_j = j;
+                        break;
+                    }
                 }
 
                 if (best > score_delta) {
@@ -88,6 +93,13 @@ class GreedyGroupingBuilder final : public GroupingBuilder<Sigma> {
 
         groups.erase(groups.begin() + best_j);
         return true;
+    }
+
+    static constexpr findkey_teddy_compile_grouping_strategy strategy() {
+        if constexpr (SelectionPolicy == GreedySelectionPolicy::Paper) {
+            return TEDDY_COMPILE_GREEDY_PAPER_POLICY;
+        }
+        return TEDDY_COMPILE_GREEDY_MIN_DELTA;
     }
 };
 

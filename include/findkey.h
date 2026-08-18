@@ -52,8 +52,8 @@ struct findkey_timing {
 };
 
 enum findkey_teddy_compile_grouping_strategy {
-    TEDDY_COMPILE_PAPER_GREEDY = 0,
-    TEDDY_COMPILE_PAPER_IMPROVED_GREEDY = 1,
+    TEDDY_COMPILE_GREEDY_PAPER_POLICY = 0,
+    TEDDY_COMPILE_GREEDY_MIN_DELTA = 1,
     TEDDY_COMPILE_HASH_STD = 2,
     TEDDY_COMPILE_HASH_ADLER32 = 3,
     TEDDY_COMPILE_HASH_CRC32 = 4,
@@ -63,20 +63,34 @@ enum findkey_teddy_compile_grouping_strategy {
     TEDDY_COMPILE_SORTED_SUFFIX_PARTITION = 8,
 };
 
+enum findkey_teddy_grouping_score {
+    TEDDY_GROUPING_SCORE_PAPER = 0,
+    TEDDY_GROUPING_SCORE_PAPER_NIBBLE = 1,
+    TEDDY_GROUPING_SCORE_NIBBLE_COUNT = 2,
+};
+
 enum findkey_teddy_suffix_mode {
     TEDDY_SUFFIX_RAW = 0,
     TEDDY_SUFFIX_QUOTED = 1,
 };
 
+struct findkey_teddy_grouping_config {
+    enum findkey_teddy_compile_grouping_strategy strategy;
+    enum findkey_teddy_grouping_score score;
+};
+
 struct findkey_teddy_config {
-    enum findkey_teddy_compile_grouping_strategy grouping_strategy;
+    struct findkey_teddy_grouping_config grouping;
     enum findkey_teddy_suffix_mode suffix_mode;
 
     int sigma;
 };
 
-#define FINDKEY_TEDDY_CONFIG_INIT                  \
-    {TEDDY_COMPILE_PAPER_GREEDY, TEDDY_SUFFIX_RAW, \
+#define FINDKEY_TEDDY_GROUPING_CONFIG_INIT \
+    {TEDDY_COMPILE_GREEDY_PAPER_POLICY, TEDDY_GROUPING_SCORE_PAPER}
+
+#define FINDKEY_TEDDY_CONFIG_INIT                          \
+    {FINDKEY_TEDDY_GROUPING_CONFIG_INIT, TEDDY_SUFFIX_RAW, \
      FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH}
 
 size_t findkey(const uint8_t* data,

@@ -125,13 +125,11 @@ std::vector<findkey_result> matcher_teddy_baseline(
     const DFA& dfa,
     struct findkey_teddy_stats* stats) {
     if (stats) {
-        return teddy::dispatch_sigma<std::vector<findkey_result>>(
-            teddy_data.sigma, [&]<int Sigma>() {
-                return matcher_impl<Sigma, true>(data, teddy_data, dfa, stats);
-            });
-    }
-    return teddy::dispatch_sigma<std::vector<findkey_result>>(
-        teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_impl<Sigma, false>(data, teddy_data, dfa, nullptr);
+        return teddy::dispatch_sigma(teddy_data.sigma, [&]<int Sigma>() {
+            return matcher_impl<Sigma, true>(data, teddy_data, dfa, stats);
         });
+    }
+    return teddy::dispatch_sigma(teddy_data.sigma, [&]<int Sigma>() {
+        return matcher_impl<Sigma, false>(data, teddy_data, dfa, nullptr);
+    });
 }
