@@ -64,7 +64,7 @@ std::optional<size_t> parse_size(std::string_view raw) {
         << "  --grouping <name>                Repeatable. Defaults: "
            "greedy_paper_policy, greedy_min_delta, hash_std, hash_adler32, "
            "hash_crc32, hash_xxhash, hash_fnv1a, sorted_suffix_round_robin, "
-           "sorted_suffix_partition\n"
+           "sorted_suffix_partition, sorted_suffix_optimal_partition\n"
         << "  --score <name>                   Repeatable. Defaults for "
            "score-based strategies: paper, paper_nibble, nibble_count\n"
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
@@ -252,15 +252,18 @@ Options parse_options(int argc, char** argv) {
         options.algos = {SCALAR, TEDDY, TEDDY_BASELINE};
     }
     if (options.grouping_strategies.empty()) {
-        options.grouping_strategies = {TEDDY_COMPILE_GREEDY_PAPER_POLICY,
-                                       TEDDY_COMPILE_GREEDY_MIN_DELTA,
-                                       TEDDY_COMPILE_HASH_STD,
-                                       TEDDY_COMPILE_HASH_ADLER32,
-                                       TEDDY_COMPILE_HASH_CRC32,
-                                       TEDDY_COMPILE_HASH_XXHASH,
-                                       TEDDY_COMPILE_HASH_FNV1A,
-                                       TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN,
-                                       TEDDY_COMPILE_SORTED_SUFFIX_PARTITION};
+        options.grouping_strategies = {
+            TEDDY_COMPILE_GREEDY_PAPER_POLICY,
+            TEDDY_COMPILE_GREEDY_MIN_DELTA,
+            TEDDY_COMPILE_HASH_STD,
+            TEDDY_COMPILE_HASH_ADLER32,
+            TEDDY_COMPILE_HASH_CRC32,
+            TEDDY_COMPILE_HASH_XXHASH,
+            TEDDY_COMPILE_HASH_FNV1A,
+            TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN,
+            TEDDY_COMPILE_SORTED_SUFFIX_PARTITION,
+            TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION,
+        };
     }
     if (options.grouping_scores.empty()) {
         options.grouping_scores = {TEDDY_GROUPING_SCORE_PAPER,

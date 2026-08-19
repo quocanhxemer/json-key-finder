@@ -49,6 +49,14 @@ std::vector<std::vector<uint32_t>> build_groups(
                 return grouping::SortedGroupingBuilder<Sigma>(
                            suffixes, grouping_config.strategy)
                     .build();
+            case TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION:
+                return grouping::dispatch_grouping_score<Sigma>(
+                    grouping_config.score,
+                    [&]<grouping::GroupingScore ScoreModel>() {
+                        return grouping::SortedOptimalGroupingBuilder<
+                                   Sigma, ScoreModel>(suffixes)
+                            .build();
+                    });
             default:
                 throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
                                    "Unknown Teddy grouping strategy");

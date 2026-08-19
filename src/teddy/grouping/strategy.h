@@ -10,6 +10,7 @@ namespace teddy::grouping {
 inline constexpr std::array SCORE_BASED_STRATEGIES = {
     TEDDY_COMPILE_GREEDY_PAPER_POLICY,
     TEDDY_COMPILE_GREEDY_MIN_DELTA,
+    TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION,
 };
 
 [[nodiscard]] constexpr bool grouping_strategy_uses_score(

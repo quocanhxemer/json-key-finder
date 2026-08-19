@@ -52,6 +52,10 @@ std::optional<findkey_teddy_compile_grouping_strategy> parse_grouping_strategy(
         raw == "sorted_partition") {
         return TEDDY_COMPILE_SORTED_SUFFIX_PARTITION;
     }
+    if (raw == "sorted_suffix_optimal_partition" ||
+        raw == "sort_optimal_partition" || raw == "sorted_optimal_partition") {
+        return TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION;
+    }
     return std::nullopt;
 }
 
@@ -135,6 +139,8 @@ std::string_view grouping_strategy_name(
             return "sorted_suffix_round_robin";
         case TEDDY_COMPILE_SORTED_SUFFIX_PARTITION:
             return "sorted_suffix_partition";
+        case TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION:
+            return "sorted_suffix_optimal_partition";
         default:
             return "unknown";
     }
