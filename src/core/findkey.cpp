@@ -21,8 +21,7 @@ static inline bool bad_args(const uint8_t* data,
                             const size_t* key_lens,
                             size_t num_keys,
                             struct findkey_result* out_results) {
-    if ((!data && len != 0) || !keys || !key_lens || !out_results ||
-        !num_keys) {
+    if (!data || len == 0 || !keys || !key_lens || !out_results || !num_keys) {
         return true;
     }
     for (size_t i = 0; i < num_keys; ++i) {
@@ -42,8 +41,7 @@ static inline bool bad_args_stats(const uint8_t* data,
                                   const size_t* key_lens,
                                   size_t num_keys,
                                   struct findkey_teddy_stats* teddy_stats) {
-    if ((!data && len != 0) || !keys || !key_lens || !num_keys ||
-        !teddy_stats) {
+    if (!data || len == 0 || !keys || !key_lens || !num_keys || !teddy_stats) {
         return true;
     }
     for (size_t i = 0; i < num_keys; ++i) {
@@ -104,8 +102,7 @@ extern "C" size_t findkey(const uint8_t* data,
         return 0;
     }
 
-    const char* str = reinterpret_cast<const char*>(data);
-    std::string_view data_sv(str ? str : "", len);
+    const std::string_view data_sv(reinterpret_cast<const char*>(data), len);
 
     std::vector<std::string_view> key_svs;
     key_svs.reserve(num_keys);
@@ -221,8 +218,7 @@ extern "C" size_t findkey_with_stats(
 
     *teddy_stats = {};
 
-    const char* str = reinterpret_cast<const char*>(data);
-    std::string_view data_sv(str ? str : "", len);
+    const std::string_view data_sv(reinterpret_cast<const char*>(data), len);
 
     std::vector<std::string_view> key_svs;
     key_svs.reserve(num_keys);

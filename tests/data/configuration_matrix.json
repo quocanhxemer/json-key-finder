@@ -1,0 +1,18 @@
+{
+  "alpha": 1,
+  "bravo": 2,
+  "charlie": 3,
+  "delta": 4,
+  "echo": 5,
+  "foxtrot": 6,
+  "golf": 7,
+  "hotel": 8,
+  "india": 9,
+  "juliet": 10,
+  "kilo": 11,
+  "lima": 12,
+  "value": "alpha",
+  "nested": {
+    "bravo": 13
+  }
+}

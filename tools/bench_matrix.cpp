@@ -9,7 +9,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -25,7 +24,6 @@ using bench::parse_options;
 using bench::print_dry_run;
 using bench::run_bench_case;
 using bench::run_stats_case;
-using bench::TeddyConfigCase;
 using bench::write_bench_header;
 using bench::write_stats_header;
 
@@ -49,7 +47,7 @@ PreparedKeys generate_keys_for_case(const json_input::LoadedJson& loaded_json,
 
 void run_matrix(const Options& options,
                 const std::vector<KeyCase>& key_cases,
-                const std::vector<TeddyConfigCase>& teddy_configs) {
+                const std::vector<findkey_teddy_config>& teddy_configs) {
     std::filesystem::create_directories(options.out_dir);
 
     std::ofstream bench_output;
@@ -86,21 +84,20 @@ void run_matrix(const Options& options,
             for (const findkey_algo algo : options.algos) {
                 if (algo == SCALAR) {
                     run_bench_case(bench_output, loaded_json.data(), key_case,
-                                   keys, algo, std::nullopt, options.repeats,
-                                   options.warmup);
+                                   keys, algo, options.repeats, options.warmup);
                     continue;
                 }
 
-                for (const TeddyConfigCase& teddy_config : teddy_configs) {
+                for (const findkey_teddy_config& teddy_config : teddy_configs) {
                     run_bench_case(bench_output, loaded_json.data(), key_case,
-                                   keys, algo, teddy_config, options.repeats,
-                                   options.warmup);
+                                   keys, algo, options.repeats, options.warmup,
+                                   teddy_config);
                 }
             }
         }
 
         if (mode_includes_stats(options.mode)) {
-            for (const TeddyConfigCase& teddy_config : teddy_configs) {
+            for (const findkey_teddy_config& teddy_config : teddy_configs) {
                 run_stats_case(stats_output, loaded_json.data(), key_case, keys,
                                teddy_config, options.repeats, options.warmup);
             }
@@ -113,7 +110,7 @@ void run_matrix(const Options& options,
 int main(int argc, char** argv) {
     const Options options = parse_options(argc, argv);
     const std::vector<KeyCase> key_cases = make_key_cases(options);
-    const std::vector<TeddyConfigCase> teddy_configs =
+    const std::vector<findkey_teddy_config> teddy_configs =
         make_teddy_configs(options);
 
     if (options.dry_run) {

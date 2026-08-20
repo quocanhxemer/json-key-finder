@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(CTest)
+
 option(FIND_KEY_NATIVE "Enable -march=native" ON)
 
 find_package(ZLIB QUIET)
@@ -55,6 +57,7 @@ add_library(find_json_key STATIC
     src/core/prepared_keys.cpp
 
     src/teddy/compile.cpp
+    src/teddy/configurations.cpp
     src/teddy/grouping.cpp
     src/teddy/suffix.cpp
 
@@ -143,3 +146,40 @@ target_link_libraries(
 add_executable(reverse_keys tools/reverse_keys.cpp)
 target_include_directories(reverse_keys PRIVATE include src)
 target_link_libraries(reverse_keys PRIVATE find_json_key_utils find_json_key_warnings)
+
+if(BUILD_TESTING)
+    find_package(GTest CONFIG QUIET)
+
+    if(NOT GTest_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            googletest
+            URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+        )
+        set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googletest)
+    endif()
+
+    add_executable(
+        find_json_key_tests
+        tests/capability_test.cpp
+        tests/configurations_test.cpp
+        tests/findkey_test.cpp
+        tests/utils.cpp
+    )
+    target_include_directories(find_json_key_tests PRIVATE include src)
+    target_compile_definitions(
+        find_json_key_tests
+        PRIVATE
+        FINDKEY_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data"
+    )
+    target_link_libraries(
+        find_json_key_tests
+        PRIVATE
+        find_json_key
+        GTest::gtest_main
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(find_json_key_tests)
+endif()

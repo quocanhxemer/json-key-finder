@@ -155,15 +155,13 @@ void write_bench_row(std::ofstream& output, const BenchCsvRow& row) {
     if (row.algo == SCALAR) {
         append_empty_columns(csv_row, BENCH_TEDDY_COLUMN_COUNT);
     } else {
-        assert(row.teddy_config.has_value());
-
         csv_row.push_back(std::string(findkey_options::grouping_strategy_name(
-            row.teddy_config->config.grouping.strategy)));
+            row.teddy_config.grouping.strategy)));
         csv_row.push_back(std::string(findkey_options::grouping_score_name(
-            row.teddy_config->config.grouping.score)));
-        csv_row.push_back(std::string(findkey_options::suffix_mode_name(
-            row.teddy_config->config.suffix_mode)));
-        csv_row.push_back(std::to_string(row.teddy_config->config.sigma));
+            row.teddy_config.grouping.score)));
+        csv_row.push_back(std::string(
+            findkey_options::suffix_mode_name(row.teddy_config.suffix_mode)));
+        csv_row.push_back(std::to_string(row.teddy_config.sigma));
     }
 
     csv_row.push_back(std::to_string(row.repeat_index));
@@ -192,12 +190,12 @@ void write_stats_row(std::ofstream& output, const StatsCsvRow& row) {
     csv_row.push_back(std::to_string(row.actual_num_keys));
     csv_row.push_back(std::to_string(row.key_case.seed));
     csv_row.push_back(std::string(findkey_options::grouping_strategy_name(
-        row.teddy_config.config.grouping.strategy)));
-    csv_row.push_back(std::string(findkey_options::grouping_score_name(
-        row.teddy_config.config.grouping.score)));
-    csv_row.push_back(std::string(findkey_options::suffix_mode_name(
-        row.teddy_config.config.suffix_mode)));
-    csv_row.push_back(std::to_string(row.teddy_config.config.sigma));
+        row.teddy_config.grouping.strategy)));
+    csv_row.push_back(std::string(
+        findkey_options::grouping_score_name(row.teddy_config.grouping.score)));
+    csv_row.push_back(std::string(
+        findkey_options::suffix_mode_name(row.teddy_config.suffix_mode)));
+    csv_row.push_back(std::to_string(row.teddy_config.sigma));
     csv_row.push_back(std::to_string(row.metadata.sigma));
     csv_row.push_back(std::to_string(row.metadata.num_groups));
     csv_row.push_back(std::to_string(row.dfa_metadata.nodes));

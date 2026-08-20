@@ -24,10 +24,6 @@ struct KeyCase {
     uint32_t seed = 0;
 };
 
-struct TeddyConfigCase {
-    findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
-};
-
 struct Options {
     RunMode mode = RunMode::Both;
     std::vector<std::string> json_paths;
@@ -51,12 +47,12 @@ bool mode_includes_bench(RunMode mode);
 
 bool mode_includes_stats(RunMode mode);
 
-std::vector<TeddyConfigCase> make_teddy_configs(const Options& options);
+std::vector<findkey_teddy_config> make_teddy_configs(const Options& options);
 
 std::vector<KeyCase> make_key_cases(const Options& options);
 
 void print_dry_run(const Options& options,
                    const std::vector<KeyCase>& key_cases,
-                   const std::vector<TeddyConfigCase>& teddy_configs);
+                   const std::vector<findkey_teddy_config>& teddy_configs);
 
 }  // namespace bench

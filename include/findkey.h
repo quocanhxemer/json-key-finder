@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -62,17 +63,20 @@ enum findkey_teddy_compile_grouping_strategy {
     TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN = 7,
     TEDDY_COMPILE_SORTED_SUFFIX_PARTITION = 8,
     TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION = 9,
+    FINDKEY_TEDDY_COMPILE_GROUPING_STRATEGY_COUNT,
 };
 
 enum findkey_teddy_grouping_score {
     TEDDY_GROUPING_SCORE_PAPER = 0,
     TEDDY_GROUPING_SCORE_PAPER_NIBBLE = 1,
     TEDDY_GROUPING_SCORE_NIBBLE_COUNT = 2,
+    FINDKEY_TEDDY_GROUPING_SCORE_COUNT,
 };
 
 enum findkey_teddy_suffix_mode {
     TEDDY_SUFFIX_RAW = 0,
     TEDDY_SUFFIX_QUOTED = 1,
+    FINDKEY_TEDDY_SUFFIX_MODE_COUNT,
 };
 
 struct findkey_teddy_grouping_config {

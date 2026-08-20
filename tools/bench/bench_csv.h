@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
-#include <optional>
 
 namespace bench {
 
@@ -16,7 +15,7 @@ struct BenchCsvRow {
     const KeyCase& key_case;
     size_t actual_num_keys = 0;
     findkey_algo algo = SCALAR;
-    std::optional<TeddyConfigCase> teddy_config;
+    findkey_teddy_config teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     size_t repeat_index = 0;
     int status = FINDKEY_OK;
     size_t total_found = 0;
@@ -29,7 +28,7 @@ struct BenchCsvRow {
 struct StatsCsvRow {
     const KeyCase& key_case;
     size_t actual_num_keys = 0;
-    TeddyConfigCase teddy_config;
+    findkey_teddy_config teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     teddy::CompilationMetadata metadata = {};
     DFACompilationMetadata dfa_metadata = {};
     size_t repeat_index = 0;

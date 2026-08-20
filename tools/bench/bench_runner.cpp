@@ -15,9 +15,9 @@ struct CompilationMetadata {
 };
 
 CompilationMetadata compile_metadata(const PreparedKeys& keys,
-                                     const TeddyConfigCase& config_case) {
+                                     const findkey_teddy_config& config) {
     const teddy::CompilationData teddy_compilation_data =
-        teddy::compile(keys.views, config_case.config);
+        teddy::compile(keys.views, config);
     const DFA dfa = compile_key_dfa(keys.views);
     return {
         .teddy = teddy::get_compilation_metadata(teddy_compilation_data),
@@ -32,15 +32,9 @@ void run_bench_case(std::ofstream& output,
                     const KeyCase& key_case,
                     const PreparedKeys& keys,
                     findkey_algo algo,
-                    const std::optional<TeddyConfigCase>& teddy_config_case,
                     size_t repeat_count,
-                    size_t warmup_count) {
-    findkey_teddy_config teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
-
-    if (algo != SCALAR && teddy_config_case) {
-        teddy_config = teddy_config_case->config;
-    }
-
+                    size_t warmup_count,
+                    findkey_teddy_config teddy_config) {
     constexpr size_t positions_capacity = 1024 * 1024;
     std::vector<findkey_result> positions(positions_capacity);
     const size_t total_iterations = repeat_count + warmup_count;
@@ -73,7 +67,7 @@ void run_bench_case(std::ofstream& output,
 
         const size_t repeat_index = iteration - warmup_count;
         write_bench_row(output,
-                        {key_case, keys.keys.size(), algo, teddy_config_case,
+                        {key_case, keys.keys.size(), algo, teddy_config,
                          repeat_index, status, total_found, timing, data.size(),
                          throughput, end_to_end_throughput});
     }
@@ -83,11 +77,10 @@ void run_stats_case(std::ofstream& output,
                     std::string_view data,
                     const KeyCase& key_case,
                     const PreparedKeys& keys,
-                    const TeddyConfigCase& teddy_config_case,
+                    const findkey_teddy_config& teddy_config,
                     size_t repeat_count,
                     size_t warmup_count) {
-    const CompilationMetadata metadata =
-        compile_metadata(keys, teddy_config_case);
+    const CompilationMetadata metadata = compile_metadata(keys, teddy_config);
 
     const size_t total_iterations = repeat_count + warmup_count;
     for (size_t iteration = 0; iteration < total_iterations; ++iteration) {
@@ -97,8 +90,8 @@ void run_stats_case(std::ofstream& output,
 
         const size_t total_found = findkey_with_stats(
             reinterpret_cast<const uint8_t*>(data.data()), data.size(),
-            keys.ptrs.data(), keys.lens.data(), keys.ptrs.size(),
-            &teddy_config_case.config, &stats, &status, &timing);
+            keys.ptrs.data(), keys.lens.data(), keys.ptrs.size(), &teddy_config,
+            &stats, &status, &timing);
 
         if (iteration < warmup_count) {
             continue;
@@ -130,11 +123,10 @@ void run_stats_case(std::ofstream& output,
 
         const size_t repeat_index = iteration - warmup_count;
         write_stats_row(
-            output,
-            {key_case, keys.keys.size(), teddy_config_case, metadata.teddy,
-             metadata.dfa, repeat_index, status, total_found, timing,
-             data.size(), stats, hit_lane_ratio, avg_hit_groups,
-             exact_match_ratio, fp_type1_ratio, fp_type2_ratio});
+            output, {key_case, keys.keys.size(), teddy_config, metadata.teddy,
+                     metadata.dfa, repeat_index, status, total_found, timing,
+                     data.size(), stats, hit_lane_ratio, avg_hit_groups,
+                     exact_match_ratio, fp_type1_ratio, fp_type2_ratio});
     }
 }
 

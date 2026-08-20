@@ -1,7 +1,7 @@
 #include "bench/bench_args.h"
 
 #include "core/findkey_options.h"
-#include "teddy/grouping/strategy.h"
+#include "teddy/configurations.h"
 
 #include <getopt.h>
 
@@ -252,29 +252,21 @@ Options parse_options(int argc, char** argv) {
         options.algos = {SCALAR, TEDDY, TEDDY_BASELINE};
     }
     if (options.grouping_strategies.empty()) {
-        options.grouping_strategies = {
-            TEDDY_COMPILE_GREEDY_PAPER_POLICY,
-            TEDDY_COMPILE_GREEDY_MIN_DELTA,
-            TEDDY_COMPILE_HASH_STD,
-            TEDDY_COMPILE_HASH_ADLER32,
-            TEDDY_COMPILE_HASH_CRC32,
-            TEDDY_COMPILE_HASH_XXHASH,
-            TEDDY_COMPILE_HASH_FNV1A,
-            TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN,
-            TEDDY_COMPILE_SORTED_SUFFIX_PARTITION,
-            TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION,
-        };
+        options.grouping_strategies.assign(
+            teddy::ALL_GROUPING_STRATEGIES.begin(),
+            teddy::ALL_GROUPING_STRATEGIES.end());
     }
     if (options.grouping_scores.empty()) {
-        options.grouping_scores = {TEDDY_GROUPING_SCORE_PAPER,
-                                   TEDDY_GROUPING_SCORE_PAPER_NIBBLE,
-                                   TEDDY_GROUPING_SCORE_NIBBLE_COUNT};
+        options.grouping_scores.assign(teddy::ALL_GROUPING_SCORES.begin(),
+                                       teddy::ALL_GROUPING_SCORES.end());
     }
     if (options.suffix_modes.empty()) {
-        options.suffix_modes = {TEDDY_SUFFIX_RAW, TEDDY_SUFFIX_QUOTED};
+        options.suffix_modes.assign(teddy::ALL_SUFFIX_MODES.begin(),
+                                    teddy::ALL_SUFFIX_MODES.end());
     }
     if (options.sigmas.empty()) {
-        options.sigmas = {1, 2, 3, 4};
+        options.sigmas.assign(teddy::ALL_SIGMAS.begin(),
+                              teddy::ALL_SIGMAS.end());
     }
 
     return options;
@@ -288,7 +280,7 @@ bool mode_includes_stats(RunMode mode) {
     return mode == RunMode::Stats || mode == RunMode::Both;
 }
 
-std::vector<TeddyConfigCase> make_teddy_configs(const Options& options) {
+std::vector<findkey_teddy_config> make_teddy_configs(const Options& options) {
     bool need_configs =
         mode_includes_stats(options.mode) ||
         (mode_includes_bench(options.mode) && has_non_scalar_algo(options));
@@ -297,33 +289,9 @@ std::vector<TeddyConfigCase> make_teddy_configs(const Options& options) {
         return {};
     }
 
-    std::vector<TeddyConfigCase> configs;
-
-    for (const auto grouping_strategy : options.grouping_strategies) {
-        const bool uses_score =
-            teddy::grouping::grouping_strategy_uses_score(grouping_strategy);
-        const size_t score_count =
-            uses_score ? options.grouping_scores.size() : 1;
-
-        for (size_t score_index = 0; score_index < score_count; ++score_index) {
-            const findkey_teddy_grouping_score grouping_score =
-                uses_score ? options.grouping_scores[score_index]
-                           : TEDDY_GROUPING_SCORE_PAPER;
-
-            for (const auto suffix_mode : options.suffix_modes) {
-                for (const int sigma : options.sigmas) {
-                    TeddyConfigCase config_case;
-                    config_case.config.grouping = {grouping_strategy,
-                                                   grouping_score};
-                    config_case.config.suffix_mode = suffix_mode;
-                    config_case.config.sigma = sigma;
-                    configs.push_back(config_case);
-                }
-            }
-        }
-    }
-
-    return configs;
+    return teddy::make_teddy_configurations(
+        options.grouping_strategies, options.grouping_scores,
+        options.suffix_modes, options.sigmas);
 }
 
 std::vector<KeyCase> make_key_cases(const Options& options) {
@@ -351,7 +319,7 @@ std::vector<KeyCase> make_key_cases(const Options& options) {
 
 void print_dry_run(const Options& options,
                    const std::vector<KeyCase>& key_cases,
-                   const std::vector<TeddyConfigCase>& teddy_configs) {
+                   const std::vector<findkey_teddy_config>& teddy_configs) {
     const size_t total_iterations = options.repeats + options.warmup;
     size_t bench_runs = 0;
     size_t stats_runs = 0;
