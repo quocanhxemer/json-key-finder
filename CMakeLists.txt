@@ -7,16 +7,29 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(FIND_KEY_NATIVE "Enable -march=native" ON)
 
-find_package(ZLIB REQUIRED)
-find_path(XXHASH_INCLUDE_DIR NAMES xxhash.h REQUIRED)
+find_package(ZLIB QUIET)
+find_path(XXHASH_INCLUDE_DIR NAMES xxhash.h)
 find_library(XXHASH_LIBRARY
     NAMES
     xxhash
     libxxhash
     xxhash.so.0
     libxxhash.so.0
-    REQUIRED
 )
+
+if(NOT UNIX
+    OR NOT "cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES
+    OR NOT ZLIB_FOUND
+    OR NOT XXHASH_INCLUDE_DIR
+    OR NOT XXHASH_LIBRARY)
+    message(FATAL_ERROR
+        "Missing build prerequisites. Requirements:\n"
+        "  - CMake 3.16+ and a C++20 compiler\n"
+        "  - POSIX-compatible system\n"
+        "  - zlib development package (zlib1g-dev / zlib-devel)\n"
+        "  - xxHash development package (libxxhash-dev / xxhash-devel)"
+    )
+endif()
 
 add_library(find_json_key_warnings INTERFACE)
 target_compile_options(find_json_key_warnings INTERFACE -Wall -Wextra -Wpedantic)
