@@ -165,6 +165,7 @@ if(BUILD_TESTING)
         tests/capability_test.cpp
         tests/configurations_test.cpp
         tests/findkey_test.cpp
+        tests/suffix_test.cpp
         tests/utils.cpp
     )
     target_include_directories(find_json_key_tests PRIVATE include src)
