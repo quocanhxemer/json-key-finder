@@ -1,13 +1,13 @@
 #pragma once
 
 #include "bench/bench_args.h"
-#include "core/key_dfa.h"
 #include "findkey.h"
 #include "teddy/compile.h"
+#include "teddy/verification/metadata.h"
 
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
+#include <ostream>
 
 namespace bench {
 
@@ -30,11 +30,10 @@ struct StatsCsvRow {
     size_t actual_num_keys = 0;
     findkey_teddy_config teddy_config = FINDKEY_TEDDY_CONFIG_INIT;
     teddy::CompilationMetadata metadata = {};
-    DFACompilationMetadata dfa_metadata = {};
+    teddy::VerifierCompilationMetadata verifier_metadata = {};
     size_t repeat_index = 0;
     int status = FINDKEY_OK;
     size_t total_found = 0;
-    findkey_timing timing = {};
     size_t data_bytes = 0;
     findkey_teddy_stats stats = {};
     double hit_lane_ratio = 0.0;
@@ -44,12 +43,12 @@ struct StatsCsvRow {
     double fp_type2_lane_ratio = 0.0;
 };
 
-void write_bench_header(std::ofstream& output);
+void write_bench_header(std::ostream& output);
 
-void write_stats_header(std::ofstream& output);
+void write_stats_header(std::ostream& output);
 
-void write_bench_row(std::ofstream& output, const BenchCsvRow& row);
+void write_bench_row(std::ostream& output, const BenchCsvRow& row);
 
-void write_stats_row(std::ofstream& output, const StatsCsvRow& row);
+void write_stats_row(std::ostream& output, const StatsCsvRow& row);
 
 }  // namespace bench

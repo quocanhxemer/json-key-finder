@@ -79,6 +79,12 @@ enum findkey_teddy_suffix_mode {
     FINDKEY_TEDDY_SUFFIX_MODE_COUNT,
 };
 
+enum findkey_teddy_verification_strategy {
+    TEDDY_VERIFY_TRIE = 0,
+    TEDDY_VERIFY_HASH = 1,
+    FINDKEY_TEDDY_VERIFICATION_STRATEGY_COUNT,
+};
+
 struct findkey_teddy_grouping_config {
     enum findkey_teddy_compile_grouping_strategy strategy;
     enum findkey_teddy_grouping_score score;
@@ -89,6 +95,7 @@ struct findkey_teddy_config {
     enum findkey_teddy_suffix_mode suffix_mode;
 
     int sigma;
+    enum findkey_teddy_verification_strategy verification_strategy;
 };
 
 #define FINDKEY_TEDDY_GROUPING_CONFIG_INIT \
@@ -96,7 +103,7 @@ struct findkey_teddy_config {
 
 #define FINDKEY_TEDDY_CONFIG_INIT                          \
     {FINDKEY_TEDDY_GROUPING_CONFIG_INIT, TEDDY_SUFFIX_RAW, \
-     FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH}
+     FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH, TEDDY_VERIFY_TRIE}
 
 size_t findkey(const uint8_t* data,
                size_t len,
@@ -118,8 +125,7 @@ size_t findkey_with_stats(const uint8_t* data,
                           size_t num_keys,
                           const struct findkey_teddy_config* teddy_config,
                           struct findkey_teddy_stats* teddy_stats,
-                          int* out_status,
-                          struct findkey_timing* out_timing);
+                          int* out_status);
 
 #ifdef __cplusplus
 }

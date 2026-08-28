@@ -1,6 +1,8 @@
-#include "teddy/grouping.h"
+#include "utils.h"
+
 #include "teddy/compile.h"
 #include "teddy/configurations.h"
+#include "teddy/grouping.h"
 #include "teddy/suffix.h"
 
 #include <gtest/gtest.h>
@@ -212,10 +214,9 @@ TEST(TeddyGroupingInvariantsTest,
         SCOPED_TRACE(::testing::Message()
                      << "strategy: " << static_cast<int>(grouping.strategy)
                      << ", score: " << static_cast<int>(grouping.score));
-        findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
+        findkey_teddy_config config = findkey_test::make_teddy_config(
+            TEDDY_SUFFIX_RAW, 4, TEDDY_VERIFY_TRIE);
         config.grouping = grouping;
-        config.suffix_mode = TEDDY_SUFFIX_RAW;
-        config.sigma = 4;
 
         const teddy::CompilationData compilation = teddy::compile(keys, config);
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/key_dfa.h"
 #include "findkey.h"
 #include "teddy/compile.h"
+#include "teddy/verification/verifier.h"
 
 #include <string_view>
 #include <vector>
@@ -13,7 +13,8 @@
         i.e. enclosed in double quotes and followed by a colon (:)
     - Then check if the key exists in the keys list using a hash map
 */
+template <teddy::Verifier VerifierModel>
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const DFA& dfa);
+    const VerifierModel& verifier);

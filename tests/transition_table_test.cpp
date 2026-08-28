@@ -1,9 +1,9 @@
 #include "utils.h"
 
-#include "core/key_dfa.h"
 #include "matchers/matcher_teddy_baseline.h"
 #include "teddy/compile.h"
 #include "teddy/suffix.h"
+#include "teddy/verification/verifiers/trie.h"
 
 #include <gtest/gtest.h>
 
@@ -16,16 +16,11 @@ namespace {
 
 constexpr int TEST_SIGMA = 3;
 
-findkey_teddy_config make_raw_config() {
-    findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
-    config.suffix_mode = TEDDY_SUFFIX_RAW;
-    config.sigma = TEST_SIGMA;
-    return config;
-}
-
 teddy::CompilationData compile_ddy_group() {
     const std::vector<std::string_view> keys = {"teddy"};
-    return teddy::compile(keys, make_raw_config());
+    return teddy::compile(
+        keys, findkey_test::make_teddy_config(TEDDY_SUFFIX_RAW, TEST_SIGMA,
+                                              TEDDY_VERIFY_TRIE));
 }
 
 void expect_group_bit_cleared(const teddy::CompilationData& compilation,
@@ -90,7 +85,8 @@ TEST(TeddyTransitionTableTest, CrossProductHitIsRejectedByExactVerification) {
     const std::vector<std::string_view> keys = {
         "AAA", "AAR", "ccc", "ttt", "%%%", "666", "GGG", "XXX", "iii",
     };
-    findkey_teddy_config config = make_raw_config();
+    findkey_teddy_config config = findkey_test::make_teddy_config(
+        TEDDY_SUFFIX_RAW, TEST_SIGMA, TEDDY_VERIFY_TRIE);
     config.grouping.strategy = TEDDY_COMPILE_GREEDY_MIN_DELTA;
     config.grouping.score = TEDDY_GROUPING_SCORE_NIBBLE_COUNT;
 
@@ -122,10 +118,10 @@ TEST(TeddyTransitionTableTest, CrossProductHitIsRejectedByExactVerification) {
                                         cross_product_suffix));
 
     constexpr std::string_view json = R"({"AAB":1})";
-    const DFA dfa = compile_key_dfa(keys);
+    const teddy::TrieVerifier verifier(keys);
     findkey_teddy_stats stats{};
     const std::vector<findkey_result> results =
-        matcher_teddy_baseline(json, compilation, dfa, &stats);
+        matcher_teddy_baseline(json, compilation, verifier, &stats);
 
     EXPECT_TRUE(results.empty());
     EXPECT_EQ(stats.prefilter_hit_lanes, 1u);

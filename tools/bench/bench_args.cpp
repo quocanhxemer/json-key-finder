@@ -69,6 +69,8 @@ std::optional<size_t> parse_size(std::string_view raw) {
            "score-based strategies: paper, paper_nibble, nibble_count\n"
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
            "quote-suffix\n"
+        << "  --verification-strategy <name>  Repeatable. Defaults: trie, "
+           "hash\n"
         << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
            "4\n";
     std::exit(EXIT_FAILURE);
@@ -93,6 +95,7 @@ Options parse_options(int argc, char** argv) {
         {"grouping", required_argument, nullptr, 'g'},
         {"score", required_argument, nullptr, 'c'},
         {"suffix-mode", required_argument, nullptr, 'f'},
+        {"verification-strategy", required_argument, nullptr, 'v'},
         {"sigma", required_argument, nullptr, 'i'},
         {"repeats", required_argument, nullptr, 'r'},
         {"warmup", required_argument, nullptr, 'w'},
@@ -193,6 +196,17 @@ Options parse_options(int argc, char** argv) {
                 options.suffix_modes.push_back(*suffix_mode);
                 break;
             }
+            case 'v': {
+                const auto verification_strategy =
+                    findkey_options::parse_verification_strategy(optarg);
+                if (!verification_strategy) {
+                    std::cerr << "Invalid --verification-strategy\n";
+                    print_usage_and_exit(argv[0]);
+                }
+                options.verification_strategies.push_back(
+                    *verification_strategy);
+                break;
+            }
             case 'i': {
                 const auto sigma = findkey_options::parse_sigma(optarg);
                 if (!sigma) {
@@ -264,6 +278,11 @@ Options parse_options(int argc, char** argv) {
         options.suffix_modes.assign(teddy::ALL_SUFFIX_MODES.begin(),
                                     teddy::ALL_SUFFIX_MODES.end());
     }
+    if (options.verification_strategies.empty()) {
+        options.verification_strategies.assign(
+            teddy::ALL_VERIFICATION_STRATEGIES.begin(),
+            teddy::ALL_VERIFICATION_STRATEGIES.end());
+    }
     if (options.sigmas.empty()) {
         options.sigmas.assign(teddy::ALL_SIGMAS.begin(),
                               teddy::ALL_SIGMAS.end());
@@ -291,7 +310,7 @@ std::vector<findkey_teddy_config> make_teddy_configs(const Options& options) {
 
     return teddy::make_teddy_configurations(
         options.grouping_strategies, options.grouping_scores,
-        options.suffix_modes, options.sigmas);
+        options.suffix_modes, options.sigmas, options.verification_strategies);
 }
 
 std::vector<KeyCase> make_key_cases(const Options& options) {

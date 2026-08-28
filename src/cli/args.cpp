@@ -42,6 +42,9 @@ namespace {
         "  --teddy-suffix-mode <name>\n"
         "                             Values: raw, quote-suffix\n"
         "                             Default: raw\n"
+        "  --teddy-verification-strategy <name>\n"
+        "                             Values: trie, hash\n"
+        "                             Default: trie\n"
         "  --sigma <n>                Suffix length for teddy keys grouping\n"
         "                             Range: 1..4\n"
         "                             Default: 3\n"
@@ -62,6 +65,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
         {"teddy-grouping-strategy", required_argument, nullptr, 'g'},
         {"teddy-grouping-score", required_argument, nullptr, 'q'},
         {"teddy-suffix-mode", required_argument, nullptr, 's'},
+        {"teddy-verification-strategy", required_argument, nullptr, 'v'},
         {"sigma", required_argument, nullptr, 'm'},
         {"keys", required_argument, nullptr, 'k'},
         {"data", required_argument, nullptr, 'd'},
@@ -121,6 +125,18 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.suffix_mode = *parsed;
+                break;
+            }
+            case 'v': {
+                const auto parsed =
+                    findkey_options::parse_verification_strategy(optarg);
+                if (!parsed) {
+                    std::fprintf(stderr,
+                                 "Unknown teddy verification strategy "
+                                 "specified\n");
+                    print_usage_and_exit(argv[0]);
+                }
+                args.teddy_config.verification_strategy = *parsed;
                 break;
             }
             case 'm': {

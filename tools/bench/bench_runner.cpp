@@ -1,8 +1,9 @@
 #include "bench/bench_runner.h"
 
 #include "bench/bench_csv.h"
-#include "core/key_dfa.h"
 #include "teddy/compile.h"
+#include "teddy/verification/dispatch.h"
+#include "teddy/verification/metadata.h"
 
 #include <vector>
 
@@ -11,17 +12,22 @@ namespace {
 
 struct CompilationMetadata {
     teddy::CompilationMetadata teddy;
-    DFACompilationMetadata dfa;
+    teddy::VerifierCompilationMetadata verifier;
 };
 
 CompilationMetadata compile_metadata(const PreparedKeys& keys,
                                      const findkey_teddy_config& config) {
     const teddy::CompilationData teddy_compilation_data =
         teddy::compile(keys.views, config);
-    const DFA dfa = compile_key_dfa(keys.views);
+    const teddy::VerifierCompilationMetadata verifier_metadata =
+        teddy::dispatch_verifier(
+            config.verification_strategy, [&]<teddy::Verifier VerifierModel>() {
+                const VerifierModel verifier(keys.views);
+                return teddy::get_verifier_compilation_metadata(verifier);
+            });
     return {
         .teddy = teddy::get_compilation_metadata(teddy_compilation_data),
-        .dfa = get_dfa_compilation_metadata(dfa),
+        .verifier = verifier_metadata,
     };
 }
 
@@ -85,13 +91,12 @@ void run_stats_case(std::ofstream& output,
     const size_t total_iterations = repeat_count + warmup_count;
     for (size_t iteration = 0; iteration < total_iterations; ++iteration) {
         int status = FINDKEY_OK;
-        findkey_timing timing = {};
         findkey_teddy_stats stats = {};
 
         const size_t total_found = findkey_with_stats(
             reinterpret_cast<const uint8_t*>(data.data()), data.size(),
             keys.ptrs.data(), keys.lens.data(), keys.ptrs.size(), &teddy_config,
-            &stats, &status, &timing);
+            &stats, &status);
 
         if (iteration < warmup_count) {
             continue;
@@ -124,7 +129,7 @@ void run_stats_case(std::ofstream& output,
         const size_t repeat_index = iteration - warmup_count;
         write_stats_row(
             output, {key_case, keys.keys.size(), teddy_config, metadata.teddy,
-                     metadata.dfa, repeat_index, status, total_found, timing,
+                     metadata.verifier, repeat_index, status, total_found,
                      data.size(), stats, hit_lane_ratio, avg_hit_groups,
                      exact_match_ratio, fp_type1_ratio, fp_type2_ratio});
     }

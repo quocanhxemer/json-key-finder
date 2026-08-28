@@ -49,7 +49,8 @@ TEST(TeddyConfigurationsTest, ExpandsTheCompleteTeddyConfigurationMatrix) {
     const auto grouping_configurations = teddy::all_grouping_configurations();
     const auto configurations = teddy::all_teddy_configurations();
 
-    EXPECT_EQ(configurations.size(), grouping_configurations.size() *
-                                         teddy::ALL_SUFFIX_MODES.size() *
-                                         teddy::ALL_SIGMAS.size());
+    EXPECT_EQ(configurations.size(),
+              grouping_configurations.size() * teddy::ALL_SUFFIX_MODES.size() *
+                  teddy::ALL_SIGMAS.size() *
+                  teddy::ALL_VERIFICATION_STRATEGIES.size());
 }

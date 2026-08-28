@@ -40,10 +40,17 @@ inline constexpr auto ALL_SIGMAS = [] {
     return sigmas;
 }();
 
+inline constexpr std::array ALL_VERIFICATION_STRATEGIES = {
+    TEDDY_VERIFY_TRIE,
+    TEDDY_VERIFY_HASH,
+};
+
 static_assert(ALL_GROUPING_STRATEGIES.size() ==
               FINDKEY_TEDDY_COMPILE_GROUPING_STRATEGY_COUNT);
 static_assert(ALL_GROUPING_SCORES.size() == FINDKEY_TEDDY_GROUPING_SCORE_COUNT);
 static_assert(ALL_SUFFIX_MODES.size() == FINDKEY_TEDDY_SUFFIX_MODE_COUNT);
+static_assert(ALL_VERIFICATION_STRATEGIES.size() ==
+              FINDKEY_TEDDY_VERIFICATION_STRATEGY_COUNT);
 
 std::vector<findkey_teddy_grouping_config> make_grouping_configurations(
     std::span<const findkey_teddy_compile_grouping_strategy> strategies,
@@ -55,7 +62,9 @@ std::vector<findkey_teddy_config> make_teddy_configurations(
     std::span<const findkey_teddy_compile_grouping_strategy> strategies,
     std::span<const findkey_teddy_grouping_score> scores,
     std::span<const findkey_teddy_suffix_mode> suffix_modes,
-    std::span<const int> sigmas);
+    std::span<const int> sigmas,
+    std::span<const findkey_teddy_verification_strategy>
+        verification_strategies);
 
 std::vector<findkey_teddy_config> all_teddy_configurations();
 

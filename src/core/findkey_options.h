@@ -18,6 +18,9 @@ std::optional<findkey_teddy_grouping_score> parse_grouping_score(
 std::optional<findkey_teddy_suffix_mode> parse_suffix_mode(
     std::string_view raw);
 
+std::optional<findkey_teddy_verification_strategy> parse_verification_strategy(
+    std::string_view raw);
+
 std::optional<int> parse_sigma(std::string_view raw);
 
 std::string_view algo_name(findkey_algo algo);
@@ -28,6 +31,9 @@ std::string_view grouping_strategy_name(
 std::string_view grouping_score_name(findkey_teddy_grouping_score score);
 
 std::string_view suffix_mode_name(findkey_teddy_suffix_mode suffix_mode);
+
+std::string_view verification_strategy_name(
+    findkey_teddy_verification_strategy strategy);
 
 std::string_view status_name(int status);
 

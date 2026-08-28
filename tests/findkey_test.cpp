@@ -16,6 +16,7 @@ using findkey_test::expect_success;
 using findkey_test::expect_teddy_matchers_match;
 using findkey_test::expect_teddy_matches_scalar;
 using findkey_test::load_json_fixture;
+using findkey_test::make_teddy_config;
 using findkey_test::run_findkey;
 
 }  // namespace
@@ -54,12 +55,26 @@ TEST(FindkeyPublicApiTest, RejectsEmptyInput) {
         reinterpret_cast<const uint8_t*>(keys.front().data());
     const size_t key_length = keys.front().size();
     findkey_teddy_stats stats{};
-    findkey_timing timing{};
     int status = FINDKEY_OK;
 
-    const size_t total =
-        findkey_with_stats(empty_data, 0, &key_data, &key_length, 1, nullptr,
-                           &stats, &status, &timing);
+    const size_t total = findkey_with_stats(
+        empty_data, 0, &key_data, &key_length, 1, nullptr, &stats, &status);
+
+    EXPECT_EQ(status, FINDKEY_ERR_BAD_ARGS);
+    EXPECT_EQ(total, 0u);
+}
+
+TEST(FindkeyPublicApiTest, RequiresTimingOutput) {
+    constexpr std::string_view json = R"({"test":1})";
+    constexpr std::string_view key = "test";
+    const auto* key_data = reinterpret_cast<const uint8_t*>(key.data());
+    const size_t key_length = key.size();
+    findkey_result result{};
+    int status = FINDKEY_OK;
+
+    const size_t total = findkey(reinterpret_cast<const uint8_t*>(json.data()),
+                                 json.size(), &key_data, &key_length, 1, SCALAR,
+                                 nullptr, &result, 1, &status, nullptr);
 
     EXPECT_EQ(status, FINDKEY_ERR_BAD_ARGS);
     EXPECT_EQ(total, 0u);
@@ -90,11 +105,13 @@ TEST(FindkeyDifferentialTest, MatchesScalarForJsonEdgeCases) {
         ASSERT_EQ(scalar.total, test_case.expected_matches);
 
         for (const auto suffix_mode : teddy::ALL_SUFFIX_MODES) {
-            findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
-            config.suffix_mode = suffix_mode;
-            config.sigma = 4;
-            expect_teddy_matchers_match(scalar, test_case.json, test_case.keys,
-                                        &config);
+            for (const auto verification_strategy :
+                 teddy::ALL_VERIFICATION_STRATEGIES) {
+                const findkey_teddy_config config =
+                    make_teddy_config(suffix_mode, 4, verification_strategy);
+                expect_teddy_matchers_match(scalar, test_case.json,
+                                            test_case.keys, &config);
+            }
         }
     }
 }
@@ -106,7 +123,13 @@ TEST(FindkeyDifferentialTest, MatchesScalarWithDefaultTeddyConfiguration) {
 
     const ApiRun scalar = run_findkey(json, keys, SCALAR);
     ASSERT_TRUE(expect_success(scalar));
-    expect_teddy_matchers_match(scalar, json, keys);
+    for (const auto verification_strategy :
+         teddy::ALL_VERIFICATION_STRATEGIES) {
+        const findkey_teddy_config config = make_teddy_config(
+            TEDDY_SUFFIX_RAW, FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH,
+            verification_strategy);
+        expect_teddy_matchers_match(scalar, json, keys, &config);
+    }
 }
 
 TEST(FindkeyDifferentialTest, MatchesScalarWhenShortKeyCapsSigma) {
@@ -114,10 +137,12 @@ TEST(FindkeyDifferentialTest, MatchesScalarWhenShortKeyCapsSigma) {
     const std::vector<std::string_view> keys = {"a", "ab", "abc", "abcd"};
 
     for (const auto suffix_mode : teddy::ALL_SUFFIX_MODES) {
-        findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
-        config.suffix_mode = suffix_mode;
-        config.sigma = 4;
-        expect_teddy_matches_scalar(json, keys, config);
+        for (const auto verification_strategy :
+             teddy::ALL_VERIFICATION_STRATEGIES) {
+            const findkey_teddy_config config =
+                make_teddy_config(suffix_mode, 4, verification_strategy);
+            expect_teddy_matches_scalar(json, keys, config);
+        }
     }
 }
 
@@ -136,10 +161,12 @@ TEST(FindkeyDifferentialTest, MatchesScalarAcrossBlockBoundaries) {
                      << "leading spaces: " << leading_spaces);
 
         for (const auto suffix_mode : teddy::ALL_SUFFIX_MODES) {
-            findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
-            config.suffix_mode = suffix_mode;
-            config.sigma = 4;
-            expect_teddy_matches_scalar(json, keys, config);
+            for (const auto verification_strategy :
+                 teddy::ALL_VERIFICATION_STRATEGIES) {
+                const findkey_teddy_config config =
+                    make_teddy_config(suffix_mode, 4, verification_strategy);
+                expect_teddy_matches_scalar(json, keys, config);
+            }
         }
     }
 }

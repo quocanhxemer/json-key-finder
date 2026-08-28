@@ -39,6 +39,17 @@ std::string load_json_fixture(std::string_view filename) {
     return contents;
 }
 
+findkey_teddy_config make_teddy_config(
+    const findkey_teddy_suffix_mode suffix_mode,
+    const int sigma,
+    const findkey_teddy_verification_strategy verification_strategy) {
+    findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
+    config.suffix_mode = suffix_mode;
+    config.sigma = sigma;
+    config.verification_strategy = verification_strategy;
+    return config;
+}
+
 ApiRun run_findkey(std::string_view json,
                    const std::vector<std::string_view>& keys,
                    findkey_algo algorithm,

@@ -1,10 +1,11 @@
 #include "cli/args.h"
 #include "cli/reporting.h"
-#include "core/key_dfa.h"
 #include "core/prepared_keys.h"
 #include "findkey.h"
 #include "io/mmap_file.h"
 #include "teddy/compile.h"
+#include "teddy/verification/dispatch.h"
+#include "teddy/verification/metadata.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -56,15 +57,19 @@ int main(int argc, char** argv) {
     findkey_teddy_stats teddy_stats = {};
     findkey_timing timing = {};
     teddy::CompilationMetadata teddy_compilation_metadata = {};
-    DFACompilationMetadata dfa_compilation_metadata = {};
+    teddy::VerifierCompilationMetadata verifier_compilation_metadata = {};
 
     if (args.collect_stats) {
         const teddy::CompilationData teddy_data =
             teddy::compile(keys.views, args.teddy_config);
-        const DFA dfa = compile_key_dfa(keys.views);
         teddy_compilation_metadata =
             teddy::get_compilation_metadata(teddy_data);
-        dfa_compilation_metadata = get_dfa_compilation_metadata(dfa);
+        verifier_compilation_metadata = teddy::dispatch_verifier(
+            args.teddy_config.verification_strategy,
+            [&]<teddy::Verifier VerifierModel>() {
+                const VerifierModel verifier(keys.views);
+                return teddy::get_verifier_compilation_metadata(verifier);
+            });
     }
 
     size_t num_found =
@@ -72,24 +77,11 @@ int main(int argc, char** argv) {
             ? findkey_with_stats(
                   reinterpret_cast<const uint8_t*>(mmap_file.data()),
                   mmap_file.size(), keys.ptrs.data(), keys.lens.data(),
-                  keys.ptrs.size(), &args.teddy_config, &teddy_stats, &status,
-                  &timing)
+                  keys.ptrs.size(), &args.teddy_config, &teddy_stats, &status)
             : findkey(reinterpret_cast<const uint8_t*>(mmap_file.data()),
                       mmap_file.size(), keys.ptrs.data(), keys.lens.data(),
                       keys.ptrs.size(), args.algo, &args.teddy_config,
                       positions.data(), positions.size(), &status, &timing);
-
-    const uint64_t total_ns = timing.compile_ns + timing.match_ns;
-    const double total_duration_s = total_ns / 1e9;
-    const double match_duration_s = timing.match_ns / 1e9;
-
-    const double bytes = mmap_file.size();
-    const double mbps = match_duration_s > 0
-                            ? (bytes / (1024.0 * 1024.0)) / match_duration_s
-                            : 0.0;
-    const double end_to_end_mbps =
-        total_duration_s > 0 ? (bytes / (1024.0 * 1024.0)) / total_duration_s
-                             : 0.0;
 
     switch (status) {
         case FINDKEY_ERR_BAD_ARGS:
@@ -120,17 +112,31 @@ int main(int argc, char** argv) {
 
     if (args.collect_stats) {
         print_compilation_stats(teddy_compilation_metadata,
-                                dfa_compilation_metadata);
+                                verifier_compilation_metadata);
         print_teddy_runtime_stats(teddy_stats, mmap_file.size());
-    }
+    } else {
+        const uint64_t total_ns = timing.compile_ns + timing.match_ns;
+        const double total_duration_s = total_ns / 1e9;
+        const double match_duration_s = timing.match_ns / 1e9;
 
-    std::printf("Compile time: %.2f ns\n",
-                static_cast<double>(timing.compile_ns));
-    std::printf("Match time: %.2f ns\n", static_cast<double>(timing.match_ns));
-    std::printf("Time taken: %.2f ns\n", static_cast<double>(total_ns));
-    std::printf("Data size: %.2f MiB\n", bytes / (1024.0 * 1024.0));
-    std::printf("Throughput: %.2f MiB/s\n", mbps);
-    std::printf("End-to-end throughput: %.2f MiB/s\n", end_to_end_mbps);
+        const double bytes = mmap_file.size();
+        const double mbps = match_duration_s > 0
+                                ? (bytes / (1024.0 * 1024.0)) / match_duration_s
+                                : 0.0;
+        const double end_to_end_mbps =
+            total_duration_s > 0
+                ? (bytes / (1024.0 * 1024.0)) / total_duration_s
+                : 0.0;
+
+        std::printf("Compile time: %.2f ns\n",
+                    static_cast<double>(timing.compile_ns));
+        std::printf("Match time: %.2f ns\n",
+                    static_cast<double>(timing.match_ns));
+        std::printf("Time taken: %.2f ns\n", static_cast<double>(total_ns));
+        std::printf("Data size: %.2f MiB\n", bytes / (1024.0 * 1024.0));
+        std::printf("Throughput: %.2f MiB/s\n", mbps);
+        std::printf("End-to-end throughput: %.2f MiB/s\n", end_to_end_mbps);
+    }
 
     return 0;
 }

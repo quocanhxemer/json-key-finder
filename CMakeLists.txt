@@ -53,13 +53,14 @@ target_link_libraries(findkey_cli PUBLIC find_json_key_warnings findkey_options)
 
 add_library(find_json_key STATIC
     src/core/findkey.cpp
-    src/core/key_dfa.cpp
     src/core/prepared_keys.cpp
 
     src/teddy/compile.cpp
     src/teddy/configurations.cpp
     src/teddy/grouping.cpp
     src/teddy/suffix.cpp
+    src/teddy/verification/verifiers/trie.cpp
+    src/teddy/verification/verifiers/hash.cpp
 
     src/matchers/matcher_scalar.cpp
     src/matchers/matcher_teddy_baseline.cpp
@@ -163,12 +164,16 @@ if(BUILD_TESTING)
     add_executable(
         find_json_key_tests
         tests/capability_test.cpp
+        tests/bench_csv_test.cpp
         tests/configurations_test.cpp
         tests/findkey_test.cpp
         tests/grouping_test.cpp
+        tests/trie_verifier_test.cpp
+        tests/hash_verifier_test.cpp
         tests/score_test.cpp
         tests/suffix_test.cpp
         tests/transition_table_test.cpp
+        tests/verification_stats_test.cpp
         tests/utils.cpp
     )
     target_include_directories(find_json_key_tests PRIVATE include src)
@@ -181,6 +186,7 @@ if(BUILD_TESTING)
         find_json_key_tests
         PRIVATE
         find_json_key
+        find_bench_tools
         GTest::gtest_main
     )
 

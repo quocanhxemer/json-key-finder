@@ -84,6 +84,17 @@ std::optional<findkey_teddy_suffix_mode> parse_suffix_mode(
     return std::nullopt;
 }
 
+std::optional<findkey_teddy_verification_strategy> parse_verification_strategy(
+    std::string_view raw) {
+    if (raw == "trie") {
+        return TEDDY_VERIFY_TRIE;
+    }
+    if (raw == "hash") {
+        return TEDDY_VERIFY_HASH;
+    }
+    return std::nullopt;
+}
+
 std::optional<int> parse_sigma(std::string_view raw) {
     if (raw.empty()) {
         return std::nullopt;
@@ -165,6 +176,18 @@ std::string_view suffix_mode_name(findkey_teddy_suffix_mode suffix_mode) {
             return "raw";
         case TEDDY_SUFFIX_QUOTED:
             return "quote-suffix";
+        default:
+            return "unknown";
+    }
+}
+
+std::string_view verification_strategy_name(
+    findkey_teddy_verification_strategy strategy) {
+    switch (strategy) {
+        case TEDDY_VERIFY_TRIE:
+            return "trie";
+        case TEDDY_VERIFY_HASH:
+            return "hash";
         default:
             return "unknown";
     }

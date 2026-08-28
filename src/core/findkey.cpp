@@ -1,9 +1,9 @@
 #include "findkey.h"
 #include "core/findkey_error.h"
-#include "core/key_dfa.h"
 #include "matchers/matcher_scalar.h"
 #include "matchers/matcher_teddy_baseline.h"
 #include "teddy/compile.h"
+#include "teddy/verification/dispatch.h"
 
 #if COMPILER_SUPPORTS_TEDDY
 #include "matchers/matcher_teddy.h"
@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <optional>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -20,8 +21,10 @@ static inline bool bad_args(const uint8_t* data,
                             const uint8_t* const* keys,
                             const size_t* key_lens,
                             size_t num_keys,
-                            struct findkey_result* out_results) {
-    if (!data || len == 0 || !keys || !key_lens || !out_results || !num_keys) {
+                            struct findkey_result* out_results,
+                            struct findkey_timing* out_timing) {
+    if (!data || len == 0 || !keys || !key_lens || !out_results ||
+        !out_timing || !num_keys) {
         return true;
     }
     for (size_t i = 0; i < num_keys; ++i) {
@@ -95,7 +98,8 @@ extern "C" size_t findkey(const uint8_t* data,
         *out_timing = {};
     }
 
-    if (bad_args(data, len, keys, key_lens, num_keys, out_results)) {
+    if (bad_args(data, len, keys, key_lens, num_keys, out_results,
+                 out_timing)) {
         if (out_status) {
             *out_status = FINDKEY_ERR_BAD_ARGS;
         }
@@ -119,33 +123,28 @@ extern "C" size_t findkey(const uint8_t* data,
     try {
         switch (algo) {
             case SCALAR: {
-                if (out_timing) {
-                    out_timing->match_ns = measure_ns(
-                        [&] { results = matcher_scalar(data_sv, key_svs); });
-                } else {
-                    results = matcher_scalar(data_sv, key_svs);
-                }
+                out_timing->match_ns = measure_ns(
+                    [&] { results = matcher_scalar(data_sv, key_svs); });
                 break;
             }
 
             case TEDDY:
 #if COMPILER_SUPPORTS_TEDDY
             {
-                teddy::CompilationData teddy_data;
-                DFA dfa;
-                if (out_timing) {
-                    out_timing->compile_ns = measure_ns([&] {
-                        teddy_data = teddy::compile(key_svs, config);
-                        dfa = compile_key_dfa(key_svs);
+                teddy::dispatch_verifier(
+                    config.verification_strategy,
+                    [&]<teddy::Verifier VerifierModel>() {
+                        teddy::CompilationData teddy_data;
+                        std::optional<VerifierModel> verifier;
+                        out_timing->compile_ns = measure_ns([&] {
+                            teddy_data = teddy::compile(key_svs, config);
+                            verifier.emplace(key_svs);
+                        });
+                        out_timing->match_ns = measure_ns([&] {
+                            results =
+                                matcher_teddy(data_sv, teddy_data, *verifier);
+                        });
                     });
-                    out_timing->match_ns = measure_ns([&] {
-                        results = matcher_teddy(data_sv, teddy_data, dfa);
-                    });
-                } else {
-                    teddy_data = teddy::compile(key_svs, config);
-                    dfa = compile_key_dfa(key_svs);
-                    results = matcher_teddy(data_sv, teddy_data, dfa);
-                }
                 break;
             }
 #else
@@ -153,22 +152,20 @@ extern "C" size_t findkey(const uint8_t* data,
                                    "Teddy is not supported by this compiler");
 #endif
             case TEDDY_BASELINE: {
-                teddy::CompilationData teddy_data;
-                DFA dfa;
-                if (out_timing) {
-                    out_timing->compile_ns = measure_ns([&] {
-                        teddy_data = teddy::compile(key_svs, config);
-                        dfa = compile_key_dfa(key_svs);
+                teddy::dispatch_verifier(
+                    config.verification_strategy,
+                    [&]<teddy::Verifier VerifierModel>() {
+                        teddy::CompilationData teddy_data;
+                        std::optional<VerifierModel> verifier;
+                        out_timing->compile_ns = measure_ns([&] {
+                            teddy_data = teddy::compile(key_svs, config);
+                            verifier.emplace(key_svs);
+                        });
+                        out_timing->match_ns = measure_ns([&] {
+                            results = matcher_teddy_baseline(
+                                data_sv, teddy_data, *verifier);
+                        });
                     });
-                    out_timing->match_ns = measure_ns([&] {
-                        results =
-                            matcher_teddy_baseline(data_sv, teddy_data, dfa);
-                    });
-                } else {
-                    teddy_data = teddy::compile(key_svs, config);
-                    dfa = compile_key_dfa(key_svs);
-                    results = matcher_teddy_baseline(data_sv, teddy_data, dfa);
-                }
                 break;
             }
             default:
@@ -200,15 +197,10 @@ extern "C" size_t findkey_with_stats(
     size_t num_keys,
     const struct findkey_teddy_config* teddy_config,
     struct findkey_teddy_stats* teddy_stats,
-    int* out_status,
-    struct findkey_timing* out_timing) {
+    int* out_status) {
     if (out_status) {
         *out_status = FINDKEY_OK;
     }
-    if (out_timing) {
-        *out_timing = {};
-    }
-
     if (bad_args_stats(data, len, keys, key_lens, num_keys, teddy_stats)) {
         if (out_status) {
             *out_status = FINDKEY_ERR_BAD_ARGS;
@@ -231,24 +223,14 @@ extern "C" size_t findkey_with_stats(
         teddy_config ? *teddy_config : default_teddy_config;
 
     try {
-        teddy::CompilationData teddy_data;
-        DFA dfa;
-        std::vector<findkey_result> results;
-        if (out_timing) {
-            out_timing->compile_ns = measure_ns([&] {
-                teddy_data = teddy::compile(key_svs, config);
-                dfa = compile_key_dfa(key_svs);
+        const std::vector<findkey_result> results = teddy::dispatch_verifier(
+            config.verification_strategy, [&]<teddy::Verifier VerifierModel>() {
+                const teddy::CompilationData teddy_data =
+                    teddy::compile(key_svs, config);
+                const VerifierModel verifier(key_svs);
+                return matcher_teddy_baseline(data_sv, teddy_data, verifier,
+                                              teddy_stats);
             });
-            out_timing->match_ns = measure_ns([&] {
-                results = matcher_teddy_baseline(data_sv, teddy_data, dfa,
-                                                 teddy_stats);
-            });
-        } else {
-            teddy_data = teddy::compile(key_svs, config);
-            dfa = compile_key_dfa(key_svs);
-            results =
-                matcher_teddy_baseline(data_sv, teddy_data, dfa, teddy_stats);
-        }
 
         return results.size();
     } catch (const FindkeyError& error) {

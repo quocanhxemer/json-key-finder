@@ -1,6 +1,8 @@
 #include "matcher_teddy_baseline.h"
 #include "teddy/compile.h"
 #include "teddy/dispatch.h"
+#include "teddy/verification/verifiers/hash.h"
+#include "teddy/verification/verifiers/trie.h"
 #include "teddy/verify.h"
 
 #include <algorithm>
@@ -11,11 +13,11 @@
 
 namespace {
 
-template <int Sigma, bool CollectStats>
+template <int Sigma, teddy::Verifier VerifierType, bool CollectStats>
 std::vector<findkey_result> matcher_impl(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const DFA& dfa,
+    const VerifierType& verifier,
     struct findkey_teddy_stats* stats) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
@@ -73,7 +75,7 @@ std::vector<findkey_result> matcher_impl(
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
         const teddy::candidate_result cr =
-            teddy::verify_json_key_candidate(str, len, end_quote, dfa);
+            teddy::verify_json_key_candidate(data, end_quote, verifier);
 
         if (cr.type == teddy::CANDIDATE_TYPE_MATCH) {
             results.push_back({cr.position, cr.key_id});
@@ -119,17 +121,31 @@ std::vector<findkey_result> matcher_impl(
 
 }  // namespace
 
+template <teddy::Verifier VerifierModel>
 std::vector<findkey_result> matcher_teddy_baseline(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const DFA& dfa,
+    const VerifierModel& verifier,
     struct findkey_teddy_stats* stats) {
     if (stats) {
         return teddy::dispatch_sigma(teddy_data.sigma, [&]<int Sigma>() {
-            return matcher_impl<Sigma, true>(data, teddy_data, dfa, stats);
+            return matcher_impl<Sigma, VerifierModel, true>(data, teddy_data,
+                                                            verifier, stats);
         });
     }
     return teddy::dispatch_sigma(teddy_data.sigma, [&]<int Sigma>() {
-        return matcher_impl<Sigma, false>(data, teddy_data, dfa, nullptr);
+        return matcher_impl<Sigma, VerifierModel, false>(data, teddy_data,
+                                                         verifier, nullptr);
     });
 }
+
+template std::vector<findkey_result>
+matcher_teddy_baseline<teddy::TrieVerifier>(std::string_view,
+                                            const teddy::CompilationData&,
+                                            const teddy::TrieVerifier&,
+                                            struct findkey_teddy_stats*);
+template std::vector<findkey_result>
+matcher_teddy_baseline<teddy::HashVerifier>(std::string_view,
+                                            const teddy::CompilationData&,
+                                            const teddy::HashVerifier&,
+                                            struct findkey_teddy_stats*);

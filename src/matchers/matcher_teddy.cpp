@@ -1,6 +1,8 @@
 #include "matcher_teddy.h"
 
 #include "core/findkey_error.h"
+#include "teddy/verification/verifiers/hash.h"
+#include "teddy/verification/verifiers/trie.h"
 
 #if COMPILER_SUPPORTS_TEDDY
 
@@ -17,11 +19,11 @@
 
 namespace {
 
-template <int Sigma>
+template <int Sigma, teddy::Verifier VerifierType>
 std::vector<findkey_result> matcher_impl(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const DFA& dfa) {
+    const VerifierType& verifier) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
 
@@ -100,7 +102,7 @@ std::vector<findkey_result> matcher_impl(
             const size_t end_quote = last_char + teddy_data.end_quote_offset;
 
             const teddy::candidate_result cr =
-                teddy::verify_json_key_candidate(str, len, end_quote, dfa);
+                teddy::verify_json_key_candidate(data, end_quote, verifier);
             if (cr.type == teddy::CANDIDATE_TYPE_MATCH) {
                 results.push_back({cr.position, cr.key_id});
             }
@@ -116,26 +118,37 @@ std::vector<findkey_result> matcher_impl(
 
 }  // namespace
 
+template <teddy::Verifier VerifierModel>
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const DFA& dfa) {
+    const VerifierModel& verifier) {
     return teddy::dispatch_sigma(teddy_data.sigma, [&]<int Sigma>() {
-        return matcher_impl<Sigma>(data, teddy_data, dfa);
+        return matcher_impl<Sigma>(data, teddy_data, verifier);
     });
 }
 
 #else
 
+template <teddy::Verifier VerifierModel>
 std::vector<findkey_result> matcher_teddy(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const DFA& dfa) {
+    const VerifierModel& verifier) {
     (void)data;
     (void)teddy_data;
-    (void)dfa;
+    (void)verifier;
     throw FindkeyError(FindkeyErrorCode::NOT_SUPPORTED,
                        "Teddy is not supported by this compiler");
 }
 
 #endif
+
+template std::vector<findkey_result> matcher_teddy<teddy::TrieVerifier>(
+    std::string_view,
+    const teddy::CompilationData&,
+    const teddy::TrieVerifier&);
+template std::vector<findkey_result> matcher_teddy<teddy::HashVerifier>(
+    std::string_view,
+    const teddy::CompilationData&,
+    const teddy::HashVerifier&);

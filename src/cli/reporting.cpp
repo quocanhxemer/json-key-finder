@@ -1,14 +1,21 @@
 #include "cli/reporting.h"
 
+#include "core/findkey_options.h"
+
 #include <cstdio>
 
-void print_compilation_stats(const teddy::CompilationMetadata& teddy_metadata,
-                             const DFACompilationMetadata& dfa_metadata) {
+void print_compilation_stats(
+    const teddy::CompilationMetadata& teddy_metadata,
+    const teddy::VerifierCompilationMetadata& metadata) {
     std::printf("Compilation Stats:\n");
     std::printf("\tSigma: %d\n", teddy_metadata.sigma);
     std::printf("\tGroups: %d\n", teddy_metadata.num_groups);
-    std::printf("\tDFA nodes: %zu\n", dfa_metadata.nodes);
-    std::printf("\tMax key length: %zu\n", dfa_metadata.max_key_len);
+    std::printf(
+        "\tVerification strategy: %s\n",
+        findkey_options::verification_strategy_name(metadata.strategy).data());
+    std::printf("\tTrie nodes: %zu\n", metadata.trie_nodes);
+    std::printf("\tHash keys: %zu\n", metadata.hash_keys);
+    std::printf("\tMax key length: %zu\n", metadata.max_key_len);
 }
 
 void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,
