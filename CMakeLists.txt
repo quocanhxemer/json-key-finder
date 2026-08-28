@@ -165,6 +165,7 @@ if(BUILD_TESTING)
         tests/capability_test.cpp
         tests/configurations_test.cpp
         tests/findkey_test.cpp
+        tests/score_test.cpp
         tests/suffix_test.cpp
         tests/utils.cpp
     )
