@@ -168,6 +168,7 @@ if(BUILD_TESTING)
         tests/grouping_test.cpp
         tests/score_test.cpp
         tests/suffix_test.cpp
+        tests/transition_table_test.cpp
         tests/utils.cpp
     )
     target_include_directories(find_json_key_tests PRIVATE include src)
