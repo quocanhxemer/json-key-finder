@@ -12,13 +12,6 @@
 
 namespace teddy {
 
-struct TrieNode {
-    std::array<int32_t, 256> children{};
-    int32_t key_id = -1;
-
-    TrieNode() { children.fill(-1); }
-};
-
 class TrieVerifier final {
    public:
     static constexpr findkey_teddy_verification_strategy strategy =
@@ -26,7 +19,7 @@ class TrieVerifier final {
 
     explicit TrieVerifier(const std::vector<std::string_view>& keys);
 
-    candidate_result check(std::string_view input, size_t end_quote) const {
+    CandidateResult check(std::string_view input, size_t end_quote) const {
         const char* str = input.data();
         int32_t current_node = 0;
         size_t consumed = 0;
@@ -38,7 +31,7 @@ class TrieVerifier final {
             if (c == '"' && is_valid_quote(str, position)) {
                 if (nodes_[current_node].key_id != -1) {
                     return {
-                        CANDIDATE_TYPE_MATCH,
+                        CANDIDATE_MATCH,
                         position + 1,
                         static_cast<uint32_t>(nodes_[current_node].key_id),
                     };
@@ -66,6 +59,13 @@ class TrieVerifier final {
     size_t max_key_len() const noexcept { return max_key_len_; }
 
    private:
+    struct TrieNode {
+        std::array<int32_t, 256> children{};
+        int32_t key_id = -1;
+
+        TrieNode() { children.fill(-1); }
+    };
+
     std::vector<TrieNode> nodes_;
     size_t max_key_len_ = 0;
 };

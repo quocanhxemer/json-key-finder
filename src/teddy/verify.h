@@ -32,10 +32,11 @@ static inline bool group_has_exact_suffix(const CompilationData& data,
     return false;
 }
 
-template <Verifier V>
-static inline candidate_result verify_json_key_candidate(std::string_view input,
-                                                         size_t end_quote,
-                                                         const V& verifier) {
+template <Verifier VerifierModel>
+static inline CandidateResult verify_json_key_candidate(
+    std::string_view input,
+    size_t end_quote,
+    const VerifierModel& verifier) {
     const char* str = input.data();
     const size_t len = input.size();
 

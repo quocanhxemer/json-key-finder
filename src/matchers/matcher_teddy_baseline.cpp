@@ -13,11 +13,11 @@
 
 namespace {
 
-template <int Sigma, teddy::Verifier VerifierType, bool CollectStats>
+template <int Sigma, teddy::Verifier VerifierModel, bool CollectStats>
 std::vector<findkey_result> matcher_impl(
     std::string_view data,
     const teddy::CompilationData& teddy_data,
-    const VerifierType& verifier,
+    const VerifierModel& verifier,
     struct findkey_teddy_stats* stats) {
     std::vector<findkey_result> results;
     results.reserve(1024);  // rough estimate
@@ -74,10 +74,10 @@ std::vector<findkey_result> matcher_impl(
         }
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
-        const teddy::candidate_result cr =
+        const teddy::CandidateResult cr =
             teddy::verify_json_key_candidate(data, end_quote, verifier);
 
-        if (cr.type == teddy::CANDIDATE_TYPE_MATCH) {
+        if (cr.type == teddy::CANDIDATE_MATCH) {
             results.push_back({cr.position, cr.key_id});
             if constexpr (CollectStats) {
                 if (stats) {

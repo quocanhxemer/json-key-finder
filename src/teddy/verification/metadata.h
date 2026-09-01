@@ -23,8 +23,12 @@ VerifierCompilationMetadata get_verifier_compilation_metadata(
     };
     if constexpr (VerifierModel::strategy == TEDDY_VERIFY_TRIE) {
         metadata.trie_nodes = verifier.size();
-    } else {
+    } else if constexpr (VerifierModel::strategy == TEDDY_VERIFY_HASH) {
         metadata.hash_keys = verifier.size();
+    } else {
+        static_assert(VerifierModel::strategy == TEDDY_VERIFY_TRIE ||
+                          VerifierModel::strategy == TEDDY_VERIFY_HASH,
+                      "Unsupported verifier strategy");
     }
     return metadata;
 }

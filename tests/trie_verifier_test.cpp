@@ -9,7 +9,7 @@
 
 namespace {
 
-teddy::candidate_result verify_candidate(
+teddy::CandidateResult verify_candidate(
     const std::string_view data,
     const std::size_t end_quote,
     const std::vector<std::string_view>& keys) {
@@ -23,9 +23,9 @@ TEST(TeddyTrieVerifierTest, ReturnsTheCorrectKey) {
     constexpr std::string_view data = R"("teddy":1)";
     const std::vector<std::string_view> keys = {"teddy", "other"};
 
-    const teddy::candidate_result result = verify_candidate(data, 6, keys);
+    const teddy::CandidateResult result = verify_candidate(data, 6, keys);
 
-    EXPECT_EQ(result.type, teddy::CANDIDATE_TYPE_MATCH);
+    EXPECT_EQ(result.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(result.position, 1u);
     EXPECT_EQ(result.key_id, 0u);
 }
@@ -36,7 +36,7 @@ TEST(TeddyTrieVerifierTest, ReportsMalformedJsonContext) {
         std::string_view data;
         std::size_t end_quote;
         std::vector<std::string_view> keys;
-        teddy::candidate_type expected_type;
+        teddy::CandidateType expected_type;
     };
 
     const std::vector<TestCase> cases = {
@@ -64,7 +64,7 @@ TEST(TeddyTrieVerifierTest, ReportsMalformedJsonContext) {
 
     for (const auto& test_case : cases) {
         SCOPED_TRACE(::testing::Message() << "case: " << test_case.name);
-        const teddy::candidate_result result = verify_candidate(
+        const teddy::CandidateResult result = verify_candidate(
             test_case.data, test_case.end_quote, test_case.keys);
         EXPECT_EQ(result.type, test_case.expected_type);
     }
@@ -74,9 +74,9 @@ TEST(TeddyTrieVerifierTest, AllowsWhitespaceBeforeTheColon) {
     constexpr std::string_view data = "\"teddy\" \n\t:1";
     const std::vector<std::string_view> keys = {"teddy"};
 
-    const teddy::candidate_result result = verify_candidate(data, 6, keys);
+    const teddy::CandidateResult result = verify_candidate(data, 6, keys);
 
-    EXPECT_EQ(result.type, teddy::CANDIDATE_TYPE_MATCH);
+    EXPECT_EQ(result.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(result.position, 1u);
     EXPECT_EQ(result.key_id, 0u);
 }
@@ -85,7 +85,7 @@ TEST(TeddyTrieVerifierTest, RejectsAnUnknownCompleteKeyWithAKnownSuffix) {
     constexpr std::string_view data = R"("daddy":1)";
     const std::vector<std::string_view> keys = {"teddy"};
 
-    const teddy::candidate_result result = verify_candidate(data, 6, keys);
+    const teddy::CandidateResult result = verify_candidate(data, 6, keys);
 
     EXPECT_EQ(result.type, teddy::CANDIDATE_KEY_NOT_FOUND);
 }
@@ -93,15 +93,15 @@ TEST(TeddyTrieVerifierTest, RejectsAnUnknownCompleteKeyWithAKnownSuffix) {
 TEST(TeddyTrieVerifierTest, RecognizesAKeyThatIsASuffixOfAnother) {
     const std::vector<std::string_view> keys = {"id", "user_id"};
 
-    const teddy::candidate_result short_key =
+    const teddy::CandidateResult short_key =
         verify_candidate(R"("id":1)", 3, keys);
-    const teddy::candidate_result long_key =
+    const teddy::CandidateResult long_key =
         verify_candidate(R"("user_id":1)", 8, keys);
 
-    ASSERT_EQ(short_key.type, teddy::CANDIDATE_TYPE_MATCH);
+    ASSERT_EQ(short_key.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(short_key.position, 1u);
     EXPECT_EQ(short_key.key_id, 0u);
-    ASSERT_EQ(long_key.type, teddy::CANDIDATE_TYPE_MATCH);
+    ASSERT_EQ(long_key.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(long_key.position, 1u);
     EXPECT_EQ(long_key.key_id, 1u);
 }
@@ -110,9 +110,9 @@ TEST(TeddyTrieVerifierTest, DuplicateKeysReturnTheFirstId) {
     constexpr std::string_view data = R"("teddy":1)";
     const std::vector<std::string_view> keys = {"teddy", "teddy"};
 
-    const teddy::candidate_result result = verify_candidate(data, 6, keys);
+    const teddy::CandidateResult result = verify_candidate(data, 6, keys);
 
-    ASSERT_EQ(result.type, teddy::CANDIDATE_TYPE_MATCH);
+    ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(result.position, 1u);
     EXPECT_EQ(result.key_id, 0u);
 }

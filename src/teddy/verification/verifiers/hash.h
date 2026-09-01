@@ -19,7 +19,7 @@ class HashVerifier final {
 
     explicit HashVerifier(const std::vector<std::string_view>& keys);
 
-    candidate_result check(std::string_view input, size_t end_quote) const {
+    CandidateResult check(std::string_view input, size_t end_quote) const {
         const char* str = input.data();
 
         size_t min_start_quote = 0;
@@ -34,7 +34,7 @@ class HashVerifier final {
                                            end_quote - position - 1);
                 const auto key_it = keys_.find(key);
                 if (key_it != keys_.end()) {
-                    return {CANDIDATE_TYPE_MATCH, position + 1, key_it->second};
+                    return {CANDIDATE_MATCH, position + 1, key_it->second};
                 }
                 return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
             }
