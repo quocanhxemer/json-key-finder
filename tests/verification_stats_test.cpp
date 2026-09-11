@@ -23,7 +23,8 @@ BaselineRun run_baseline_with_stats(const std::string_view data,
     const findkey_teddy_config config =
         findkey_test::make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_TRIE);
     const teddy::CompilationData compilation = teddy::compile(keys, config);
-    const teddy::TrieVerifier verifier(keys);
+    const teddy::VerificationBuildContext context{keys, compilation};
+    const teddy::TrieVerifier verifier(context);
 
     BaselineRun run;
     run.results =

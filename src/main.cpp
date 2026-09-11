@@ -67,7 +67,9 @@ int main(int argc, char** argv) {
         verifier_compilation_metadata = teddy::dispatch_verifier(
             args.teddy_config.verification_strategy,
             [&]<teddy::Verifier VerifierModel>() {
-                const VerifierModel verifier(keys.views);
+                const teddy::VerificationBuildContext context{keys.views,
+                                                              teddy_data};
+                const VerifierModel verifier(context);
                 return teddy::get_verifier_compilation_metadata(verifier);
             });
     }

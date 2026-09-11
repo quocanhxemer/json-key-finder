@@ -10,10 +10,16 @@
 
 namespace teddy {
 
+struct CompilationData;
+
+struct VerificationBuildContext {
+    const std::vector<std::string_view>& keys;
+    const CompilationData& teddy;
+};
+
 template <typename VerifierModel>
 concept Verifier =
-    std::constructible_from<VerifierModel,
-                            const std::vector<std::string_view>&> &&
+    std::constructible_from<VerifierModel, const VerificationBuildContext&> &&
     requires(const VerifierModel& verifier,
              std::string_view input,
              size_t end_quote) {

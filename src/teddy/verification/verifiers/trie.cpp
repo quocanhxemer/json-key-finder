@@ -4,7 +4,8 @@
 
 namespace teddy {
 
-TrieVerifier::TrieVerifier(const std::vector<std::string_view>& keys) {
+TrieVerifier::TrieVerifier(const VerificationBuildContext& context) {
+    const std::vector<std::string_view>& keys = context.keys;
     nodes_.emplace_back();  // root
 
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {

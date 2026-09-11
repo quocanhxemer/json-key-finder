@@ -29,6 +29,9 @@ struct CompilationData {
 
     std::vector<Suffix> suffixes;
     std::vector<std::vector<uint32_t>> group_suffix_ids;
+
+    // maps original key index to suffix index
+    std::vector<uint32_t> key_suffix_ids;
 };
 
 struct CompilationMetadata {

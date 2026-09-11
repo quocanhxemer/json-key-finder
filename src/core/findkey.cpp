@@ -138,7 +138,9 @@ extern "C" size_t findkey(const uint8_t* data,
                         std::optional<VerifierModel> verifier;
                         out_timing->compile_ns = measure_ns([&] {
                             teddy_data = teddy::compile(key_svs, config);
-                            verifier.emplace(key_svs);
+                            const teddy::VerificationBuildContext context{
+                                key_svs, teddy_data};
+                            verifier.emplace(context);
                         });
                         out_timing->match_ns = measure_ns([&] {
                             results =
@@ -159,7 +161,9 @@ extern "C" size_t findkey(const uint8_t* data,
                         std::optional<VerifierModel> verifier;
                         out_timing->compile_ns = measure_ns([&] {
                             teddy_data = teddy::compile(key_svs, config);
-                            verifier.emplace(key_svs);
+                            const teddy::VerificationBuildContext context{
+                                key_svs, teddy_data};
+                            verifier.emplace(context);
                         });
                         out_timing->match_ns = measure_ns([&] {
                             results = matcher_teddy_baseline(
@@ -227,7 +231,9 @@ extern "C" size_t findkey_with_stats(
             config.verification_strategy, [&]<teddy::Verifier VerifierModel>() {
                 const teddy::CompilationData teddy_data =
                     teddy::compile(key_svs, config);
-                const VerifierModel verifier(key_svs);
+                const teddy::VerificationBuildContext context{key_svs,
+                                                              teddy_data};
+                const VerifierModel verifier(context);
                 return matcher_teddy_baseline(data_sv, teddy_data, verifier,
                                               teddy_stats);
             });

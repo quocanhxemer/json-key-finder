@@ -22,7 +22,9 @@ CompilationMetadata compile_metadata(const PreparedKeys& keys,
     const teddy::VerifierCompilationMetadata verifier_metadata =
         teddy::dispatch_verifier(
             config.verification_strategy, [&]<teddy::Verifier VerifierModel>() {
-                const VerifierModel verifier(keys.views);
+                const teddy::VerificationBuildContext context{
+                    keys.views, teddy_compilation_data};
+                const VerifierModel verifier(context);
                 return teddy::get_verifier_compilation_metadata(verifier);
             });
     return {

@@ -17,6 +17,9 @@ struct SuffixSet {
     size_t end_quote_offset = 1;
 
     std::vector<Suffix> data;
+
+    // maps original key index to suffix index
+    std::vector<uint32_t> key_suffix_ids;
 };
 
 SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,

@@ -70,6 +70,7 @@ CompilationData compile(SuffixSet suffixes,
     data.sigma = suffixes.sigma;
     data.end_quote_offset = suffixes.end_quote_offset;
     data.suffixes = std::move(suffixes.data);
+    data.key_suffix_ids = std::move(suffixes.key_suffix_ids);
     data.group_suffix_ids =
         build_groups(data.suffixes, grouping_config, data.sigma);
 

@@ -3,7 +3,7 @@
 #include "core/findkey_error.h"
 
 #include <algorithm>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace teddy {
 namespace {
@@ -86,8 +86,9 @@ SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
         config.suffix_mode == TEDDY_SUFFIX_QUOTED ? 0 : 1;
 
     prepared.data.reserve(keys.size());
-    std::unordered_set<uint64_t> seen;
-    seen.reserve(keys.size());
+    prepared.key_suffix_ids.reserve(keys.size());
+    std::unordered_map<uint64_t, uint32_t> suffix_ids;
+    suffix_ids.reserve(keys.size());
 
     for (std::string_view key : keys) {
         Suffix suffix{};
@@ -95,9 +96,13 @@ SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
             suffix[i] = suffix_byte(key, prepared.sigma, i, config.suffix_mode);
         }
 
-        if (seen.insert(encode_suffix(suffix, prepared.sigma)).second) {
+        const uint64_t encoded = encode_suffix(suffix, prepared.sigma);
+        const auto [suffix_it, inserted] = suffix_ids.emplace(
+            encoded, static_cast<uint32_t>(prepared.data.size()));
+        if (inserted) {
             prepared.data.push_back(suffix);
         }
+        prepared.key_suffix_ids.push_back(suffix_it->second);
     }
 
     return prepared;

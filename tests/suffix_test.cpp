@@ -20,6 +20,7 @@ void expect_suffixes(const teddy::SuffixSet& actual,
     ASSERT_EQ(actual.sigma, expected.sigma);
     EXPECT_EQ(actual.end_quote_offset, expected.end_quote_offset);
     ASSERT_EQ(actual.data.size(), expected.data.size());
+    EXPECT_EQ(actual.key_suffix_ids, expected.key_suffix_ids);
 
     for (size_t index = 0; index < expected.data.size(); ++index) {
         SCOPED_TRACE(::testing::Message() << "suffix index " << index);
@@ -59,6 +60,7 @@ TEST(TeddySuffixPreparationTest, RawModeUsesTrailingKeyBytes) {
                 teddy::Suffix{'p', 'h', 'a'},
                 teddy::Suffix{'e', 't', 'a'},
             },
+        .key_suffix_ids = {0, 1},
     };
 
     expect_suffixes(prepared, expected);
@@ -78,6 +80,7 @@ TEST(TeddySuffixPreparationTest, QuotedModeAppendsTheClosingQuote) {
                 teddy::Suffix{'p', 'h', 'a', '"'},
                 teddy::Suffix{'e', 't', 'a', '"'},
             },
+        .key_suffix_ids = {0, 1},
     };
 
     expect_suffixes(prepared, expected);
@@ -96,6 +99,7 @@ TEST(TeddySuffixPreparationTest, CapsSigmaAtTheShortestVirtualKey) {
                 teddy::Suffix{'t'},
                 teddy::Suffix{'a'},
             },
+        .key_suffix_ids = {0, 1},
     };
     expect_suffixes(raw, expected_raw);
 
@@ -109,6 +113,7 @@ TEST(TeddySuffixPreparationTest, CapsSigmaAtTheShortestVirtualKey) {
                 teddy::Suffix{'t', '"'},
                 teddy::Suffix{'a', '"'},
             },
+        .key_suffix_ids = {0, 1},
     };
     expect_suffixes(quoted, expected_quoted);
 }
@@ -124,6 +129,7 @@ TEST(TeddySuffixPreparationTest, SupportsTheMaximumRequestedSigma) {
         .sigma = 4,
         .end_quote_offset = 1,
         .data = {teddy::Suffix{'a', 'b', 'e', 't'}},
+        .key_suffix_ids = {0},
     };
     expect_suffixes(raw, expected_raw);
 
@@ -135,6 +141,7 @@ TEST(TeddySuffixPreparationTest, SupportsTheMaximumRequestedSigma) {
         .sigma = 5,
         .end_quote_offset = 0,
         .data = {teddy::Suffix{'a', 'b', 'e', 't', '"'}},
+        .key_suffix_ids = {0},
     };
     expect_suffixes(quoted, expected_quoted);
 }
@@ -157,6 +164,7 @@ TEST(TeddySuffixPreparationTest, DeduplicatesEqualSuffixesInFirstSeenOrder) {
                 teddy::Suffix{'l', 'p', 'h', 'a'},
                 teddy::Suffix{'m', 'e', 'g', 'a'},
             },
+        .key_suffix_ids = {0, 1, 0, 1},
     };
     expect_suffixes(raw, expected_raw);
 
@@ -170,6 +178,7 @@ TEST(TeddySuffixPreparationTest, DeduplicatesEqualSuffixesInFirstSeenOrder) {
                 teddy::Suffix{'l', 'p', 'h', 'a', '"'},
                 teddy::Suffix{'m', 'e', 'g', 'a', '"'},
             },
+        .key_suffix_ids = {0, 1, 0, 1},
     };
     expect_suffixes(quoted, expected_quoted);
 }
@@ -185,6 +194,7 @@ TEST(TeddySuffixPreparationTest, PreservesNonAsciiBytes) {
         .sigma = 2,
         .end_quote_offset = 1,
         .data = {teddy::Suffix{0xC3, 0xA9}},
+        .key_suffix_ids = {0},
     };
 
     expect_suffixes(prepared, expected);

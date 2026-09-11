@@ -17,7 +17,7 @@ class HashVerifier final {
     static constexpr findkey_teddy_verification_strategy strategy =
         TEDDY_VERIFY_HASH;
 
-    explicit HashVerifier(const std::vector<std::string_view>& keys);
+    explicit HashVerifier(const VerificationBuildContext& context);
 
     CandidateResult check(std::string_view input, size_t end_quote) const {
         const char* str = input.data();

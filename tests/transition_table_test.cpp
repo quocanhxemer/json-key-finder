@@ -118,7 +118,8 @@ TEST(TeddyTransitionTableTest, CrossProductHitIsRejectedByExactVerification) {
                                         cross_product_suffix));
 
     constexpr std::string_view json = R"({"AAB":1})";
-    const teddy::TrieVerifier verifier(keys);
+    const teddy::VerificationBuildContext context{keys, compilation};
+    const teddy::TrieVerifier verifier(context);
     findkey_teddy_stats stats{};
     const std::vector<findkey_result> results =
         matcher_teddy_baseline(json, compilation, verifier, &stats);

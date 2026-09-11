@@ -1,6 +1,6 @@
-#include "teddy/verification/verifiers/hash.h"
+#include "teddy_verifier_test_utils.h"
 
-#include "teddy/verify.h"
+#include "teddy/verification/verifiers/hash.h"
 
 #include <gtest/gtest.h>
 
@@ -9,35 +9,26 @@
 #include <string_view>
 #include <vector>
 
-namespace {
-
-teddy::CandidateResult verify_candidate(
-    const std::string_view data,
-    const std::size_t end_quote,
-    const std::vector<std::string_view>& keys) {
-    const teddy::HashVerifier verifier(keys);
-    return teddy::verify_json_key_candidate(data, end_quote, verifier);
-}
-
-}  // namespace
-
 TEST(TeddyHashVerifierTest, FindsKnownAndUnknownKeys) {
     const std::vector<std::string_view> keys = {"teddy", "other"};
 
     const teddy::CandidateResult known =
-        verify_candidate(R"("teddy":1)", 6, keys);
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"("teddy":1)", 6,
+                                                            keys);
     EXPECT_EQ(known.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(known.position, 1u);
     EXPECT_EQ(known.key_id, 0u);
 
     const teddy::CandidateResult unknown =
-        verify_candidate(R"("daddy":1)", 6, keys);
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"("daddy":1)", 6,
+                                                            keys);
     EXPECT_EQ(unknown.type, teddy::CANDIDATE_KEY_NOT_FOUND);
 }
 
 TEST(TeddyHashVerifierTest, DuplicateKeysReturnTheFirstId) {
     const teddy::CandidateResult result =
-        verify_candidate(R"("teddy":1)", 6, {"teddy", "other", "teddy"});
+        findkey_test::verify_candidate<teddy::HashVerifier>(
+            R"("teddy":1)", 6, {"teddy", "other", "teddy"});
 
     ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(result.position, 1u);
@@ -46,9 +37,11 @@ TEST(TeddyHashVerifierTest, DuplicateKeysReturnTheFirstId) {
 
 TEST(TeddyHashVerifierTest, RecognizesKeysThatSuffixOtherKeys) {
     const teddy::CandidateResult short_key =
-        verify_candidate(R"("id":1)", 3, {"id", "user_id"});
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"("id":1)", 3,
+                                                            {"id", "user_id"});
     const teddy::CandidateResult long_key =
-        verify_candidate(R"("user_id":1)", 8, {"id", "user_id"});
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"("user_id":1)", 8,
+                                                            {"id", "user_id"});
 
     ASSERT_EQ(short_key.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(short_key.position, 1u);
@@ -64,9 +57,9 @@ TEST(TeddyHashVerifierTest, HandlesEscapedQuotesAndBackslashes) {
                                                 R"(backslash\\key)"};
 
     const teddy::CandidateResult escaped_quote =
-        verify_candidate(data, 13, keys);
+        findkey_test::verify_candidate<teddy::HashVerifier>(data, 13, keys);
     const teddy::CandidateResult escaped_backslash =
-        verify_candidate(data, 32, keys);
+        findkey_test::verify_candidate<teddy::HashVerifier>(data, 32, keys);
 
     ASSERT_EQ(escaped_quote.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(escaped_quote.position, 1u);
@@ -78,17 +71,20 @@ TEST(TeddyHashVerifierTest, HandlesEscapedQuotesAndBackslashes) {
 TEST(TeddyHashVerifierTest, ReportsEmptyAndMissingOpeningQuotes) {
     const std::vector<std::string_view> keys = {"teddy"};
 
-    const teddy::CandidateResult empty = verify_candidate(R"("":1)", 1, keys);
+    const teddy::CandidateResult empty =
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"("":1)", 1, keys);
     EXPECT_EQ(empty.type, teddy::CANDIDATE_KEY_NOT_FOUND);
 
     const teddy::CandidateResult missing =
-        verify_candidate(R"(teddy":1)", 5, keys);
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"(teddy":1)", 5,
+                                                            keys);
     EXPECT_EQ(missing.type, teddy::CANDIDATE_MISSING_OPEN_QUOTE);
 }
 
 TEST(TeddyHashVerifierTest, BoundsOpeningQuoteSearchByMaximumKeyLength) {
     const teddy::CandidateResult result =
-        verify_candidate(R"("oversized":1)", 10, {"id"});
+        findkey_test::verify_candidate<teddy::HashVerifier>(R"("oversized":1)",
+                                                            10, {"id"});
 
     EXPECT_EQ(result.type, teddy::CANDIDATE_MISSING_OPEN_QUOTE);
 }
@@ -100,7 +96,8 @@ TEST(TeddyHashVerifierTest, PreservesNonAsciiBytes) {
     data += "\":1";
 
     const teddy::CandidateResult result =
-        verify_candidate(data, 1 + key.size(), {key});
+        findkey_test::verify_candidate<teddy::HashVerifier>(
+            data, 1 + key.size(), {key});
 
     ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(result.position, 1u);

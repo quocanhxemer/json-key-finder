@@ -60,6 +60,17 @@ void expect_valid_grouping(const GroupedSuffixIds& groups,
     }
 }
 
+void expect_valid_routing(const teddy::CompilationData& compilation,
+                          const std::size_t key_count) {
+    ASSERT_EQ(compilation.key_suffix_ids.size(), key_count);
+
+    for (std::size_t key_id = 0; key_id < key_count; ++key_id) {
+        SCOPED_TRACE(::testing::Message() << "key ID: " << key_id);
+        const uint32_t suffix_id = compilation.key_suffix_ids[key_id];
+        ASSERT_LT(suffix_id, compilation.suffixes.size());
+    }
+}
+
 bool active_suffixes_are_unique(const std::vector<teddy::Suffix>& suffixes,
                                 const int sigma) {
     for (std::size_t i = 0; i < suffixes.size(); ++i) {
@@ -204,27 +215,70 @@ TEST(TeddyGroupingInvariantsTest,
 TEST(TeddyGroupingInvariantsTest,
      CompilationDeduplicatesSuffixesBeforeGrouping) {
     const std::vector<std::string_view> keys = {
-        "alpha",
-        "zalpha",
-        "omega",
-        "mega",
+        "alpha", "zalpha", "omega", "mega", "alpha",
     };
 
     for (const auto grouping : teddy::all_grouping_configurations()) {
-        SCOPED_TRACE(::testing::Message()
-                     << "strategy: " << static_cast<int>(grouping.strategy)
-                     << ", score: " << static_cast<int>(grouping.score));
-        findkey_teddy_config config = findkey_test::make_teddy_config(
-            TEDDY_SUFFIX_RAW, 4, TEDDY_VERIFY_TRIE);
-        config.grouping = grouping;
+        for (const auto suffix_mode : teddy::ALL_SUFFIX_MODES) {
+            SCOPED_TRACE(::testing::Message()
+                         << "strategy: " << static_cast<int>(grouping.strategy)
+                         << ", score: " << static_cast<int>(grouping.score)
+                         << ", suffix mode: " << static_cast<int>(suffix_mode));
+            findkey_teddy_config config = findkey_test::make_teddy_config(
+                suffix_mode, 4, TEDDY_VERIFY_TRIE);
+            config.grouping = grouping;
 
-        const teddy::CompilationData compilation = teddy::compile(keys, config);
+            const teddy::CompilationData compilation =
+                teddy::compile(keys, config);
 
-        ASSERT_EQ(compilation.suffixes.size(), 2u);
-        EXPECT_TRUE(active_suffixes_are_unique(compilation.suffixes,
-                                               compilation.sigma));
-        expect_valid_grouping(compilation.group_suffix_ids,
-                              compilation.suffixes.size());
+            ASSERT_EQ(compilation.suffixes.size(), 2u);
+            EXPECT_EQ(compilation.key_suffix_ids,
+                      (std::vector<uint32_t>{0, 0, 1, 1, 0}));
+            EXPECT_TRUE(active_suffixes_are_unique(compilation.suffixes,
+                                                   compilation.sigma));
+            expect_valid_grouping(compilation.group_suffix_ids,
+                                  compilation.suffixes.size());
+            expect_valid_routing(compilation, keys.size());
+        }
+    }
+}
+
+TEST(TeddyGroupingInvariantsTest,
+     CompilationRoutesEveryKeyThroughItsDeduplicatedSuffix) {
+    const std::vector<std::string_view> keys = {
+        "key000", "key001", "key002", "key003",   "key004", "key005",
+        "key006", "key007", "key008", "other000", "key003",
+    };
+    const std::vector<uint32_t> expected_key_suffix_ids = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 3,
+    };
+
+    for (const auto grouping : teddy::all_grouping_configurations()) {
+        for (const auto suffix_mode : teddy::ALL_SUFFIX_MODES) {
+            SCOPED_TRACE(::testing::Message()
+                         << "strategy: " << static_cast<int>(grouping.strategy)
+                         << ", score: " << static_cast<int>(grouping.score)
+                         << ", suffix mode: " << static_cast<int>(suffix_mode));
+            findkey_teddy_config config = findkey_test::make_teddy_config(
+                suffix_mode, 3, TEDDY_VERIFY_TRIE);
+            config.grouping = grouping;
+
+            const teddy::CompilationData compilation =
+                teddy::compile(keys, config);
+
+            ASSERT_EQ(compilation.suffixes.size(), 9u);
+            EXPECT_EQ(compilation.key_suffix_ids, expected_key_suffix_ids);
+            expect_valid_grouping(compilation.group_suffix_ids,
+                                  compilation.suffixes.size());
+            expect_valid_routing(compilation, keys.size());
+
+            // 9 suffixes must occupy at most 8 groups
+            // test pigeonhole principle
+            EXPECT_TRUE(std::any_of(
+                compilation.group_suffix_ids.begin(),
+                compilation.group_suffix_ids.end(),
+                [](const auto& group) { return group.size() > 1; }));
+        }
     }
 }
 
