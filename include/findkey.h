@@ -82,6 +82,7 @@ enum findkey_teddy_suffix_mode {
 enum findkey_teddy_verification_strategy {
     TEDDY_VERIFY_TRIE = 0,
     TEDDY_VERIFY_HASH = 1,
+    TEDDY_VERIFY_GROUP_MASK_TRIE = 2,
     FINDKEY_TEDDY_VERIFICATION_STRATEGY_COUNT,
 };
 

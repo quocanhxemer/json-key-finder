@@ -1,6 +1,7 @@
 #include "matcher_teddy_baseline.h"
 #include "teddy/compile.h"
 #include "teddy/dispatch.h"
+#include "teddy/verification/verifiers/group_mask_trie.h"
 #include "teddy/verification/verifiers/hash.h"
 #include "teddy/verification/verifiers/trie.h"
 #include "teddy/verify.h"
@@ -75,7 +76,7 @@ std::vector<findkey_result> matcher_impl(
 
         const size_t end_quote = position + teddy_data.end_quote_offset;
         const teddy::CandidateResult cr =
-            teddy::verify_json_key_candidate(data, end_quote, verifier);
+            teddy::verify_json_key_candidate(data, end_quote, hits, verifier);
 
         if (cr.type == teddy::CANDIDATE_MATCH) {
             results.push_back({cr.position, cr.key_id});
@@ -149,3 +150,8 @@ matcher_teddy_baseline<teddy::HashVerifier>(std::string_view,
                                             const teddy::CompilationData&,
                                             const teddy::HashVerifier&,
                                             struct findkey_teddy_stats*);
+template std::vector<findkey_result> matcher_teddy_baseline<
+    teddy::GroupMaskTrieVerifier>(std::string_view,
+                                  const teddy::CompilationData&,
+                                  const teddy::GroupMaskTrieVerifier&,
+                                  struct findkey_teddy_stats*);

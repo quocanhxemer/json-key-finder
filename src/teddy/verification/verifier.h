@@ -22,11 +22,14 @@ concept Verifier =
     std::constructible_from<VerifierModel, const VerificationBuildContext&> &&
     requires(const VerifierModel& verifier,
              std::string_view input,
-             size_t end_quote) {
+             size_t end_quote,
+             uint8_t candidate_groups) {
         {
             VerifierModel::strategy
         } -> std::convertible_to<findkey_teddy_verification_strategy>;
-        { verifier.check(input, end_quote) } -> std::same_as<CandidateResult>;
+        {
+            verifier.check(input, end_quote, candidate_groups)
+        } -> std::same_as<CandidateResult>;
         { verifier.size() } noexcept -> std::same_as<size_t>;
         { verifier.max_key_len() } noexcept -> std::same_as<size_t>;
     };

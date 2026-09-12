@@ -92,6 +92,9 @@ std::optional<findkey_teddy_verification_strategy> parse_verification_strategy(
     if (raw == "hash") {
         return TEDDY_VERIFY_HASH;
     }
+    if (raw == "group_mask_trie") {
+        return TEDDY_VERIFY_GROUP_MASK_TRIE;
+    }
     return std::nullopt;
 }
 
@@ -188,6 +191,8 @@ std::string_view verification_strategy_name(
             return "trie";
         case TEDDY_VERIFY_HASH:
             return "hash";
+        case TEDDY_VERIFY_GROUP_MASK_TRIE:
+            return "group_mask_trie";
         default:
             return "unknown";
     }

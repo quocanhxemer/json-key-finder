@@ -70,7 +70,7 @@ std::optional<size_t> parse_size(std::string_view raw) {
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
            "quote-suffix\n"
         << "  --verification-strategy <name>  Repeatable. Defaults: trie, "
-           "hash\n"
+           "hash, group_mask_trie\n"
         << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
            "4\n";
     std::exit(EXIT_FAILURE);

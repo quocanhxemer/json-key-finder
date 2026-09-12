@@ -1,6 +1,7 @@
 #include "matcher_teddy.h"
 
 #include "core/findkey_error.h"
+#include "teddy/verification/verifiers/group_mask_trie.h"
 #include "teddy/verification/verifiers/hash.h"
 #include "teddy/verification/verifiers/trie.h"
 
@@ -90,6 +91,9 @@ std::vector<findkey_result> matcher_impl(
         __m128i is_zero = _mm_cmpeq_epi8(match, zero_vector);
         uint16_t hit_mask = ~static_cast<uint16_t>(_mm_movemask_epi8(is_zero));
 
+        alignas(16) uint8_t hit_groups[16];
+        _mm_store_si128(reinterpret_cast<__m128i*>(hit_groups), match);
+
         while (hit_mask) {
             const int i = __builtin_ctz(hit_mask);
             hit_mask &= hit_mask - 1;
@@ -101,8 +105,8 @@ std::vector<findkey_result> matcher_impl(
             const size_t last_char = base + i;
             const size_t end_quote = last_char + teddy_data.end_quote_offset;
 
-            const teddy::CandidateResult cr =
-                teddy::verify_json_key_candidate(data, end_quote, verifier);
+            const teddy::CandidateResult cr = teddy::verify_json_key_candidate(
+                data, end_quote, hit_groups[i], verifier);
             if (cr.type == teddy::CANDIDATE_MATCH) {
                 results.push_back({cr.position, cr.key_id});
             }
@@ -152,3 +156,7 @@ template std::vector<findkey_result> matcher_teddy<teddy::HashVerifier>(
     std::string_view,
     const teddy::CompilationData&,
     const teddy::HashVerifier&);
+template std::vector<findkey_result> matcher_teddy<
+    teddy::GroupMaskTrieVerifier>(std::string_view,
+                                  const teddy::CompilationData&,
+                                  const teddy::GroupMaskTrieVerifier&);

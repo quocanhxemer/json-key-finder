@@ -14,13 +14,15 @@ template <teddy::Verifier VerifierModel>
 teddy::CandidateResult verify_candidate(
     const std::string_view data,
     const std::size_t end_quote,
-    const std::vector<std::string_view>& keys) {
+    const std::vector<std::string_view>& keys,
+    const uint8_t candidate_groups = 0xFF) {
     const findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
     const teddy::CompilationData compilation = teddy::compile(keys, config);
     const teddy::VerificationBuildContext context{keys, compilation};
 
     const VerifierModel verifier(context);
-    return teddy::verify_json_key_candidate(data, end_quote, verifier);
+    return teddy::verify_json_key_candidate(data, end_quote, candidate_groups,
+                                            verifier);
 }
 
 }  // namespace findkey_test
