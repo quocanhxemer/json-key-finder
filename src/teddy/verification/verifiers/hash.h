@@ -19,7 +19,10 @@ class HashVerifier final {
 
     explicit HashVerifier(const VerificationBuildContext& context);
 
-    CandidateResult check(std::string_view input, size_t end_quote) const {
+    CandidateResult check(std::string_view input,
+                          size_t end_quote,
+                          uint8_t candidate_groups) const {
+        (void)candidate_groups;
         const char* str = input.data();
 
         size_t min_start_quote = 0;
@@ -44,7 +47,6 @@ class HashVerifier final {
     }
 
     size_t size() const noexcept { return keys_.size(); }
-    size_t max_key_len() const noexcept { return max_key_len_; }
 
    private:
     std::unordered_map<std::string_view, uint32_t> keys_;

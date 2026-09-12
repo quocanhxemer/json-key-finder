@@ -97,8 +97,7 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
         .metadata = {.sigma = 3, .num_groups = 4},
         .verifier_metadata = {.strategy = TEDDY_VERIFY_TRIE,
                               .trie_nodes = 29,
-                              .hash_keys = 0,
-                              .max_key_len = 31},
+                              .hash_keys = 0},
         .repeat_index = 5,
         .status = FINDKEY_OK,
         .total_found = 7,
@@ -127,17 +126,18 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
     const std::vector<std::string> values = split_csv_row(output.str());
 
     ASSERT_EQ(header.size(), values.size());
-    EXPECT_EQ(header.size(), 35u);
+    EXPECT_EQ(header.size(), 34u);
     EXPECT_EQ(std::find(header.begin(), header.end(), "compile_ns"),
               header.end());
     EXPECT_EQ(std::find(header.begin(), header.end(), "match_ns"),
               header.end());
     EXPECT_EQ(std::find(header.begin(), header.end(), "total_ns"),
               header.end());
-    EXPECT_EQ(header[18], "data_bytes");
+    EXPECT_EQ(std::find(header.begin(), header.end(), "max_key_len"),
+              header.end());
+    EXPECT_EQ(header[17], "data_bytes");
     EXPECT_EQ(values[12], "29");
-    EXPECT_EQ(values[14], "31");
-    EXPECT_EQ(values[18], "37");
-    EXPECT_EQ(values[19], "41");
-    EXPECT_EQ(values[29], "83");
+    EXPECT_EQ(values[17], "37");
+    EXPECT_EQ(values[18], "41");
+    EXPECT_EQ(values[28], "83");
 }

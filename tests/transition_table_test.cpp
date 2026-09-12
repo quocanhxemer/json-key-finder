@@ -3,7 +3,7 @@
 #include "matchers/matcher_teddy_baseline.h"
 #include "teddy/compile.h"
 #include "teddy/suffix.h"
-#include "teddy/verification/verifiers/trie.h"
+#include "teddy/verification/verifiers/plain_trie.h"
 
 #include <gtest/gtest.h>
 
@@ -119,7 +119,7 @@ TEST(TeddyTransitionTableTest, CrossProductHitIsRejectedByExactVerification) {
 
     constexpr std::string_view json = R"({"AAB":1})";
     const teddy::VerificationBuildContext context{keys, compilation};
-    const teddy::TrieVerifier verifier(context);
+    const teddy::PlainTrieVerifier verifier(context);
     findkey_teddy_stats stats{};
     const std::vector<findkey_result> results =
         matcher_teddy_baseline(json, compilation, verifier, &stats);

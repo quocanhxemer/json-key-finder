@@ -36,6 +36,7 @@ template <Verifier VerifierModel>
 static inline CandidateResult verify_json_key_candidate(
     std::string_view input,
     size_t end_quote,
+    uint8_t candidate_groups,
     const VerifierModel& verifier) {
     const char* str = input.data();
     const size_t len = input.size();
@@ -57,7 +58,7 @@ static inline CandidateResult verify_json_key_candidate(
         return {CANDIDATE_MISSING_COLON, 0, 0};
     }
 
-    return verifier.check(input, end_quote);
+    return verifier.check(input, end_quote, candidate_groups);
 }
 
 }  // namespace teddy

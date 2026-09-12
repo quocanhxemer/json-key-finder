@@ -12,7 +12,7 @@ namespace bench {
 namespace {
 
 constexpr size_t BENCH_COLUMN_COUNT = 20;
-constexpr size_t STATS_COLUMN_COUNT = 35;
+constexpr size_t STATS_COLUMN_COUNT = 34;
 constexpr size_t BENCH_TEDDY_COLUMN_COUNT = 5;
 
 // RFC4180 CSV escaping
@@ -110,7 +110,6 @@ void write_stats_header(std::ostream& output) {
         "num_groups",
         "trie_nodes",
         "hash_keys",
-        "max_key_len",
         "repeat_index",
         "status",
         "total_found",
@@ -200,7 +199,6 @@ void write_stats_row(std::ostream& output, const StatsCsvRow& row) {
     csv_row.push_back(std::to_string(row.metadata.num_groups));
     csv_row.push_back(std::to_string(row.verifier_metadata.trie_nodes));
     csv_row.push_back(std::to_string(row.verifier_metadata.hash_keys));
-    csv_row.push_back(std::to_string(row.verifier_metadata.max_key_len));
     csv_row.push_back(std::to_string(row.repeat_index));
     csv_row.push_back(std::string(findkey_options::status_name(row.status)));
     csv_row.push_back(std::to_string(row.total_found));

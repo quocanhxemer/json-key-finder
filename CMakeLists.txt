@@ -59,8 +59,9 @@ add_library(find_json_key STATIC
     src/teddy/configurations.cpp
     src/teddy/grouping.cpp
     src/teddy/suffix.cpp
-    src/teddy/verification/verifiers/trie.cpp
+    src/teddy/verification/verifiers/plain_trie.cpp
     src/teddy/verification/verifiers/hash.cpp
+    src/teddy/verification/verifiers/group_mask_trie.cpp
 
     src/matchers/matcher_scalar.cpp
     src/matchers/matcher_teddy_baseline.cpp
@@ -168,7 +169,8 @@ if(BUILD_TESTING)
         tests/configurations_test.cpp
         tests/findkey_test.cpp
         tests/grouping_test.cpp
-        tests/trie_verifier_test.cpp
+        tests/group_mask_trie_verifier_test.cpp
+        tests/plain_trie_verifier_test.cpp
         tests/hash_verifier_test.cpp
         tests/score_test.cpp
         tests/suffix_test.cpp

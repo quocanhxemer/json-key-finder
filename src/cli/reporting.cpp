@@ -15,7 +15,6 @@ void print_compilation_stats(
         findkey_options::verification_strategy_name(metadata.strategy).data());
     std::printf("\tTrie nodes: %zu\n", metadata.trie_nodes);
     std::printf("\tHash keys: %zu\n", metadata.hash_keys);
-    std::printf("\tMax key length: %zu\n", metadata.max_key_len);
 }
 
 void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,

@@ -3,7 +3,7 @@
 #include "findkey.h"
 #include "matchers/matcher_teddy_baseline.h"
 #include "teddy/compile.h"
-#include "teddy/verification/verifiers/trie.h"
+#include "teddy/verification/verifiers/plain_trie.h"
 
 #include <gtest/gtest.h>
 
@@ -24,7 +24,7 @@ BaselineRun run_baseline_with_stats(const std::string_view data,
         findkey_test::make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_TRIE);
     const teddy::CompilationData compilation = teddy::compile(keys, config);
     const teddy::VerificationBuildContext context{keys, compilation};
-    const teddy::TrieVerifier verifier(context);
+    const teddy::PlainTrieVerifier verifier(context);
 
     BaselineRun run;
     run.results =

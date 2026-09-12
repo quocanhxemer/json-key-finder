@@ -43,7 +43,7 @@ namespace {
         "                             Values: raw, quote-suffix\n"
         "                             Default: raw\n"
         "  --teddy-verification-strategy <name>\n"
-        "                             Values: trie, hash\n"
+        "                             Values: trie, hash, group_mask_trie\n"
         "                             Default: trie\n"
         "  --sigma <n>                Suffix length for teddy keys grouping\n"
         "                             Range: 1..4\n"
