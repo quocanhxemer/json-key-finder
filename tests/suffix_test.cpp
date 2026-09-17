@@ -49,7 +49,7 @@ void expect_invalid_suffix_input(const std::vector<std::string_view>& keys,
 TEST(TeddySuffixPreparationTest, RawModeUsesTrailingKeyBytes) {
     const std::vector<std::string_view> keys = {"alpha", "beta"};
     const findkey_teddy_config config =
-        make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_TRIE);
+        make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_PLAIN_TRIE);
 
     const teddy::SuffixSet prepared = teddy::prepare_suffixes(keys, config);
     const teddy::SuffixSet expected{
@@ -69,7 +69,7 @@ TEST(TeddySuffixPreparationTest, RawModeUsesTrailingKeyBytes) {
 TEST(TeddySuffixPreparationTest, QuotedModeAppendsTheClosingQuote) {
     const std::vector<std::string_view> keys = {"alpha", "beta"};
     const findkey_teddy_config config =
-        make_teddy_config(TEDDY_SUFFIX_QUOTED, 3, TEDDY_VERIFY_TRIE);
+        make_teddy_config(TEDDY_SUFFIX_QUOTED, 3, TEDDY_VERIFY_PLAIN_TRIE);
 
     const teddy::SuffixSet prepared = teddy::prepare_suffixes(keys, config);
     const teddy::SuffixSet expected{
@@ -90,7 +90,7 @@ TEST(TeddySuffixPreparationTest, CapsSigmaAtTheShortestVirtualKey) {
     const std::vector<std::string_view> keys = {"alphabet", "a"};
 
     const teddy::SuffixSet raw = teddy::prepare_suffixes(
-        keys, make_teddy_config(TEDDY_SUFFIX_RAW, 4, TEDDY_VERIFY_TRIE));
+        keys, make_teddy_config(TEDDY_SUFFIX_RAW, 4, TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_raw{
         .sigma = 1,
         .end_quote_offset = 1,
@@ -104,7 +104,8 @@ TEST(TeddySuffixPreparationTest, CapsSigmaAtTheShortestVirtualKey) {
     expect_suffixes(raw, expected_raw);
 
     const teddy::SuffixSet quoted = teddy::prepare_suffixes(
-        keys, make_teddy_config(TEDDY_SUFFIX_QUOTED, 4, TEDDY_VERIFY_TRIE));
+        keys,
+        make_teddy_config(TEDDY_SUFFIX_QUOTED, 4, TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_quoted{
         .sigma = 2,
         .end_quote_offset = 0,
@@ -124,7 +125,7 @@ TEST(TeddySuffixPreparationTest, SupportsTheMaximumRequestedSigma) {
     const teddy::SuffixSet raw = teddy::prepare_suffixes(
         keys,
         make_teddy_config(TEDDY_SUFFIX_RAW, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH,
-                          TEDDY_VERIFY_TRIE));
+                          TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_raw{
         .sigma = 4,
         .end_quote_offset = 1,
@@ -136,7 +137,7 @@ TEST(TeddySuffixPreparationTest, SupportsTheMaximumRequestedSigma) {
     const teddy::SuffixSet quoted = teddy::prepare_suffixes(
         keys,
         make_teddy_config(TEDDY_SUFFIX_QUOTED, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH,
-                          TEDDY_VERIFY_TRIE));
+                          TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_quoted{
         .sigma = 5,
         .end_quote_offset = 0,
@@ -155,7 +156,7 @@ TEST(TeddySuffixPreparationTest, DeduplicatesEqualSuffixesInFirstSeenOrder) {
     };
 
     const teddy::SuffixSet raw = teddy::prepare_suffixes(
-        keys, make_teddy_config(TEDDY_SUFFIX_RAW, 4, TEDDY_VERIFY_TRIE));
+        keys, make_teddy_config(TEDDY_SUFFIX_RAW, 4, TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_raw{
         .sigma = 4,
         .end_quote_offset = 1,
@@ -169,7 +170,8 @@ TEST(TeddySuffixPreparationTest, DeduplicatesEqualSuffixesInFirstSeenOrder) {
     expect_suffixes(raw, expected_raw);
 
     const teddy::SuffixSet quoted = teddy::prepare_suffixes(
-        keys, make_teddy_config(TEDDY_SUFFIX_QUOTED, 4, TEDDY_VERIFY_TRIE));
+        keys,
+        make_teddy_config(TEDDY_SUFFIX_QUOTED, 4, TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_quoted{
         .sigma = 5,
         .end_quote_offset = 0,
@@ -187,7 +189,7 @@ TEST(TeddySuffixPreparationTest, PreservesNonAsciiBytes) {
     const std::string key = "caf\xC3\xA9";
     const std::vector<std::string_view> keys = {key};
     const findkey_teddy_config config =
-        make_teddy_config(TEDDY_SUFFIX_RAW, 2, TEDDY_VERIFY_TRIE);
+        make_teddy_config(TEDDY_SUFFIX_RAW, 2, TEDDY_VERIFY_PLAIN_TRIE);
 
     const teddy::SuffixSet prepared = teddy::prepare_suffixes(keys, config);
     const teddy::SuffixSet expected{
@@ -203,7 +205,7 @@ TEST(TeddySuffixPreparationTest, PreservesNonAsciiBytes) {
 TEST(TeddySuffixPreparationTest, RejectsAnEmptyKeyList) {
     const std::vector<std::string_view> keys;
     const findkey_teddy_config config =
-        make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_TRIE);
+        make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_PLAIN_TRIE);
 
     expect_invalid_suffix_input(keys, config,
                                 "Teddy requires at least one key");
@@ -215,7 +217,7 @@ TEST(TeddySuffixPreparationTest, RejectsOutOfRangeSigma) {
     for (const int sigma : {-1, 0, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH + 1}) {
         SCOPED_TRACE(::testing::Message() << "sigma=" << sigma);
         const findkey_teddy_config config =
-            make_teddy_config(TEDDY_SUFFIX_RAW, sigma, TEDDY_VERIFY_TRIE);
+            make_teddy_config(TEDDY_SUFFIX_RAW, sigma, TEDDY_VERIFY_PLAIN_TRIE);
         expect_invalid_suffix_input(keys, config,
                                     "Teddy suffix length is out of range");
     }
@@ -226,7 +228,7 @@ TEST(TeddySuffixPreparationTest, RejectsAnUnknownSuffixMode) {
     const auto unknown_mode =
         static_cast<findkey_teddy_suffix_mode>(FINDKEY_TEDDY_SUFFIX_MODE_COUNT);
     const findkey_teddy_config config =
-        make_teddy_config(unknown_mode, 3, TEDDY_VERIFY_TRIE);
+        make_teddy_config(unknown_mode, 3, TEDDY_VERIFY_PLAIN_TRIE);
 
     expect_invalid_suffix_input(keys, config, "Unknown Teddy suffix mode");
 }
@@ -234,7 +236,7 @@ TEST(TeddySuffixPreparationTest, RejectsAnUnknownSuffixMode) {
 TEST(TeddySuffixPreparationTest, RejectsAnEmptyKey) {
     const std::vector<std::string_view> keys = {"alpha", ""};
     const findkey_teddy_config config =
-        make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_TRIE);
+        make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_PLAIN_TRIE);
 
     expect_invalid_suffix_input(keys, config, "Teddy keys must not be empty");
 }

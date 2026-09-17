@@ -15,8 +15,7 @@ namespace {
 
 uint8_t group_bit_for_suffix(const teddy::CompilationData& compilation,
                              uint32_t suffix_id) {
-    for (size_t group = 0; group < compilation.group_suffix_ids.size();
-         ++group) {
+    for (size_t group = 0; group < compilation.num_groups(); ++group) {
         for (const uint32_t grouped_suffix_id :
              compilation.group_suffix_ids[group]) {
             if (grouped_suffix_id == suffix_id) {

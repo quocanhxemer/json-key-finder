@@ -46,15 +46,15 @@ struct GroupMaskTriePolicy {
 
 static_assert(ReverseTrieNode<GroupMaskTriePolicy::Node>);
 
+using GroupMaskReverseTrie = ReverseTrie<GroupMaskTriePolicy>;
+
 }  // namespace teddy::verification::detail
 
 namespace teddy {
 
 class GroupMaskTrieVerifier final
-    : private verification::detail::ReverseTrie<
-          verification::detail::GroupMaskTriePolicy> {
-    using Base = verification::detail::ReverseTrie<
-        verification::detail::GroupMaskTriePolicy>;
+    : private verification::detail::GroupMaskReverseTrie {
+    using Base = verification::detail::GroupMaskReverseTrie;
 
    public:
     static constexpr findkey_teddy_verification_strategy strategy =
@@ -67,8 +67,7 @@ class GroupMaskTrieVerifier final
 };
 
 static_assert(sizeof(GroupMaskTrieVerifier) ==
-              sizeof(verification::detail::ReverseTrie<
-                     verification::detail::GroupMaskTriePolicy>));
+              sizeof(verification::detail::GroupMaskReverseTrie));
 static_assert(Verifier<GroupMaskTrieVerifier>);
 
 }  // namespace teddy

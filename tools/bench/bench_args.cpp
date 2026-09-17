@@ -69,8 +69,8 @@ std::optional<size_t> parse_size(std::string_view raw) {
            "score-based strategies: paper, paper_nibble, nibble_count\n"
         << "  --suffix-mode <name>             Repeatable. Defaults: raw, "
            "quote-suffix\n"
-        << "  --verification-strategy <name>  Repeatable. Defaults: trie, "
-           "hash, group_mask_trie\n"
+        << "  --verification-strategy <name>  Repeatable. Defaults: hash, "
+           "plain_trie, group_mask_trie, per_group_trie\n"
         << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
            "4\n";
     std::exit(EXIT_FAILURE);

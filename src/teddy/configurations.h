@@ -41,9 +41,10 @@ inline constexpr auto ALL_SIGMAS = [] {
 }();
 
 inline constexpr std::array ALL_VERIFICATION_STRATEGIES = {
-    TEDDY_VERIFY_TRIE,
     TEDDY_VERIFY_HASH,
+    TEDDY_VERIFY_PLAIN_TRIE,
     TEDDY_VERIFY_GROUP_MASK_TRIE,
+    TEDDY_VERIFY_PER_GROUP_TRIE,
 };
 
 static_assert(ALL_GROUPING_STRATEGIES.size() ==

@@ -17,7 +17,6 @@ static_assert(MAX_GROUPS > 0 && (MAX_GROUPS & (MAX_GROUPS - 1)) == 0,
 
 struct CompilationData {
     int sigma = 0;
-    int num_groups = 0;
 
     // offset from last character to the closing quote
     // 1 for RAW mode
@@ -30,13 +29,15 @@ struct CompilationData {
     std::vector<Suffix> suffixes;
     std::vector<std::vector<uint32_t>> group_suffix_ids;
 
+    size_t num_groups() const noexcept { return group_suffix_ids.size(); }
+
     // maps original key index to suffix index
     std::vector<uint32_t> key_suffix_ids;
 };
 
 struct CompilationMetadata {
     int sigma = 0;
-    int num_groups = 0;
+    size_t num_groups = 0;
 };
 
 CompilationData compile(const std::vector<std::string_view>& keys,

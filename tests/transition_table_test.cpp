@@ -20,7 +20,7 @@ teddy::CompilationData compile_ddy_group() {
     const std::vector<std::string_view> keys = {"teddy"};
     return teddy::compile(
         keys, findkey_test::make_teddy_config(TEDDY_SUFFIX_RAW, TEST_SIGMA,
-                                              TEDDY_VERIFY_TRIE));
+                                              TEDDY_VERIFY_PLAIN_TRIE));
 }
 
 void expect_group_bit_cleared(const teddy::CompilationData& compilation,
@@ -61,11 +61,11 @@ TEST(TeddyTransitionTableTest, ClearsTheGroupBitForEveryDdyNibble) {
     constexpr teddy::Suffix expected_suffix{'d', 'd', 'y'};
 
     ASSERT_EQ(compilation.sigma, TEST_SIGMA);
-    ASSERT_EQ(compilation.num_groups, 1);
     ASSERT_EQ(compilation.suffixes.size(), 1u);
     ASSERT_EQ(compilation.group_suffix_ids.size(), 1u);
     ASSERT_EQ(compilation.group_suffix_ids.front(), std::vector<uint32_t>{0});
     ASSERT_EQ(compilation.suffixes.front(), expected_suffix);
+    EXPECT_EQ(teddy::get_compilation_metadata(compilation).num_groups, 1);
 
     expect_group_bit_cleared(compilation, 0, 0, 'd');
     expect_group_bit_cleared(compilation, 0, 1, 'd');
@@ -86,14 +86,13 @@ TEST(TeddyTransitionTableTest, CrossProductHitIsRejectedByExactVerification) {
         "AAA", "AAR", "ccc", "ttt", "%%%", "666", "GGG", "XXX", "iii",
     };
     findkey_teddy_config config = findkey_test::make_teddy_config(
-        TEDDY_SUFFIX_RAW, TEST_SIGMA, TEDDY_VERIFY_TRIE);
+        TEDDY_SUFFIX_RAW, TEST_SIGMA, TEDDY_VERIFY_PLAIN_TRIE);
     config.grouping.strategy = TEDDY_COMPILE_GREEDY_MIN_DELTA;
     config.grouping.score = TEDDY_GROUPING_SCORE_NIBBLE_COUNT;
 
     const teddy::CompilationData compilation = teddy::compile(keys, config);
-    std::size_t cross_product_group = compilation.group_suffix_ids.size();
-    for (std::size_t group = 0; group < compilation.group_suffix_ids.size();
-         ++group) {
+    std::size_t cross_product_group = compilation.num_groups();
+    for (std::size_t group = 0; group < compilation.num_groups(); ++group) {
         const auto& suffix_ids = compilation.group_suffix_ids[group];
         bool contains_aaa = false;
         bool contains_aar = false;
@@ -107,7 +106,7 @@ TEST(TeddyTransitionTableTest, CrossProductHitIsRejectedByExactVerification) {
         }
     }
 
-    ASSERT_LT(cross_product_group, compilation.group_suffix_ids.size());
+    ASSERT_LT(cross_product_group, compilation.num_groups());
     ASSERT_EQ(compilation.group_suffix_ids[cross_product_group].size(), 2u);
 
     // At the final position, A contributes high nibble 4 and R contributes

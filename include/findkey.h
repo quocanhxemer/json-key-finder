@@ -80,9 +80,10 @@ enum findkey_teddy_suffix_mode {
 };
 
 enum findkey_teddy_verification_strategy {
-    TEDDY_VERIFY_TRIE = 0,
+    TEDDY_VERIFY_PLAIN_TRIE = 0,
     TEDDY_VERIFY_HASH = 1,
     TEDDY_VERIFY_GROUP_MASK_TRIE = 2,
+    TEDDY_VERIFY_PER_GROUP_TRIE = 3,
     FINDKEY_TEDDY_VERIFICATION_STRATEGY_COUNT,
 };
 
@@ -104,7 +105,7 @@ struct findkey_teddy_config {
 
 #define FINDKEY_TEDDY_CONFIG_INIT                          \
     {FINDKEY_TEDDY_GROUPING_CONFIG_INIT, TEDDY_SUFFIX_RAW, \
-     FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH, TEDDY_VERIFY_TRIE}
+     FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH, TEDDY_VERIFY_PLAIN_TRIE}
 
 size_t findkey(const uint8_t* data,
                size_t len,

@@ -20,8 +20,8 @@ struct BaselineRun {
 
 BaselineRun run_baseline_with_stats(const std::string_view data,
                                     const std::vector<std::string_view>& keys) {
-    const findkey_teddy_config config =
-        findkey_test::make_teddy_config(TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_TRIE);
+    const findkey_teddy_config config = findkey_test::make_teddy_config(
+        TEDDY_SUFFIX_RAW, 3, TEDDY_VERIFY_PLAIN_TRIE);
     const teddy::CompilationData compilation = teddy::compile(keys, config);
     const teddy::VerificationBuildContext context{keys, compilation};
     const teddy::PlainTrieVerifier verifier(context);

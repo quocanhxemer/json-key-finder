@@ -86,14 +86,17 @@ std::optional<findkey_teddy_suffix_mode> parse_suffix_mode(
 
 std::optional<findkey_teddy_verification_strategy> parse_verification_strategy(
     std::string_view raw) {
-    if (raw == "trie") {
-        return TEDDY_VERIFY_TRIE;
-    }
     if (raw == "hash") {
         return TEDDY_VERIFY_HASH;
     }
+    if (raw == "plain_trie") {
+        return TEDDY_VERIFY_PLAIN_TRIE;
+    }
     if (raw == "group_mask_trie") {
         return TEDDY_VERIFY_GROUP_MASK_TRIE;
+    }
+    if (raw == "per_group_trie") {
+        return TEDDY_VERIFY_PER_GROUP_TRIE;
     }
     return std::nullopt;
 }
@@ -187,12 +190,14 @@ std::string_view suffix_mode_name(findkey_teddy_suffix_mode suffix_mode) {
 std::string_view verification_strategy_name(
     findkey_teddy_verification_strategy strategy) {
     switch (strategy) {
-        case TEDDY_VERIFY_TRIE:
-            return "trie";
         case TEDDY_VERIFY_HASH:
             return "hash";
+        case TEDDY_VERIFY_PLAIN_TRIE:
+            return "plain_trie";
         case TEDDY_VERIFY_GROUP_MASK_TRIE:
             return "group_mask_trie";
+        case TEDDY_VERIFY_PER_GROUP_TRIE:
+            return "per_group_trie";
         default:
             return "unknown";
     }

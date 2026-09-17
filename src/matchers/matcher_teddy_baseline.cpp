@@ -3,6 +3,7 @@
 #include "teddy/dispatch.h"
 #include "teddy/verification/verifiers/group_mask_trie.h"
 #include "teddy/verification/verifiers/hash.h"
+#include "teddy/verification/verifiers/per_group_trie.h"
 #include "teddy/verification/verifiers/plain_trie.h"
 #include "teddy/verify.h"
 
@@ -26,7 +27,7 @@ std::vector<findkey_result> matcher_impl(
     const char* str = data.data();
     const size_t len = data.size();
 
-    const uint8_t group_mask = (1u << teddy_data.num_groups) - 1u;
+    const uint8_t group_mask = (1u << teddy_data.num_groups()) - 1u;
 
     for (size_t position = Sigma - 1; position < len; ++position) {
         uint8_t shift_or = 0;
@@ -155,3 +156,8 @@ template std::vector<findkey_result> matcher_teddy_baseline<
                                   const teddy::CompilationData&,
                                   const teddy::GroupMaskTrieVerifier&,
                                   struct findkey_teddy_stats*);
+template std::vector<findkey_result> matcher_teddy_baseline<
+    teddy::PerGroupTrieVerifier>(std::string_view,
+                                 const teddy::CompilationData&,
+                                 const teddy::PerGroupTrieVerifier&,
+                                 struct findkey_teddy_stats*);

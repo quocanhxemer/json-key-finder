@@ -33,18 +33,18 @@ static_assert(ReverseTrieNode<PlainTriePolicy::Node>);
 static_assert(sizeof(PlainTriePolicy::Node) ==
               sizeof(std::array<int32_t, 256>) + sizeof(int32_t));
 
+using PlainReverseTrie = ReverseTrie<PlainTriePolicy>;
+
 }  // namespace teddy::verification::detail
 
 namespace teddy {
 
-class PlainTrieVerifier final : private verification::detail::ReverseTrie<
-                                    verification::detail::PlainTriePolicy> {
-    using Base = verification::detail::ReverseTrie<
-        verification::detail::PlainTriePolicy>;
+class PlainTrieVerifier final : private verification::detail::PlainReverseTrie {
+    using Base = verification::detail::PlainReverseTrie;
 
    public:
     static constexpr findkey_teddy_verification_strategy strategy =
-        TEDDY_VERIFY_TRIE;
+        TEDDY_VERIFY_PLAIN_TRIE;
 
     explicit PlainTrieVerifier(const VerificationBuildContext& context);
 
@@ -53,8 +53,7 @@ class PlainTrieVerifier final : private verification::detail::ReverseTrie<
 };
 
 static_assert(sizeof(PlainTrieVerifier) ==
-              sizeof(verification::detail::ReverseTrie<
-                     verification::detail::PlainTriePolicy>));
+              sizeof(verification::detail::PlainReverseTrie));
 static_assert(Verifier<PlainTrieVerifier>);
 
 }  // namespace teddy

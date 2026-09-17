@@ -95,7 +95,7 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
         .key_case = key_case,
         .actual_num_keys = 18,
         .metadata = {.sigma = 3, .num_groups = 4},
-        .verifier_metadata = {.strategy = TEDDY_VERIFY_TRIE,
+        .verifier_metadata = {.strategy = TEDDY_VERIFY_PLAIN_TRIE,
                               .trie_nodes = 29,
                               .hash_keys = 0},
         .repeat_index = 5,
@@ -135,6 +135,7 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
               header.end());
     EXPECT_EQ(std::find(header.begin(), header.end(), "max_key_len"),
               header.end());
+    EXPECT_EQ(values[5], "plain_trie");
     EXPECT_EQ(header[17], "data_bytes");
     EXPECT_EQ(values[12], "29");
     EXPECT_EQ(values[17], "37");

@@ -9,7 +9,7 @@ void print_compilation_stats(
     const teddy::VerifierCompilationMetadata& metadata) {
     std::printf("Compilation Stats:\n");
     std::printf("\tSigma: %d\n", teddy_metadata.sigma);
-    std::printf("\tGroups: %d\n", teddy_metadata.num_groups);
+    std::printf("\tGroups: %zu\n", teddy_metadata.num_groups);
     std::printf(
         "\tVerification strategy: %s\n",
         findkey_options::verification_strategy_name(metadata.strategy).data());

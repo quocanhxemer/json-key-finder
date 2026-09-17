@@ -3,6 +3,7 @@
 #include "core/findkey_error.h"
 #include "teddy/verification/verifiers/group_mask_trie.h"
 #include "teddy/verification/verifiers/hash.h"
+#include "teddy/verification/verifiers/per_group_trie.h"
 #include "teddy/verification/verifiers/plain_trie.h"
 
 #if COMPILER_SUPPORTS_TEDDY
@@ -48,7 +49,7 @@ std::vector<findkey_result> matcher_impl(
 
     const __m128i mask_0f = _mm_set1_epi8(0x0F);
     const __m128i group_mask_vector =
-        _mm_set1_epi8(static_cast<char>((1u << teddy_data.num_groups) - 1u));
+        _mm_set1_epi8(static_cast<char>((1u << teddy_data.num_groups()) - 1u));
     const __m128i zero_vector = _mm_setzero_si128();
 
     for (size_t base = 0; base < len; base += 16) {
@@ -160,3 +161,7 @@ template std::vector<findkey_result> matcher_teddy<
     teddy::GroupMaskTrieVerifier>(std::string_view,
                                   const teddy::CompilationData&,
                                   const teddy::GroupMaskTrieVerifier&);
+template std::vector<findkey_result> matcher_teddy<teddy::PerGroupTrieVerifier>(
+    std::string_view,
+    const teddy::CompilationData&,
+    const teddy::PerGroupTrieVerifier&);

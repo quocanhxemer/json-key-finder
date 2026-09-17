@@ -18,7 +18,7 @@ static void build_compilation_tables(CompilationData& data) {
     }
 
     for (int i = 0; i < Sigma; ++i) {
-        for (int group = 0; group < data.num_groups; ++group) {
+        for (size_t group = 0; group < data.num_groups(); ++group) {
             bool low_filled[16] = {false};
             bool high_filled[16] = {false};
 
@@ -74,8 +74,6 @@ CompilationData compile(SuffixSet suffixes,
     data.group_suffix_ids =
         build_groups(data.suffixes, grouping_config, data.sigma);
 
-    data.num_groups = static_cast<int>(data.group_suffix_ids.size());
-
     dispatch_sigma(data.sigma,
                    [&]<int Sigma>() { build_compilation_tables<Sigma>(data); });
 
@@ -85,7 +83,7 @@ CompilationData compile(SuffixSet suffixes,
 CompilationMetadata get_compilation_metadata(const CompilationData& data) {
     return {
         .sigma = data.sigma,
-        .num_groups = data.num_groups,
+        .num_groups = data.num_groups(),
     };
 }
 

@@ -225,7 +225,7 @@ TEST(TeddyGroupingInvariantsTest,
                          << ", score: " << static_cast<int>(grouping.score)
                          << ", suffix mode: " << static_cast<int>(suffix_mode));
             findkey_teddy_config config = findkey_test::make_teddy_config(
-                suffix_mode, 4, TEDDY_VERIFY_TRIE);
+                suffix_mode, 4, TEDDY_VERIFY_PLAIN_TRIE);
             config.grouping = grouping;
 
             const teddy::CompilationData compilation =
@@ -260,7 +260,7 @@ TEST(TeddyGroupingInvariantsTest,
                          << ", score: " << static_cast<int>(grouping.score)
                          << ", suffix mode: " << static_cast<int>(suffix_mode));
             findkey_teddy_config config = findkey_test::make_teddy_config(
-                suffix_mode, 3, TEDDY_VERIFY_TRIE);
+                suffix_mode, 3, TEDDY_VERIFY_PLAIN_TRIE);
             config.grouping = grouping;
 
             const teddy::CompilationData compilation =
