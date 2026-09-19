@@ -11,7 +11,7 @@
 namespace bench {
 namespace {
 
-constexpr size_t BENCH_COLUMN_COUNT = 20;
+constexpr size_t BENCH_COLUMN_COUNT = 21;
 constexpr size_t STATS_COLUMN_COUNT = 34;
 constexpr size_t BENCH_TEDDY_COLUMN_COUNT = 5;
 
@@ -84,6 +84,7 @@ void write_bench_header(std::ostream& output) {
         "status",
         "total_found",
         "compile_ns",
+        "verifier_build_ns",
         "match_ns",
         "total_ns",
         "data_bytes",
@@ -136,7 +137,9 @@ void write_stats_header(std::ostream& output) {
 }
 
 void write_bench_row(std::ostream& output, const BenchCsvRow& row) {
-    const uint64_t total_ns = row.timing.compile_ns + row.timing.match_ns;
+    const uint64_t total_ns = row.timing.compile_ns +
+                              row.timing.verifier_build_ns +
+                              row.timing.match_ns;
     std::vector<std::string> csv_row;
     csv_row.reserve(BENCH_COLUMN_COUNT);
 
@@ -167,6 +170,7 @@ void write_bench_row(std::ostream& output, const BenchCsvRow& row) {
     csv_row.push_back(std::string(findkey_options::status_name(row.status)));
     csv_row.push_back(std::to_string(row.total_found));
     csv_row.push_back(std::to_string(row.timing.compile_ns));
+    csv_row.push_back(std::to_string(row.timing.verifier_build_ns));
     csv_row.push_back(std::to_string(row.timing.match_ns));
     csv_row.push_back(std::to_string(total_ns));
     csv_row.push_back(std::to_string(row.data_bytes));

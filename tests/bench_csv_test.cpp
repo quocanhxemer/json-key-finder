@@ -61,7 +61,7 @@ TEST(BenchCsvTest, BenchHeaderMatchesBenchRowSchema) {
         .repeat_index = 2,
         .status = FINDKEY_OK,
         .total_found = 3,
-        .timing = {.compile_ns = 11, .match_ns = 13},
+        .timing = {.compile_ns = 11, .verifier_build_ns = 13, .match_ns = 17},
         .data_bytes = 17,
         .throughput_mib_s = 1.5,
         .end_to_end_throughput_mib_s = 2.5,
@@ -73,15 +73,17 @@ TEST(BenchCsvTest, BenchHeaderMatchesBenchRowSchema) {
     const std::vector<std::string> values = split_csv_row(output.str());
 
     ASSERT_EQ(header.size(), values.size());
-    EXPECT_EQ(header.size(), 20u);
+    EXPECT_EQ(header.size(), 21u);
     EXPECT_EQ(header[14], "compile_ns");
-    EXPECT_EQ(header[15], "match_ns");
-    EXPECT_EQ(header[16], "total_ns");
+    EXPECT_EQ(header[15], "verifier_build_ns");
+    EXPECT_EQ(header[16], "match_ns");
+    EXPECT_EQ(header[17], "total_ns");
     EXPECT_EQ(values[6], "hash");
     EXPECT_EQ(values[14], "11");
     EXPECT_EQ(values[15], "13");
-    EXPECT_EQ(values[16], "24");
-    EXPECT_EQ(values[17], "17");
+    EXPECT_EQ(values[16], "17");
+    EXPECT_EQ(values[17], "41");
+    EXPECT_EQ(values[18], "17");
 }
 
 TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
@@ -128,6 +130,8 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
     ASSERT_EQ(header.size(), values.size());
     EXPECT_EQ(header.size(), 34u);
     EXPECT_EQ(std::find(header.begin(), header.end(), "compile_ns"),
+              header.end());
+    EXPECT_EQ(std::find(header.begin(), header.end(), "verifier_build_ns"),
               header.end());
     EXPECT_EQ(std::find(header.begin(), header.end(), "match_ns"),
               header.end());

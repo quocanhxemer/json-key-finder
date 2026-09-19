@@ -65,13 +65,12 @@ ApiRun run_findkey(std::string_view json,
     }
 
     std::vector<findkey_result> output(std::max<size_t>(json.size(), 1));
-    findkey_timing timing{};
     ApiRun run;
 
     run.total = findkey(reinterpret_cast<const uint8_t*>(json.data()),
                         json.size(), key_data.data(), key_lengths.data(),
                         keys.size(), algorithm, teddy_config, output.data(),
-                        output.size(), &run.status, &timing);
+                        output.size(), &run.status, &run.timing);
 
     output.resize(std::min(run.total, output.size()));
     run.results = std::move(output);

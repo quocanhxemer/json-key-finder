@@ -4,6 +4,7 @@
 #include "matchers/matcher_teddy_baseline.h"
 #include "teddy/compile.h"
 #include "teddy/verification/dispatch.h"
+#include "teddy/verification/verifiers/hash.h"
 
 #if COMPILER_SUPPORTS_TEDDY
 #include "matchers/matcher_teddy.h"
@@ -123,8 +124,11 @@ extern "C" size_t findkey(const uint8_t* data,
     try {
         switch (algo) {
             case SCALAR: {
+                std::optional<teddy::HashVerifier> verifier;
+                out_timing->verifier_build_ns =
+                    measure_ns([&] { verifier.emplace(key_svs); });
                 out_timing->match_ns = measure_ns(
-                    [&] { results = matcher_scalar(data_sv, key_svs); });
+                    [&] { results = matcher_scalar(data_sv, *verifier); });
                 break;
             }
 
@@ -138,6 +142,8 @@ extern "C" size_t findkey(const uint8_t* data,
                         std::optional<VerifierModel> verifier;
                         out_timing->compile_ns = measure_ns([&] {
                             teddy_data = teddy::compile(key_svs, config);
+                        });
+                        out_timing->verifier_build_ns = measure_ns([&] {
                             const teddy::VerificationBuildContext context{
                                 key_svs, teddy_data};
                             verifier.emplace(context);
@@ -161,6 +167,8 @@ extern "C" size_t findkey(const uint8_t* data,
                         std::optional<VerifierModel> verifier;
                         out_timing->compile_ns = measure_ns([&] {
                             teddy_data = teddy::compile(key_svs, config);
+                        });
+                        out_timing->verifier_build_ns = measure_ns([&] {
                             const teddy::VerificationBuildContext context{
                                 key_svs, teddy_data};
                             verifier.emplace(context);

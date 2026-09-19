@@ -52,6 +52,7 @@ namespace {
         "\n"
         "Notes:\n"
         "  - --collect-stats always uses the Teddy baseline matcher\n"
+        "  - --collect-stats cannot be combined with --print-positions\n"
         "  - Teddy options are ignored when --algo scalar is selected\n";
 
     std::fprintf(stderr, usage_message, prog_name);
@@ -171,6 +172,12 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
     }
 
     if (!args.keys_path || !args.data_path) {
+        print_usage_and_exit(argv[0]);
+    }
+
+    if (args.collect_stats && args.print_positions) {
+        std::fprintf(stderr,
+                     "--print-positions cannot be used with --collect-stats\n");
         print_usage_and_exit(argv[0]);
     }
 

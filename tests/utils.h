@@ -13,6 +13,7 @@ struct ApiRun {
     int status = FINDKEY_ERR_BAD_ARGS;
     size_t total = 0;
     std::vector<findkey_result> results;
+    findkey_timing timing = {};
 };
 
 enum class SimdTeddyAvailability {

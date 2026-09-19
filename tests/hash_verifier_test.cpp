@@ -9,6 +9,19 @@
 #include <string_view>
 #include <vector>
 
+TEST(TeddyHashVerifierTest, ChecksKnownKeyRangeDirectly) {
+    const std::vector<std::string_view> keys = {"teddy", "other"};
+    const teddy::HashVerifier verifier(keys);
+
+    const teddy::CandidateResult known = verifier.check_key("teddy", 17);
+    ASSERT_EQ(known.type, teddy::CANDIDATE_MATCH);
+    EXPECT_EQ(known.position, 17u);
+    EXPECT_EQ(known.key_id, 0u);
+
+    const teddy::CandidateResult unknown = verifier.check_key("daddy", 17);
+    EXPECT_EQ(unknown.type, teddy::CANDIDATE_KEY_NOT_FOUND);
+}
+
 TEST(TeddyHashVerifierTest, FindsKnownAndUnknownKeys) {
     const std::vector<std::string_view> keys = {"teddy", "other"};
 

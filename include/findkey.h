@@ -49,6 +49,7 @@ struct findkey_teddy_stats {
 
 struct findkey_timing {
     uint64_t compile_ns;
+    uint64_t verifier_build_ns;
     uint64_t match_ns;
 };
 

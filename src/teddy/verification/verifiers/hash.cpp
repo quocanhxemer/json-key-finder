@@ -4,8 +4,7 @@
 
 namespace teddy {
 
-HashVerifier::HashVerifier(const VerificationBuildContext& context) {
-    const std::vector<std::string_view>& keys = context.keys;
+HashVerifier::HashVerifier(const std::vector<std::string_view>& keys) {
     keys_.reserve(keys.size());
 
     for (uint32_t key_id = 0; key_id < keys.size(); ++key_id) {
@@ -13,5 +12,8 @@ HashVerifier::HashVerifier(const VerificationBuildContext& context) {
         keys_.emplace(keys[key_id], key_id);
     }
 }
+
+HashVerifier::HashVerifier(const VerificationBuildContext& context)
+    : HashVerifier(context.keys) {}
 
 }  // namespace teddy

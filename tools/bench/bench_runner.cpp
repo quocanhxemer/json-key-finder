@@ -61,7 +61,8 @@ void run_bench_case(std::ofstream& output,
             continue;
         }
 
-        const uint64_t total_ns = timing.compile_ns + timing.match_ns;
+        const uint64_t total_ns =
+            timing.compile_ns + timing.verifier_build_ns + timing.match_ns;
         const double data_mib =
             static_cast<double>(data.size()) / (1024.0 * 1024.0);
         const double throughput = timing.match_ns > 0

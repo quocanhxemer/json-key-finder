@@ -17,7 +17,18 @@ class HashVerifier final {
     static constexpr findkey_teddy_verification_strategy strategy =
         TEDDY_VERIFY_HASH;
 
+    explicit HashVerifier(const std::vector<std::string_view>& keys);
     explicit HashVerifier(const VerificationBuildContext& context);
+
+    // in case start position is known
+    // e.g. in the scalar matcher
+    CandidateResult check_key(std::string_view key, size_t position) const {
+        const auto key_it = keys_.find(key);
+        if (key_it != keys_.end()) {
+            return {CANDIDATE_MATCH, position, key_it->second};
+        }
+        return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
+    }
 
     CandidateResult check(std::string_view input,
                           size_t end_quote,
@@ -35,11 +46,7 @@ class HashVerifier final {
             if (str[position] == '"' && is_valid_quote(str, position)) {
                 const std::string_view key(str + position + 1,
                                            end_quote - position - 1);
-                const auto key_it = keys_.find(key);
-                if (key_it != keys_.end()) {
-                    return {CANDIDATE_MATCH, position + 1, key_it->second};
-                }
-                return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
+                return check_key(key, position + 1);
             }
         }
 

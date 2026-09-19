@@ -117,7 +117,8 @@ int main(int argc, char** argv) {
                                 verifier_compilation_metadata);
         print_teddy_runtime_stats(teddy_stats, mmap_file.size());
     } else {
-        const uint64_t total_ns = timing.compile_ns + timing.match_ns;
+        const uint64_t total_ns =
+            timing.compile_ns + timing.verifier_build_ns + timing.match_ns;
         const double total_duration_s = total_ns / 1e9;
         const double match_duration_s = timing.match_ns / 1e9;
 
@@ -132,6 +133,8 @@ int main(int argc, char** argv) {
 
         std::printf("Compile time: %.2f ns\n",
                     static_cast<double>(timing.compile_ns));
+        std::printf("Verifier build time: %.2f ns\n",
+                    static_cast<double>(timing.verifier_build_ns));
         std::printf("Match time: %.2f ns\n",
                     static_cast<double>(timing.match_ns));
         std::printf("Time taken: %.2f ns\n", static_cast<double>(total_ns));
