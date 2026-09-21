@@ -13,8 +13,9 @@ void print_compilation_stats(
     std::printf(
         "\tVerification strategy: %s\n",
         findkey_options::verification_strategy_name(metadata.strategy).data());
-    std::printf("\tTrie nodes: %zu\n", metadata.trie_nodes);
-    std::printf("\tHash keys: %zu\n", metadata.hash_keys);
+    std::printf(
+        "\tVerifier size: %zu bytes (%.3f MiB)\n", metadata.verifier_size_bytes,
+        static_cast<double>(metadata.verifier_size_bytes) / (1024.0 * 1024.0));
 }
 
 void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,

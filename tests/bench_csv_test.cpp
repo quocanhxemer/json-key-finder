@@ -98,8 +98,7 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
         .actual_num_keys = 18,
         .metadata = {.sigma = 3, .num_groups = 4},
         .verifier_metadata = {.strategy = TEDDY_VERIFY_PLAIN_TRIE,
-                              .trie_nodes = 29,
-                              .hash_keys = 0},
+                              .verifier_size_bytes = 29},
         .repeat_index = 5,
         .status = FINDKEY_OK,
         .total_found = 7,
@@ -128,7 +127,7 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
     const std::vector<std::string> values = split_csv_row(output.str());
 
     ASSERT_EQ(header.size(), values.size());
-    EXPECT_EQ(header.size(), 34u);
+    EXPECT_EQ(header.size(), 33u);
     EXPECT_EQ(std::find(header.begin(), header.end(), "compile_ns"),
               header.end());
     EXPECT_EQ(std::find(header.begin(), header.end(), "verifier_build_ns"),
@@ -137,12 +136,11 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
               header.end());
     EXPECT_EQ(std::find(header.begin(), header.end(), "total_ns"),
               header.end());
-    EXPECT_EQ(std::find(header.begin(), header.end(), "max_key_len"),
-              header.end());
     EXPECT_EQ(values[5], "plain_trie");
-    EXPECT_EQ(header[17], "data_bytes");
+    EXPECT_EQ(header[12], "verifier_size_bytes");
+    EXPECT_EQ(header[16], "data_bytes");
     EXPECT_EQ(values[12], "29");
-    EXPECT_EQ(values[17], "37");
-    EXPECT_EQ(values[18], "41");
-    EXPECT_EQ(values[28], "83");
+    EXPECT_EQ(values[16], "37");
+    EXPECT_EQ(values[17], "41");
+    EXPECT_EQ(values[27], "83");
 }

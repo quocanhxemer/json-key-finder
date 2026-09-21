@@ -1,6 +1,7 @@
 #pragma once
 
 #include "findkey.h"
+#include "teddy/verification/memory_usage.h"
 #include "teddy/verification/verifier.h"
 #include "teddy/verification/verifiers/plain_trie.h"
 
@@ -49,12 +50,14 @@ class PerGroupTrieVerifier final {
         return rejection;
     }
 
-    size_t size() const noexcept {
-        size_t total_nodes = 0;
+    size_t memory_usage_bytes() const noexcept {
+        size_t bytes =
+            sizeof(*this) +
+            verification::detail::vector_allocation_bytes(group_tries_);
         for (const Trie& trie : group_tries_) {
-            total_nodes += trie.size();
+            bytes += trie.dynamic_memory_usage_bytes();
         }
-        return total_nodes;
+        return bytes;
     }
 
    private:

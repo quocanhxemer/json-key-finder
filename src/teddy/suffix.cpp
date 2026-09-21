@@ -37,15 +37,15 @@ uint8_t suffix_byte(std::string_view key,
     return '"';
 }
 
-uint64_t encode_suffix(const Suffix& suffix, int sigma) {
+}  // namespace
+
+uint64_t encode_suffix(const uint8_t* suffix, int sigma) noexcept {
     uint64_t encoded = 0;
     for (int i = 0; i < sigma; ++i) {
         encoded = (encoded << 8) | suffix[i];
     }
     return encoded;
 }
-
-}  // namespace
 
 SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
                            const findkey_teddy_config& config) {
@@ -96,7 +96,7 @@ SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
             suffix[i] = suffix_byte(key, prepared.sigma, i, config.suffix_mode);
         }
 
-        const uint64_t encoded = encode_suffix(suffix, prepared.sigma);
+        const uint64_t encoded = encode_suffix(suffix.data(), prepared.sigma);
         const auto [suffix_it, inserted] = suffix_ids.emplace(
             encoded, static_cast<uint32_t>(prepared.data.size()));
         if (inserted) {

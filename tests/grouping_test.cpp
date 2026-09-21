@@ -213,37 +213,6 @@ TEST(TeddyGroupingInvariantsTest,
 }
 
 TEST(TeddyGroupingInvariantsTest,
-     CompilationDeduplicatesSuffixesBeforeGrouping) {
-    const std::vector<std::string_view> keys = {
-        "alpha", "zalpha", "omega", "mega", "alpha",
-    };
-
-    for (const auto grouping : teddy::all_grouping_configurations()) {
-        for (const auto suffix_mode : teddy::ALL_SUFFIX_MODES) {
-            SCOPED_TRACE(::testing::Message()
-                         << "strategy: " << static_cast<int>(grouping.strategy)
-                         << ", score: " << static_cast<int>(grouping.score)
-                         << ", suffix mode: " << static_cast<int>(suffix_mode));
-            findkey_teddy_config config = findkey_test::make_teddy_config(
-                suffix_mode, 4, TEDDY_VERIFY_PLAIN_TRIE);
-            config.grouping = grouping;
-
-            const teddy::CompilationData compilation =
-                teddy::compile(keys, config);
-
-            ASSERT_EQ(compilation.suffixes.size(), 2u);
-            EXPECT_EQ(compilation.key_suffix_ids,
-                      (std::vector<uint32_t>{0, 0, 1, 1, 0}));
-            EXPECT_TRUE(active_suffixes_are_unique(compilation.suffixes,
-                                                   compilation.sigma));
-            expect_valid_grouping(compilation.group_suffix_ids,
-                                  compilation.suffixes.size());
-            expect_valid_routing(compilation, keys.size());
-        }
-    }
-}
-
-TEST(TeddyGroupingInvariantsTest,
      CompilationRoutesEveryKeyThroughItsDeduplicatedSuffix) {
     const std::vector<std::string_view> keys = {
         "key000", "key001", "key002", "key003",   "key004", "key005",

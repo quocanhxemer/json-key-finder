@@ -63,7 +63,7 @@ class GroupMaskTrieVerifier final
     explicit GroupMaskTrieVerifier(const VerificationBuildContext& context);
 
     using Base::check;
-    using Base::size;
+    using Base::memory_usage_bytes;
 };
 
 static_assert(sizeof(GroupMaskTrieVerifier) ==

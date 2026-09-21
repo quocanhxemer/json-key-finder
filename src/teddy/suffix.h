@@ -22,6 +22,8 @@ struct SuffixSet {
     std::vector<uint32_t> key_suffix_ids;
 };
 
+uint64_t encode_suffix(const uint8_t* suffix, int sigma) noexcept;
+
 SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
                            const findkey_teddy_config& config);
 

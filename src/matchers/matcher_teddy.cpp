@@ -4,6 +4,7 @@
 #include "teddy/verification/verifiers/group_mask_trie.h"
 #include "teddy/verification/verifiers/hash.h"
 #include "teddy/verification/verifiers/per_group_trie.h"
+#include "teddy/verification/verifiers/per_suffix_trie.h"
 #include "teddy/verification/verifiers/plain_trie.h"
 
 #if COMPILER_SUPPORTS_TEDDY
@@ -165,3 +166,7 @@ template std::vector<findkey_result> matcher_teddy<teddy::PerGroupTrieVerifier>(
     std::string_view,
     const teddy::CompilationData&,
     const teddy::PerGroupTrieVerifier&);
+template std::vector<findkey_result> matcher_teddy<
+    teddy::PerSuffixTrieVerifier>(std::string_view,
+                                  const teddy::CompilationData&,
+                                  const teddy::PerSuffixTrieVerifier&);

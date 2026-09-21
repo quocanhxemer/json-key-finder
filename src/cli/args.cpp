@@ -44,7 +44,7 @@ namespace {
         "                             Default: raw\n"
         "  --teddy-verification-strategy <name>\n"
         "                             Values: hash, plain_trie, "
-        "group_mask_trie, per_group_trie\n"
+        "group_mask_trie, per_group_trie, per_suffix_trie\n"
         "                             Default: plain_trie\n"
         "  --sigma <n>                Suffix length for teddy keys grouping\n"
         "                             Range: 1..4\n"

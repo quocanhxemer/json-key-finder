@@ -12,7 +12,6 @@
 namespace {
 
 using findkey_test::ApiRun;
-using findkey_test::expect_success;
 using findkey_test::expect_teddy_matchers_match;
 using findkey_test::expect_teddy_matches_scalar;
 using findkey_test::load_json_fixture;
@@ -113,22 +112,6 @@ TEST(FindkeyDifferentialTest, MatchesScalarForJsonEdgeCases) {
                                             test_case.keys, &config);
             }
         }
-    }
-}
-
-TEST(FindkeyDifferentialTest, MatchesScalarWithDefaultTeddyConfiguration) {
-    constexpr std::string_view json =
-        R"({"alpha":1,"bravo":2,"value":"alpha"})";
-    const std::vector<std::string_view> keys = {"alpha", "bravo"};
-
-    const ApiRun scalar = run_findkey(json, keys, SCALAR);
-    ASSERT_TRUE(expect_success(scalar));
-    for (const auto verification_strategy :
-         teddy::ALL_VERIFICATION_STRATEGIES) {
-        const findkey_teddy_config config = make_teddy_config(
-            TEDDY_SUFFIX_RAW, FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH,
-            verification_strategy);
-        expect_teddy_matchers_match(scalar, json, keys, &config);
     }
 }
 

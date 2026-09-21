@@ -30,7 +30,7 @@ concept Verifier =
         {
             verifier.check(input, end_quote, candidate_groups)
         } -> std::same_as<CandidateResult>;
-        { verifier.size() } noexcept -> std::same_as<size_t>;
+        { verifier.memory_usage_bytes() } noexcept -> std::same_as<size_t>;
     };
 
 }  // namespace teddy

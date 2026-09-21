@@ -2,6 +2,7 @@
 
 #include "findkey.h"
 #include "teddy/verification/json_context.h"
+#include "teddy/verification/memory_usage.h"
 #include "teddy/verification/verifier.h"
 
 #include <cstddef>
@@ -53,7 +54,10 @@ class HashVerifier final {
         return {CANDIDATE_MISSING_OPEN_QUOTE, 0, 0};
     }
 
-    size_t size() const noexcept { return keys_.size(); }
+    size_t memory_usage_bytes() const noexcept {
+        return sizeof(*this) +
+               verification::detail::unordered_map_allocation_bytes(keys_);
+    }
 
    private:
     std::unordered_map<std::string_view, uint32_t> keys_;

@@ -98,6 +98,9 @@ std::optional<findkey_teddy_verification_strategy> parse_verification_strategy(
     if (raw == "per_group_trie") {
         return TEDDY_VERIFY_PER_GROUP_TRIE;
     }
+    if (raw == "per_suffix_trie") {
+        return TEDDY_VERIFY_PER_SUFFIX_TRIE;
+    }
     return std::nullopt;
 }
 
@@ -198,6 +201,8 @@ std::string_view verification_strategy_name(
             return "group_mask_trie";
         case TEDDY_VERIFY_PER_GROUP_TRIE:
             return "per_group_trie";
+        case TEDDY_VERIFY_PER_SUFFIX_TRIE:
+            return "per_suffix_trie";
         default:
             return "unknown";
     }

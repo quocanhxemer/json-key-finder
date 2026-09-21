@@ -49,7 +49,7 @@ class PlainTrieVerifier final : private verification::detail::PlainReverseTrie {
     explicit PlainTrieVerifier(const VerificationBuildContext& context);
 
     using Base::check;
-    using Base::size;
+    using Base::memory_usage_bytes;
 };
 
 static_assert(sizeof(PlainTrieVerifier) ==

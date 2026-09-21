@@ -1,6 +1,7 @@
 #pragma once
 
 #include "teddy/verification/json_context.h"
+#include "teddy/verification/memory_usage.h"
 #include "teddy/verification/result.h"
 
 #include <concepts>
@@ -93,7 +94,13 @@ class ReverseTrie {
         return {CANDIDATE_MISSING_OPEN_QUOTE, 0, 0};
     }
 
-    size_t size() const noexcept { return nodes_.size(); }
+    size_t memory_usage_bytes() const noexcept {
+        return sizeof(*this) + dynamic_memory_usage_bytes();
+    }
+
+    size_t dynamic_memory_usage_bytes() const noexcept {
+        return vector_allocation_bytes(nodes_);
+    }
 
    private:
     using Node = typename Policy::Node;

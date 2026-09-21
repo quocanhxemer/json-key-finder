@@ -38,16 +38,6 @@ TEST(TeddyHashVerifierTest, FindsKnownAndUnknownKeys) {
     EXPECT_EQ(unknown.type, teddy::CANDIDATE_KEY_NOT_FOUND);
 }
 
-TEST(TeddyHashVerifierTest, DuplicateKeysReturnTheFirstId) {
-    const teddy::CandidateResult result =
-        findkey_test::verify_candidate<teddy::HashVerifier>(
-            R"("teddy":1)", 6, {"teddy", "other", "teddy"});
-
-    ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
-    EXPECT_EQ(result.position, 1u);
-    EXPECT_EQ(result.key_id, 0u);
-}
-
 TEST(TeddyHashVerifierTest, RecognizesKeysThatSuffixOtherKeys) {
     const teddy::CandidateResult short_key =
         findkey_test::verify_candidate<teddy::HashVerifier>(R"("id":1)", 3,

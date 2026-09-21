@@ -89,7 +89,6 @@ void expect_merge_case(const MergeCase& test_case,
 
     EXPECT_EQ(left.value(), expected_value);
     EXPECT_EQ(incremental.value(), expected_value);
-    EXPECT_EQ(left.value(), incremental.value());
     EXPECT_EQ(right.value(), right_value_before_merge);
 }
 
@@ -230,44 +229,58 @@ TEST(TeddyScoreModelsTest, MergeMatchesScoringTheCombinedSuffixes) {
     }
 }
 
-TEST(TeddyScoreModelsTest, NibbleCountPenalizesWorseGrouping) {
-    const std::vector<teddy::Suffix> base = {{'A', 'A', 'A'}};
-    const std::vector<teddy::Suffix> sensible = {
-        {'C', 'C', 'A'},
-        {'C', 'A', 'C'},
-    };
-    const std::vector<teddy::Suffix> poor = {
-        {'B', 'B', 'B'},
-        {'C', 'C', 'C'},
-    };
-
-    EXPECT_EQ(score_after_merge<PaperScore<3>>(base, sensible), 27u);
-    EXPECT_EQ(score_after_merge<PaperScore<3>>(base, poor), 27u);
-    EXPECT_EQ(score_after_merge<PaperNibbleScore<3>>(base, sensible), 8u);
-    EXPECT_EQ(score_after_merge<PaperNibbleScore<3>>(base, poor), 8u);
-
-    EXPECT_EQ(score_after_merge<NibbleCountScore<3>>(base, sensible), 8u);
-    EXPECT_EQ(score_after_merge<NibbleCountScore<3>>(base, poor), 27u);
-}
-
-TEST(TeddyScoreModelsTest, NibbleCountPenalizesWorseGrouping2) {
-    const std::vector<teddy::Suffix> base = {{'U', 'U', 'U'}};
-    const std::vector<teddy::Suffix> sensible = {
-        {'w', 'w', 'U'},
-        {'w', 'U', 'w'},
-    };
-    const std::vector<teddy::Suffix> poor = {
-        {'f', 'f', 'f'},
-        {'w', 'w', 'w'},
+TEST(TeddyScoreModelsTest, NibbleCountDistinguishesGroupingQuality) {
+    struct TestCase {
+        std::string_view name;
+        std::vector<teddy::Suffix> base;
+        std::vector<teddy::Suffix> sensible;
+        std::vector<teddy::Suffix> poor;
+        uint64_t expected_paper;
+        uint64_t expected_paper_nibble;
+        uint64_t expected_sensible_nibble_count;
+        uint64_t expected_poor_nibble_count;
     };
 
-    EXPECT_EQ(score_after_merge<PaperScore<3>>(base, sensible), 216u);
-    EXPECT_EQ(score_after_merge<PaperScore<3>>(base, poor), 216u);
-    EXPECT_EQ(score_after_merge<PaperNibbleScore<3>>(base, sensible), 729u);
-    EXPECT_EQ(score_after_merge<PaperNibbleScore<3>>(base, poor), 729u);
+    const std::vector<TestCase> cases = {
+        {"shared high nibbles",
+         {{'A', 'A', 'A'}},
+         {{'C', 'C', 'A'}, {'C', 'A', 'C'}},
+         {{'B', 'B', 'B'}, {'C', 'C', 'C'}},
+         27,
+         8,
+         8,
+         27},
+        {"distinct high and low nibbles",
+         {{'U', 'U', 'U'}},
+         {{'w', 'w', 'U'}, {'w', 'U', 'w'}},
+         {{'f', 'f', 'f'}, {'w', 'w', 'w'}},
+         216,
+         729,
+         64,
+         729},
+    };
 
-    EXPECT_EQ(score_after_merge<NibbleCountScore<3>>(base, sensible), 64u);
-    EXPECT_EQ(score_after_merge<NibbleCountScore<3>>(base, poor), 729u);
+    for (const auto& test_case : cases) {
+        SCOPED_TRACE(::testing::Message() << "case: " << test_case.name);
+        EXPECT_EQ(score_after_merge<PaperScore<3>>(test_case.base,
+                                                   test_case.sensible),
+                  test_case.expected_paper);
+        EXPECT_EQ(
+            score_after_merge<PaperScore<3>>(test_case.base, test_case.poor),
+            test_case.expected_paper);
+        EXPECT_EQ(score_after_merge<PaperNibbleScore<3>>(test_case.base,
+                                                         test_case.sensible),
+                  test_case.expected_paper_nibble);
+        EXPECT_EQ(score_after_merge<PaperNibbleScore<3>>(test_case.base,
+                                                         test_case.poor),
+                  test_case.expected_paper_nibble);
+        EXPECT_EQ(score_after_merge<NibbleCountScore<3>>(test_case.base,
+                                                         test_case.sensible),
+                  test_case.expected_sensible_nibble_count);
+        EXPECT_EQ(score_after_merge<NibbleCountScore<3>>(test_case.base,
+                                                         test_case.poor),
+                  test_case.expected_poor_nibble_count);
+    }
 }
 
 TEST(TeddyScoreModelsTest, IgnoresSuffixBytesAfterSigma) {

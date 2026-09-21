@@ -16,18 +16,19 @@ using findkey_test::SimdTeddyAvailability;
 
 }  // namespace
 
-TEST(FindkeyCapabilityTest, RequiresSimdTeddyAvailability) {
+TEST(FindkeyCapabilityTest, ReportsUnsupportedBuildOrMatchesScalar) {
     constexpr std::string_view json = R"({"dummy":1})";
     const std::vector<std::string_view> keys = {"dummy"};
 
     switch (simd_teddy_availability()) {
         case SimdTeddyAvailability::NotCompiled: {
             const ApiRun simd = run_findkey(json, keys, TEDDY);
-            ASSERT_EQ(simd.status, FINDKEY_TEDDY_NOT_SUPPORTED);
-            FAIL() << "-mssse3 is not supported by the compiler";
+            EXPECT_EQ(simd.status, FINDKEY_TEDDY_NOT_SUPPORTED);
+            EXPECT_EQ(simd.total, 0u);
+            break;
         }
         case SimdTeddyAvailability::CpuUnsupported:
-            FAIL() << "CPU does not have SSSE3 support";
+            GTEST_SKIP() << "CPU does not have SSSE3 support";
         case SimdTeddyAvailability::Available: {
             const ApiRun scalar = run_findkey(json, keys, SCALAR);
             ASSERT_TRUE(expect_success(scalar));

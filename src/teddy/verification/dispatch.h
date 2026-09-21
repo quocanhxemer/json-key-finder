@@ -5,6 +5,7 @@
 #include "teddy/verification/verifiers/group_mask_trie.h"
 #include "teddy/verification/verifiers/hash.h"
 #include "teddy/verification/verifiers/per_group_trie.h"
+#include "teddy/verification/verifiers/per_suffix_trie.h"
 #include "teddy/verification/verifiers/plain_trie.h"
 
 #include <utility>
@@ -27,6 +28,9 @@ decltype(auto) dispatch_verifier(findkey_teddy_verification_strategy strategy,
         case TEDDY_VERIFY_PER_GROUP_TRIE:
             return std::forward<Function>(function)
                 .template operator()<PerGroupTrieVerifier>();
+        case TEDDY_VERIFY_PER_SUFFIX_TRIE:
+            return std::forward<Function>(function)
+                .template operator()<PerSuffixTrieVerifier>();
         default:
             throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
                                "Unknown Teddy verification strategy");
