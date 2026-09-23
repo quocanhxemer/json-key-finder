@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-#define FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH 3
-#define FINDKEY_TEDDY_MAX_SUFFIX_LENGTH 4
+#define FINDKEY_TEDDY_DEFAULT_REQUESTED_SIGMA 3
+#define FINDKEY_TEDDY_MAX_REQUESTED_SIGMA 4
 
-#define FINDKEY_TEDDY_MAX_SIGMA 5
+#define FINDKEY_TEDDY_MAX_COMPILED_SIGMA (FINDKEY_TEDDY_MAX_REQUESTED_SIGMA + 1)
 
 enum findkey_status {
     FINDKEY_OK = 0,
@@ -98,6 +98,7 @@ struct findkey_teddy_config {
     struct findkey_teddy_grouping_config grouping;
     enum findkey_teddy_suffix_mode suffix_mode;
 
+    // for quoted suffix mode, sigma is added one for the closing quote
     int sigma;
     enum findkey_teddy_verification_strategy verification_strategy;
 };
@@ -107,7 +108,7 @@ struct findkey_teddy_config {
 
 #define FINDKEY_TEDDY_CONFIG_INIT                          \
     {FINDKEY_TEDDY_GROUPING_CONFIG_INIT, TEDDY_SUFFIX_RAW, \
-     FINDKEY_TEDDY_DEFAULT_SUFFIX_LENGTH, TEDDY_VERIFY_PLAIN_TRIE}
+     FINDKEY_TEDDY_DEFAULT_REQUESTED_SIGMA, TEDDY_VERIFY_PLAIN_TRIE}
 
 size_t findkey(const uint8_t* data,
                size_t len,

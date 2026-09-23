@@ -117,7 +117,7 @@ std::optional<int> parse_sigma(std::string_view raw) {
         return std::nullopt;
     }
 
-    if (value <= 0 || value > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH ||
+    if (value <= 0 || value > FINDKEY_TEDDY_MAX_REQUESTED_SIGMA ||
         value > std::numeric_limits<int>::max()) {
         return std::nullopt;
     }

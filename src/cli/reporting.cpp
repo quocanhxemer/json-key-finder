@@ -2,20 +2,22 @@
 
 #include "core/findkey_options.h"
 
-#include <cstdio>
+#include <iostream>
 
 void print_compilation_stats(
     const teddy::CompilationMetadata& teddy_metadata,
     const teddy::VerifierCompilationMetadata& metadata) {
-    std::printf("Compilation Stats:\n");
-    std::printf("\tSigma: %d\n", teddy_metadata.sigma);
-    std::printf("\tGroups: %zu\n", teddy_metadata.num_groups);
-    std::printf(
-        "\tVerification strategy: %s\n",
-        findkey_options::verification_strategy_name(metadata.strategy).data());
-    std::printf(
-        "\tVerifier size: %zu bytes (%.3f MiB)\n", metadata.verifier_size_bytes,
-        static_cast<double>(metadata.verifier_size_bytes) / (1024.0 * 1024.0));
+    std::cout << "Compilation Stats:\n";
+    std::cout << "\tCompiled sigma: " << teddy_metadata.sigma << '\n';
+    std::cout << "\tGroups: " << teddy_metadata.num_groups << '\n';
+    std::cout << "\tVerification strategy: "
+              << findkey_options::verification_strategy_name(metadata.strategy)
+              << '\n';
+    std::cout << "\tVerifier size: " << metadata.verifier_size_bytes
+              << " bytes ("
+              << static_cast<double>(metadata.verifier_size_bytes) /
+                     (1024.0 * 1024.0)
+              << " MiB)\n";
 }
 
 void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,
@@ -47,29 +49,29 @@ void print_teddy_runtime_stats(const findkey_teddy_stats& teddy_stats,
                   static_cast<double>(teddy_stats.prefilter_hit_lanes)
             : 0.0;
 
-    std::printf("Teddy Runtime Stats:\n");
-    std::printf("\tScan positions: %zu\n", scan_positions);
-    std::printf("\tPrefilter hit lanes: %lu\n",
-                teddy_stats.prefilter_hit_lanes);
-    std::printf("\tPrefilter hit groups: %lu\n",
-                teddy_stats.prefilter_hit_groups);
-    std::printf("\tFP type 1 lanes: %lu\n", teddy_stats.fp_type1_lanes);
-    std::printf("\tFP type 1 groups: %lu\n", teddy_stats.fp_type1_groups);
-    std::printf("\tFP type 2 lanes: %lu\n", teddy_stats.fp_type2_lanes);
-    std::printf("\tReject bad end quote: %lu\n",
-                teddy_stats.reject_bad_end_quote);
-    std::printf("\tReject invalid quote: %lu\n",
-                teddy_stats.reject_invalid_quote);
-    std::printf("\tReject missing colon: %lu\n",
-                teddy_stats.reject_missing_colon);
-    std::printf("\tReject missing open quote: %lu\n",
-                teddy_stats.reject_missing_open_quote);
-    std::printf("\tReject key not found: %lu\n",
-                teddy_stats.reject_key_not_found);
-    std::printf("\tExact matches: %lu\n", teddy_stats.exact_matches);
-    std::printf("\tHit lane ratio: %.6f\n", hit_lane_ratio);
-    std::printf("\tAvg hit groups per lane: %.6f\n", avg_hit_groups);
-    std::printf("\tExact matches per hit lane: %.6f\n", exact_match_ratio);
-    std::printf("\tFP type 1 lane ratio: %.6f\n", fp_type1_ratio);
-    std::printf("\tFP type 2 lane ratio: %.6f\n", fp_type2_ratio);
+    std::cout << "Teddy Runtime Stats:\n";
+    std::cout << "\tScan positions: " << scan_positions << '\n';
+    std::cout << "\tPrefilter hit lanes: " << teddy_stats.prefilter_hit_lanes
+              << '\n';
+    std::cout << "\tPrefilter hit groups: " << teddy_stats.prefilter_hit_groups
+              << '\n';
+    std::cout << "\tFP type 1 lanes: " << teddy_stats.fp_type1_lanes << '\n';
+    std::cout << "\tFP type 1 groups: " << teddy_stats.fp_type1_groups << '\n';
+    std::cout << "\tFP type 2 lanes: " << teddy_stats.fp_type2_lanes << '\n';
+    std::cout << "\tReject bad end quote: " << teddy_stats.reject_bad_end_quote
+              << '\n';
+    std::cout << "\tReject invalid quote: " << teddy_stats.reject_invalid_quote
+              << '\n';
+    std::cout << "\tReject missing colon: " << teddy_stats.reject_missing_colon
+              << '\n';
+    std::cout << "\tReject missing open quote: "
+              << teddy_stats.reject_missing_open_quote << '\n';
+    std::cout << "\tReject key not found: " << teddy_stats.reject_key_not_found
+              << '\n';
+    std::cout << "\tExact matches: " << teddy_stats.exact_matches << '\n';
+    std::cout << "\tHit lane ratio: " << hit_lane_ratio << '\n';
+    std::cout << "\tAvg hit groups per lane: " << avg_hit_groups << '\n';
+    std::cout << "\tExact matches per hit lane: " << exact_match_ratio << '\n';
+    std::cout << "\tFP type 1 lane ratio: " << fp_type1_ratio << '\n';
+    std::cout << "\tFP type 2 lane ratio: " << fp_type2_ratio << '\n';
 }

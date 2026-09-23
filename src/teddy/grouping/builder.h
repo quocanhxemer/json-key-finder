@@ -11,16 +11,17 @@ namespace teddy::grouping {
 using GroupedSuffixIds = std::vector<std::vector<uint32_t>>;
 
 template <int Sigma>
-class GroupingBuilder {
-    static_assert(Sigma > 0 && Sigma <= FINDKEY_TEDDY_MAX_SIGMA,
-                  "Teddy sigma is out of range");
+class GroupingBuilderBase {
+    static_assert(Sigma > 0 && Sigma <= FINDKEY_TEDDY_MAX_COMPILED_SIGMA,
+                  "Compiled Teddy suffix byte count is out of range");
 
    protected:
-    GroupingBuilder(const std::vector<Suffix>& suffixes,
-                    findkey_teddy_compile_grouping_strategy grouping_strategy)
+    GroupingBuilderBase(
+        const std::vector<Suffix>& suffixes,
+        findkey_teddy_compile_grouping_strategy grouping_strategy)
         : suffixes_(suffixes), grouping_strategy_(grouping_strategy) {}
 
-    ~GroupingBuilder() = default;
+    ~GroupingBuilderBase() = default;
 
     const std::vector<Suffix>& suffixes_;
     const findkey_teddy_compile_grouping_strategy grouping_strategy_;

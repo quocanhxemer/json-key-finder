@@ -55,9 +55,10 @@ SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
         throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
                            "Teddy requires at least one key");
     }
-    if (config.sigma <= 0 || config.sigma > FINDKEY_TEDDY_MAX_SUFFIX_LENGTH) {
+    if (config.sigma <= 0 || config.sigma > FINDKEY_TEDDY_MAX_REQUESTED_SIGMA) {
         throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
-                           "Teddy suffix length is out of range");
+                           "Requested Teddy key suffix byte count is out of "
+                           "range");
     }
 
     if (config.suffix_mode != TEDDY_SUFFIX_RAW &&
@@ -78,10 +79,10 @@ SuffixSet prepare_suffixes(const std::vector<std::string_view>& keys,
             std::min(min_len, virtual_key_length(key, config.suffix_mode));
     }
 
-    const int requested_sigma = config.suffix_mode == TEDDY_SUFFIX_QUOTED
-                                    ? config.sigma + 1
-                                    : config.sigma;
-    prepared.sigma = std::min(static_cast<int>(min_len), requested_sigma);
+    const int target_compiled_sigma = config.suffix_mode == TEDDY_SUFFIX_QUOTED
+                                          ? config.sigma + 1
+                                          : config.sigma;
+    prepared.sigma = std::min(static_cast<int>(min_len), target_compiled_sigma);
     prepared.end_quote_offset =
         config.suffix_mode == TEDDY_SUFFIX_QUOTED ? 0 : 1;
 

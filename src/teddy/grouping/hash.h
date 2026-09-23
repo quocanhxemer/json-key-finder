@@ -10,12 +10,12 @@
 namespace teddy::grouping {
 
 template <int Sigma>
-class HashGroupingBuilder final : public GroupingBuilder<Sigma> {
+class HashGroupingBuilder final : public GroupingBuilderBase<Sigma> {
    public:
     HashGroupingBuilder(
         const std::vector<Suffix>& suffixes,
         findkey_teddy_compile_grouping_strategy grouping_strategy)
-        : GroupingBuilder<Sigma>(suffixes, grouping_strategy) {}
+        : GroupingBuilderBase<Sigma>(suffixes, grouping_strategy) {}
 
     GroupedSuffixIds build() const {
         // partition

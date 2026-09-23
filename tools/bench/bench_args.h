@@ -35,7 +35,7 @@ struct Options {
     std::vector<findkey_teddy_grouping_score> grouping_scores;
     std::vector<findkey_teddy_suffix_mode> suffix_modes;
     std::vector<findkey_teddy_verification_strategy> verification_strategies;
-    std::vector<int> sigmas;
+    std::vector<int> requested_sigmas;
     size_t repeats = 5;
     size_t warmup = 1;
     std::filesystem::path out_dir = "bench_out_cpp";

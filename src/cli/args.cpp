@@ -3,59 +3,62 @@
 
 #include <getopt.h>
 
-#include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 namespace {
 
 [[noreturn]] void print_usage_and_exit(const char* prog_name) {
-    static constexpr const char* usage_message =
-        "Usage:\n"
-        "  %s --keys <keys_file> --data <json_file> [options]\n"
-        "\n"
-        "Required:\n"
-        "  --keys <keys_file>         Newline-delimited list of keys to "
-        "search\n"
-        "  --data <json_file>         JSON input file to scan\n"
-        "\n"
-        "General options:\n"
-        "  --algo <name>              Matching algorithm\n"
-        "                             Values: scalar, teddy, teddy_baseline\n"
-        "                             Default: scalar\n"
-        "  --print-positions          Print the position and key for each "
-        "match\n"
-        "  --collect-stats            Print Teddy baseline false-positive "
-        "stats\n"
-        "\n"
-        "Teddy options:\n"
-        "  --teddy-grouping-strategy <name>\n"
-        "                             Values: greedy_paper_policy, "
-        "greedy_min_delta, "
-        "hash_std, hash_adler32, hash_crc32, hash_xxhash, hash_fnv1a, "
-        "sorted_suffix_round_robin, sorted_suffix_partition, "
-        "sorted_suffix_optimal_partition\n"
-        "                             Default: greedy_paper_policy\n"
-        "  --teddy-grouping-score <name>\n"
-        "                             Values: paper, paper_nibble, "
-        "nibble_count\n"
-        "                             Default: paper\n"
-        "  --teddy-suffix-mode <name>\n"
-        "                             Values: raw, quote-suffix\n"
-        "                             Default: raw\n"
-        "  --teddy-verification-strategy <name>\n"
-        "                             Values: hash, plain_trie, "
-        "group_mask_trie, per_group_trie, per_suffix_trie\n"
-        "                             Default: plain_trie\n"
-        "  --sigma <n>                Suffix length for teddy keys grouping\n"
-        "                             Range: 1..4\n"
-        "                             Default: 3\n"
-        "\n"
-        "Notes:\n"
-        "  - --collect-stats always uses the Teddy baseline matcher\n"
-        "  - --collect-stats cannot be combined with --print-positions\n"
-        "  - Teddy options are ignored when --algo scalar is selected\n";
+    std::cerr
+        << "Usage:\n"
+        << "  " << prog_name
+        << " --keys <keys_file> --data <json_file> [options]\n"
+        << "\n"
+        << "Required:\n"
+        << "  --keys <keys_file>         Newline-delimited list of keys to "
+           "search\n"
+        << "  --data <json_file>         JSON input file to scan\n"
+        << "\n"
+        << "General options:\n"
+        << "  --algo <name>              Matching algorithm\n"
+        << "                             Values: scalar, teddy, "
+           "teddy_baseline\n"
+        << "                             Default: scalar\n"
+        << "  --print-positions          Print the position and key for each "
+           "match\n"
+        << "  --collect-stats            Print Teddy baseline false-positive "
+           "stats\n"
+        << "\n"
+        << "Teddy options:\n"
+        << "  --teddy-grouping-strategy <name>\n"
+        << "                             Values: greedy_paper_policy, "
+           "greedy_min_delta, "
+           "hash_std, hash_adler32, hash_crc32, hash_xxhash, hash_fnv1a, "
+           "sorted_suffix_round_robin, sorted_suffix_partition, "
+           "sorted_suffix_optimal_partition\n"
+        << "                             Default: greedy_paper_policy\n"
+        << "  --teddy-grouping-score <name>\n"
+        << "                             Values: paper, paper_nibble, "
+           "nibble_count\n"
+        << "                             Default: paper\n"
+        << "  --teddy-suffix-mode <name>\n"
+        << "                             Values: raw, quote-suffix\n"
+        << "                             Default: raw\n"
+        << "  --teddy-verification-strategy <name>\n"
+        << "                             Values: hash, plain_trie, "
+           "group_mask_trie, per_group_trie, per_suffix_trie\n"
+        << "                             Default: plain_trie\n"
+        << "  --sigma <n>                Requested sigma for Teddy grouping\n"
+        << "                             Range: 1.."
+        << FINDKEY_TEDDY_MAX_REQUESTED_SIGMA
+        << "; quoted mode compiles one extra byte\n"
+        << "                             Default: 3\n"
+        << "\n"
+        << "Notes:\n"
+        << "  - --collect-stats always uses the Teddy baseline matcher\n"
+        << "  - --collect-stats cannot be combined with --print-positions\n"
+        << "  - Teddy options are ignored when --algo scalar is selected\n";
 
-    std::fprintf(stderr, usage_message, prog_name);
     std::exit(EXIT_FAILURE);
 }
 
@@ -91,7 +94,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
             case 'a': {
                 const auto parsed = findkey_options::parse_algo(optarg);
                 if (!parsed) {
-                    std::fprintf(stderr, "Unknown algorithm specified\n");
+                    std::cerr << "Unknown algorithm specified\n";
                     print_usage_and_exit(argv[0]);
                 }
                 args.algo = *parsed;
@@ -101,8 +104,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                 const auto parsed =
                     findkey_options::parse_grouping_strategy(optarg);
                 if (!parsed) {
-                    std::fprintf(stderr,
-                                 "Unknown teddy grouping strategy specified\n");
+                    std::cerr << "Unknown teddy grouping strategy specified\n";
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.grouping.strategy = *parsed;
@@ -112,8 +114,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                 const auto parsed =
                     findkey_options::parse_grouping_score(optarg);
                 if (!parsed) {
-                    std::fprintf(stderr,
-                                 "Unknown teddy grouping score specified\n");
+                    std::cerr << "Unknown teddy grouping score specified\n";
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.grouping.score = *parsed;
@@ -122,8 +123,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
             case 's': {
                 const auto parsed = findkey_options::parse_suffix_mode(optarg);
                 if (!parsed) {
-                    std::fprintf(stderr,
-                                 "Unknown teddy suffix mode specified\n");
+                    std::cerr << "Unknown teddy suffix mode specified\n";
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.suffix_mode = *parsed;
@@ -133,9 +133,8 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
                 const auto parsed =
                     findkey_options::parse_verification_strategy(optarg);
                 if (!parsed) {
-                    std::fprintf(stderr,
-                                 "Unknown teddy verification strategy "
-                                 "specified\n");
+                    std::cerr << "Unknown teddy verification strategy "
+                                 "specified\n";
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.verification_strategy = *parsed;
@@ -144,7 +143,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
             case 'm': {
                 const auto parsed = findkey_options::parse_sigma(optarg);
                 if (!parsed) {
-                    std::fprintf(stderr, "Invalid sigma specified\n");
+                    std::cerr << "Invalid sigma specified\n";
                     print_usage_and_exit(argv[0]);
                 }
                 args.teddy_config.sigma = *parsed;
@@ -176,8 +175,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
     }
 
     if (args.collect_stats && args.print_positions) {
-        std::fprintf(stderr,
-                     "--print-positions cannot be used with --collect-stats\n");
+        std::cerr << "--print-positions cannot be used with --collect-stats\n";
         print_usage_and_exit(argv[0]);
     }
 

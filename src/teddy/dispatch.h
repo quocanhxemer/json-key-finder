@@ -1,10 +1,13 @@
 #pragma once
 
 #include "core/findkey_error.h"
+#include "findkey.h"
 
 #include <utility>
 
 namespace teddy {
+
+static_assert(FINDKEY_TEDDY_MAX_COMPILED_SIGMA == 5);
 
 template <typename Function>
 decltype(auto) dispatch_sigma(int sigma, Function&& function) {

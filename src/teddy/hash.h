@@ -16,8 +16,8 @@ template <size_t Length>
 uint32_t hash_grouping_bytes(
     const uint8_t* data,
     enum findkey_teddy_compile_grouping_strategy grouping_strategy) {
-    static_assert(Length > 0 && Length <= FINDKEY_TEDDY_MAX_SIGMA,
-                  "Teddy hash length is out of range");
+    static_assert(Length > 0 && Length <= FINDKEY_TEDDY_MAX_COMPILED_SIGMA,
+                  "Teddy grouping hash length is out of range");
 
     switch (grouping_strategy) {
         case TEDDY_COMPILE_HASH_STD:

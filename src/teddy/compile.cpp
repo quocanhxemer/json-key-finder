@@ -10,7 +10,7 @@ namespace teddy {
 
 template <int Sigma>
 static void build_compilation_tables(CompilationData& data) {
-    for (int i = 0; i < FINDKEY_TEDDY_MAX_SIGMA; ++i) {
+    for (int i = 0; i < FINDKEY_TEDDY_MAX_COMPILED_SIGMA; ++i) {
         for (int j = 0; j < 16; ++j) {
             data.low_table[i][j] = 0xFF;
             data.high_table[i][j] = 0xFF;
@@ -54,9 +54,10 @@ CompilationData compile(SuffixSet suffixes,
                         findkey_teddy_grouping_config grouping_config) {
     CompilationData data{};
 
-    if (suffixes.sigma <= 0 || suffixes.sigma > FINDKEY_TEDDY_MAX_SIGMA) {
+    if (suffixes.sigma <= 0 ||
+        suffixes.sigma > FINDKEY_TEDDY_MAX_COMPILED_SIGMA) {
         throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,
-                           "Compiled Teddy suffix length is out of range");
+                           "Compiled Teddy suffix byte count is out of range");
     }
     if (suffixes.data.empty()) {
         throw FindkeyError(FindkeyErrorCode::INVALID_ARGUMENT,

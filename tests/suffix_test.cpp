@@ -119,12 +119,12 @@ TEST(TeddySuffixPreparationTest, CapsSigmaAtTheShortestVirtualKey) {
     expect_suffixes(quoted, expected_quoted);
 }
 
-TEST(TeddySuffixPreparationTest, SupportsTheMaximumRequestedSigma) {
+TEST(TeddySuffixPreparationTest, SupportsMaximumRequestedSigma) {
     const std::vector<std::string_view> keys = {"alphabet"};
 
     const teddy::SuffixSet raw = teddy::prepare_suffixes(
         keys,
-        make_teddy_config(TEDDY_SUFFIX_RAW, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH,
+        make_teddy_config(TEDDY_SUFFIX_RAW, FINDKEY_TEDDY_MAX_REQUESTED_SIGMA,
                           TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_raw{
         .sigma = 4,
@@ -135,9 +135,9 @@ TEST(TeddySuffixPreparationTest, SupportsTheMaximumRequestedSigma) {
     expect_suffixes(raw, expected_raw);
 
     const teddy::SuffixSet quoted = teddy::prepare_suffixes(
-        keys,
-        make_teddy_config(TEDDY_SUFFIX_QUOTED, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH,
-                          TEDDY_VERIFY_PLAIN_TRIE));
+        keys, make_teddy_config(TEDDY_SUFFIX_QUOTED,
+                                FINDKEY_TEDDY_MAX_REQUESTED_SIGMA,
+                                TEDDY_VERIFY_PLAIN_TRIE));
     const teddy::SuffixSet expected_quoted{
         .sigma = 5,
         .end_quote_offset = 0,
@@ -211,15 +211,16 @@ TEST(TeddySuffixPreparationTest, RejectsAnEmptyKeyList) {
                                 "Teddy requires at least one key");
 }
 
-TEST(TeddySuffixPreparationTest, RejectsOutOfRangeSigma) {
+TEST(TeddySuffixPreparationTest, RejectsOutOfRangeRequestedSigma) {
     const std::vector<std::string_view> keys = {"alpha"};
 
-    for (const int sigma : {-1, 0, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH + 1}) {
+    for (const int sigma : {-1, 0, FINDKEY_TEDDY_MAX_REQUESTED_SIGMA + 1}) {
         SCOPED_TRACE(::testing::Message() << "sigma=" << sigma);
         const findkey_teddy_config config =
             make_teddy_config(TEDDY_SUFFIX_RAW, sigma, TEDDY_VERIFY_PLAIN_TRIE);
-        expect_invalid_suffix_input(keys, config,
-                                    "Teddy suffix length is out of range");
+        expect_invalid_suffix_input(
+            keys, config,
+            "Requested Teddy key suffix byte count is out of range");
     }
 }
 

@@ -7,16 +7,16 @@
 #include "teddy/verification/dispatch.h"
 #include "teddy/verification/metadata.h"
 
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
 static std::vector<std::string> read_keys_from_file(const char* keys_file) {
     std::ifstream infile(keys_file);
     if (!infile) {
-        std::fprintf(stderr, "Failed to open keys file: %s\n", keys_file);
+        std::cerr << "Failed to open keys file: " << keys_file << '\n';
         std::exit(EXIT_FAILURE);
     }
 
@@ -32,7 +32,7 @@ static std::vector<std::string> read_keys_from_file(const char* keys_file) {
     }
 
     if (keys.empty()) {
-        std::fprintf(stderr, "No keys found in keys file: %s\n", keys_file);
+        std::cerr << "No keys found in keys file: " << keys_file << '\n';
         std::exit(EXIT_FAILURE);
     }
 
@@ -44,8 +44,7 @@ int main(int argc, char** argv) {
 
     PreparedKeys keys = prepare_keys(read_keys_from_file(args.keys_path));
     if (keys.keys.empty()) {
-        std::fprintf(stderr, "No keys found in keys file: %s\n",
-                     args.keys_path);
+        std::cerr << "No keys found in keys file: " << args.keys_path << '\n';
         std::exit(EXIT_FAILURE);
     }
 
@@ -87,28 +86,29 @@ int main(int argc, char** argv) {
 
     switch (status) {
         case FINDKEY_ERR_BAD_ARGS:
-            std::fprintf(stderr, "Bad arguments\n");
+            std::cerr << "Bad arguments\n";
             return EXIT_FAILURE;
         case FINDKEY_TEDDY_NOT_SUPPORTED:
-            std::fprintf(stderr, "Teddy not supported by this compiler\n");
+            std::cerr << "Teddy not supported by this compiler\n";
             return EXIT_FAILURE;
         case FINDKEY_ERR_UNKNOWN_ALGO:
-            std::fprintf(stderr, "Unknown algorithm specified\n");
+            std::cerr << "Unknown algorithm specified\n";
             return EXIT_FAILURE;
         default:
             break;
     }
 
-    std::printf("Total key-value pairs found: %zu\n", num_found);
+    std::cout << "Total key-value pairs found: " << num_found << '\n';
 
     if (args.print_positions) {
         for (size_t i = 0; i < num_found && i < positions.size(); ++i) {
-            std::printf("\tPosition: %zu\n", positions[i].position);
-            std::printf("\tKey: \"%s\"\n",
-                        keys.keys[positions[i].key_id].c_str());
+            std::cout << "\tPosition: " << positions[i].position << '\n';
+            std::cout << "\tKey: \"" << keys.keys[positions[i].key_id]
+                      << "\"\n";
         }
         if (num_found > positions.size()) {
-            std::printf("  ... and %zu more\n", num_found - positions.size());
+            std::cout << "  ... and " << num_found - positions.size()
+                      << " more\n";
         }
     }
 
@@ -131,16 +131,14 @@ int main(int argc, char** argv) {
                 ? (bytes / (1024.0 * 1024.0)) / total_duration_s
                 : 0.0;
 
-        std::printf("Compile time: %.2f ns\n",
-                    static_cast<double>(timing.compile_ns));
-        std::printf("Verifier build time: %.2f ns\n",
-                    static_cast<double>(timing.verifier_build_ns));
-        std::printf("Match time: %.2f ns\n",
-                    static_cast<double>(timing.match_ns));
-        std::printf("Time taken: %.2f ns\n", static_cast<double>(total_ns));
-        std::printf("Data size: %.2f MiB\n", bytes / (1024.0 * 1024.0));
-        std::printf("Throughput: %.2f MiB/s\n", mbps);
-        std::printf("End-to-end throughput: %.2f MiB/s\n", end_to_end_mbps);
+        std::cout << "Compile time: " << timing.compile_ns << " ns\n";
+        std::cout << "Verifier build time: " << timing.verifier_build_ns
+                  << " ns\n";
+        std::cout << "Match time: " << timing.match_ns << " ns\n";
+        std::cout << "Time taken: " << total_ns << " ns\n";
+        std::cout << "Data size: " << bytes / (1024.0 * 1024.0) << " MiB\n";
+        std::cout << "Throughput: " << mbps << " MiB/s\n";
+        std::cout << "End-to-end throughput: " << end_to_end_mbps << " MiB/s\n";
     }
 
     return 0;

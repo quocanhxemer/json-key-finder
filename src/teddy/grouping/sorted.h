@@ -36,12 +36,12 @@ std::vector<uint32_t> sorted_suffix_ids(const std::vector<Suffix>& suffixes) {
 }  // namespace detail
 
 template <int Sigma>
-class SortedGroupingBuilder final : public GroupingBuilder<Sigma> {
+class SortedGroupingBuilder final : public GroupingBuilderBase<Sigma> {
    public:
     SortedGroupingBuilder(
         const std::vector<Suffix>& suffixes,
         findkey_teddy_compile_grouping_strategy grouping_strategy)
-        : GroupingBuilder<Sigma>(suffixes, grouping_strategy) {}
+        : GroupingBuilderBase<Sigma>(suffixes, grouping_strategy) {}
 
     GroupedSuffixIds build() const {
         const std::vector<uint32_t> suffix_ids =
@@ -96,10 +96,10 @@ class SortedGroupingBuilder final : public GroupingBuilder<Sigma> {
 };
 
 template <int Sigma, GroupingScore ScoreModel>
-class SortedOptimalGroupingBuilder final : public GroupingBuilder<Sigma> {
+class SortedOptimalGroupingBuilder final : public GroupingBuilderBase<Sigma> {
    public:
     explicit SortedOptimalGroupingBuilder(const std::vector<Suffix>& suffixes)
-        : GroupingBuilder<Sigma>(
+        : GroupingBuilderBase<Sigma>(
               suffixes,
               TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION) {}
 

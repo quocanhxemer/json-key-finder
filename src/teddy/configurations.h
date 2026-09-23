@@ -3,6 +3,7 @@
 #include "findkey.h"
 
 #include <array>
+#include <numeric>
 #include <span>
 #include <vector>
 
@@ -32,12 +33,10 @@ inline constexpr std::array ALL_SUFFIX_MODES = {
     TEDDY_SUFFIX_QUOTED,
 };
 
-inline constexpr auto ALL_SIGMAS = [] {
-    std::array<int, FINDKEY_TEDDY_MAX_SUFFIX_LENGTH> sigmas{};
-    for (size_t i = 0; i < sigmas.size(); ++i) {
-        sigmas[i] = static_cast<int>(i) + 1;
-    }
-    return sigmas;
+inline constexpr auto ALL_REQUESTED_SIGMAS = [] {
+    std::array<int, FINDKEY_TEDDY_MAX_REQUESTED_SIGMA> requested_sigmas{};
+    std::iota(requested_sigmas.begin(), requested_sigmas.end(), 1);
+    return requested_sigmas;
 }();
 
 inline constexpr std::array ALL_VERIFICATION_STRATEGIES = {
@@ -65,7 +64,7 @@ std::vector<findkey_teddy_config> make_teddy_configurations(
     std::span<const findkey_teddy_compile_grouping_strategy> strategies,
     std::span<const findkey_teddy_grouping_score> scores,
     std::span<const findkey_teddy_suffix_mode> suffix_modes,
-    std::span<const int> sigmas,
+    std::span<const int> requested_sigmas,
     std::span<const findkey_teddy_verification_strategy>
         verification_strategies);
 

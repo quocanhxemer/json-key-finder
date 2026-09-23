@@ -19,12 +19,12 @@ enum class GreedySelectionPolicy {
 template <int Sigma,
           GroupingScore ScoreModel,
           GreedySelectionPolicy SelectionPolicy>
-class GreedyGroupingBuilder final : public GroupingBuilder<Sigma> {
+class GreedyGroupingBuilder final : public GroupingBuilderBase<Sigma> {
     using Group = SuffixGroup<ScoreModel>;
 
    public:
     explicit GreedyGroupingBuilder(const std::vector<Suffix>& suffixes)
-        : GroupingBuilder<Sigma>(suffixes, strategy()) {}
+        : GroupingBuilderBase<Sigma>(suffixes, strategy()) {}
 
     GroupedSuffixIds build() const {
         std::vector<Group> groups;

@@ -74,6 +74,7 @@ TEST(BenchCsvTest, BenchHeaderMatchesBenchRowSchema) {
 
     ASSERT_EQ(header.size(), values.size());
     EXPECT_EQ(header.size(), 21u);
+    EXPECT_EQ(header[10], "requested_sigma");
     EXPECT_EQ(header[14], "compile_ns");
     EXPECT_EQ(header[15], "verifier_build_ns");
     EXPECT_EQ(header[16], "match_ns");
@@ -137,6 +138,8 @@ TEST(BenchCsvTest, StatsHeaderMatchesStatsRowSchemaWithoutTiming) {
     EXPECT_EQ(std::find(header.begin(), header.end(), "total_ns"),
               header.end());
     EXPECT_EQ(values[5], "plain_trie");
+    EXPECT_EQ(header[9], "requested_sigma");
+    EXPECT_EQ(header[10], "compiled_sigma");
     EXPECT_EQ(header[12], "verifier_size_bytes");
     EXPECT_EQ(header[16], "data_bytes");
     EXPECT_EQ(values[12], "29");

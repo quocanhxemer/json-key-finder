@@ -23,8 +23,8 @@ struct CompilationData {
     // 0 for QUOTED mode
     size_t end_quote_offset = 1;
 
-    alignas(16) uint8_t low_table[FINDKEY_TEDDY_MAX_SIGMA][16] = {};
-    alignas(16) uint8_t high_table[FINDKEY_TEDDY_MAX_SIGMA][16] = {};
+    alignas(16) uint8_t low_table[FINDKEY_TEDDY_MAX_COMPILED_SIGMA][16] = {};
+    alignas(16) uint8_t high_table[FINDKEY_TEDDY_MAX_COMPILED_SIGMA][16] = {};
 
     std::vector<Suffix> suffixes;
     std::vector<std::vector<uint32_t>> group_suffix_ids;

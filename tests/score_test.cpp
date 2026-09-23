@@ -96,7 +96,7 @@ template <template <int> class ScoreModel, int Sigma>
     requires teddy::grouping::GroupingScore<ScoreModel<Sigma>>
 void expect_score_model_respects_sigma() {
     static_assert(Sigma > 0);
-    static_assert(Sigma < FINDKEY_TEDDY_MAX_SIGMA,
+    static_assert(Sigma < FINDKEY_TEDDY_MAX_COMPILED_SIGMA,
                   "The test needs at least one byte after sigma");
 
     // Construct 2 identical Suffix-es with different trailing bytes

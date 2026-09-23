@@ -10,7 +10,7 @@
 
 namespace teddy {
 
-using Suffix = std::array<uint8_t, FINDKEY_TEDDY_MAX_SIGMA>;
+using Suffix = std::array<uint8_t, FINDKEY_TEDDY_MAX_COMPILED_SIGMA>;
 
 struct SuffixSet {
     int sigma = 0;

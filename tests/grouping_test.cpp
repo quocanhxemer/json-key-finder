@@ -90,8 +90,10 @@ uint64_t independently_calculate_nibble_count_score(
     const std::size_t begin,
     const std::size_t end,
     const int sigma) {
-    std::array<std::array<bool, 16>, FINDKEY_TEDDY_MAX_SIGMA> low_seen{};
-    std::array<std::array<bool, 16>, FINDKEY_TEDDY_MAX_SIGMA> high_seen{};
+    std::array<std::array<bool, 16>, FINDKEY_TEDDY_MAX_COMPILED_SIGMA>
+        low_seen{};
+    std::array<std::array<bool, 16>, FINDKEY_TEDDY_MAX_COMPILED_SIGMA>
+        high_seen{};
 
     for (std::size_t i = begin; i < end; ++i) {
         const teddy::Suffix& suffix = suffixes[suffix_ids[i]];
@@ -157,7 +159,8 @@ TEST(TeddyGroupingInvariantsTest,
     const std::vector<teddy::Suffix> suffixes = make_unique_suffixes(17);
 
     for (const auto config : teddy::all_grouping_configurations()) {
-        for (int sigma = 1; sigma <= FINDKEY_TEDDY_MAX_SIGMA; ++sigma) {
+        for (int sigma = 1; sigma <= FINDKEY_TEDDY_MAX_COMPILED_SIGMA;
+             ++sigma) {
             SCOPED_TRACE(::testing::Message()
                          << "strategy: " << static_cast<int>(config.strategy)
                          << ", score: " << static_cast<int>(config.score)

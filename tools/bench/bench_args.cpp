@@ -71,8 +71,10 @@ std::optional<size_t> parse_size(std::string_view raw) {
            "quote-suffix\n"
         << "  --verification-strategy <name>  Repeatable. Defaults: hash, "
            "plain_trie, group_mask_trie, per_group_trie, per_suffix_trie\n"
-        << "  --sigma <n>                      Repeatable. Defaults: 1, 2, 3, "
-           "4\n";
+        << "  --sigma <n>                      Requested sigma; "
+           "repeatable. Defaults: 1.."
+        << FINDKEY_TEDDY_MAX_REQUESTED_SIGMA
+        << " (quoted mode compiles one extra byte)\n";
     std::exit(EXIT_FAILURE);
 }
 
@@ -213,7 +215,7 @@ Options parse_options(int argc, char** argv) {
                     std::cerr << "Invalid --sigma\n";
                     print_usage_and_exit(argv[0]);
                 }
-                options.sigmas.push_back(*sigma);
+                options.requested_sigmas.push_back(*sigma);
                 break;
             }
             case 'r': {
@@ -283,9 +285,9 @@ Options parse_options(int argc, char** argv) {
             teddy::ALL_VERIFICATION_STRATEGIES.begin(),
             teddy::ALL_VERIFICATION_STRATEGIES.end());
     }
-    if (options.sigmas.empty()) {
-        options.sigmas.assign(teddy::ALL_SIGMAS.begin(),
-                              teddy::ALL_SIGMAS.end());
+    if (options.requested_sigmas.empty()) {
+        options.requested_sigmas.assign(teddy::ALL_REQUESTED_SIGMAS.begin(),
+                                        teddy::ALL_REQUESTED_SIGMAS.end());
     }
 
     return options;
@@ -310,7 +312,8 @@ std::vector<findkey_teddy_config> make_teddy_configs(const Options& options) {
 
     return teddy::make_teddy_configurations(
         options.grouping_strategies, options.grouping_scores,
-        options.suffix_modes, options.sigmas, options.verification_strategies);
+        options.suffix_modes, options.requested_sigmas,
+        options.verification_strategies);
 }
 
 std::vector<KeyCase> make_key_cases(const Options& options) {
