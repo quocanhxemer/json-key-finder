@@ -52,7 +52,7 @@ class ReverseTrie {
     }
 
     CandidateResult check(std::string_view input,
-                          size_t end_quote,
+                          size_t start_position,
                           uint8_t candidate_groups) const {
         const char* str = input.data();
         int32_t current_node = 0;
@@ -62,7 +62,7 @@ class ReverseTrie {
             return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
         }
 
-        for (size_t position = end_quote; position > 0;) {
+        for (size_t position = start_position; position > 0;) {
             --position;
             const uint8_t c = static_cast<uint8_t>(str[position]);
 

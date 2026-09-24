@@ -26,6 +26,32 @@ TEST(TeddyPerSuffixTrieVerifierTest, ReportsMemoryUsage) {
     EXPECT_GT(metadata.verifier_size_bytes, sizeof(verifier));
 }
 
+TEST(TeddyPerSuffixTrieVerifierTest, StoresOnlyTheUnmatchedKeyPrefixes) {
+    const std::vector<std::string_view> keys = {"abc", "def", "ghij"};
+    findkey_teddy_config short_suffix_config = FINDKEY_TEDDY_CONFIG_INIT;
+    short_suffix_config.sigma = 1;
+    const teddy::CompilationData short_suffix_compilation =
+        teddy::compile(keys, short_suffix_config);
+    const teddy::VerificationBuildContext short_suffix_context{
+        keys, short_suffix_compilation};
+    const teddy::PerSuffixTrieVerifier short_suffix_verifier(
+        short_suffix_context);
+
+    findkey_teddy_config long_suffix_config = FINDKEY_TEDDY_CONFIG_INIT;
+    long_suffix_config.sigma = 3;
+    const teddy::CompilationData long_suffix_compilation =
+        teddy::compile(keys, long_suffix_config);
+    const teddy::VerificationBuildContext long_suffix_context{
+        keys, long_suffix_compilation};
+    const teddy::PerSuffixTrieVerifier long_suffix_verifier(
+        long_suffix_context);
+
+    ASSERT_EQ(short_suffix_compilation.suffixes.size(),
+              long_suffix_compilation.suffixes.size());
+    EXPECT_LT(long_suffix_verifier.memory_usage_bytes(),
+              short_suffix_verifier.memory_usage_bytes());
+}
+
 TEST(TeddyPerSuffixTrieVerifierTest, MatchesKeysWithTheSameSuffix) {
     const std::vector<std::string_view> keys = {"alpha", "xalpha"};
     const findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
@@ -44,6 +70,29 @@ TEST(TeddyPerSuffixTrieVerifierTest, MatchesKeysWithTheSameSuffix) {
     EXPECT_EQ(alpha.key_id, 0u);
     ASSERT_EQ(xalpha.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(xalpha.key_id, 1u);
+}
+
+TEST(TeddyPerSuffixTrieVerifierTest, MatchesAfterRemovingTheEntireKeySuffix) {
+    const std::vector<std::string_view> keys = {"abc", "xabc"};
+    const findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
+    const teddy::CompilationData compilation = teddy::compile(keys, config);
+    const teddy::VerificationBuildContext context{keys, compilation};
+    const teddy::PerSuffixTrieVerifier verifier(context);
+
+    ASSERT_EQ(compilation.sigma, 3);
+    ASSERT_EQ(compilation.suffixes.size(), 1u);
+
+    const teddy::CandidateResult empty_prefix =
+        teddy::verify_json_key_candidate(R"("abc":1)", 4, 0xFF, verifier);
+    const teddy::CandidateResult nonempty_prefix =
+        teddy::verify_json_key_candidate(R"("xabc":1)", 5, 0xFF, verifier);
+
+    ASSERT_EQ(empty_prefix.type, teddy::CANDIDATE_MATCH);
+    EXPECT_EQ(empty_prefix.position, 1u);
+    EXPECT_EQ(empty_prefix.key_id, 0u);
+    ASSERT_EQ(nonempty_prefix.type, teddy::CANDIDATE_MATCH);
+    EXPECT_EQ(nonempty_prefix.position, 1u);
+    EXPECT_EQ(nonempty_prefix.key_id, 1u);
 }
 
 TEST(TeddyPerSuffixTrieVerifierTest, UsesExactSuffixToSelectTrie) {
@@ -84,6 +133,56 @@ TEST(TeddyPerSuffixTrieVerifierTest, SupportsQuotedSuffixes) {
     ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
     EXPECT_EQ(result.position, 1u);
     EXPECT_EQ(result.key_id, 0u);
+}
+
+TEST(TeddyPerSuffixTrieVerifierTest,
+     MatchesAfterRemovingTheEntireQuotedKeySuffix) {
+    const std::vector<std::string_view> keys = {"abcd"};
+    findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
+    config.suffix_mode = TEDDY_SUFFIX_QUOTED;
+    config.sigma = 4;
+
+    const teddy::CompilationData compilation = teddy::compile(keys, config);
+    const teddy::VerificationBuildContext context{keys, compilation};
+    const teddy::PerSuffixTrieVerifier verifier(context);
+
+    ASSERT_EQ(compilation.sigma, 5);
+    const teddy::CandidateResult result =
+        teddy::verify_json_key_candidate(R"("abcd":1)", 5, 0xFF, verifier);
+
+    ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
+    EXPECT_EQ(result.position, 1u);
+    EXPECT_EQ(result.key_id, 0u);
+}
+
+TEST(TeddyPerSuffixTrieVerifierTest,
+     AcceptsAnEscapedQuoteAtThePrefixSuffixBoundary) {
+    const std::vector<std::string_view> keys = {R"(a\"bc)"};
+    const findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
+    const teddy::CompilationData compilation = teddy::compile(keys, config);
+    const teddy::VerificationBuildContext context{keys, compilation};
+    const teddy::PerSuffixTrieVerifier verifier(context);
+
+    const teddy::CandidateResult result =
+        teddy::verify_json_key_candidate(R"("a\"bc":1)", 6, 0xFF, verifier);
+
+    ASSERT_EQ(result.type, teddy::CANDIDATE_MATCH);
+    EXPECT_EQ(result.position, 1u);
+    EXPECT_EQ(result.key_id, 0u);
+}
+
+TEST(TeddyPerSuffixTrieVerifierTest,
+     RejectsAnUnescapedQuoteInTheMatchedSuffix) {
+    const std::vector<std::string_view> keys = {R"(a"bc)"};
+    const findkey_teddy_config config = FINDKEY_TEDDY_CONFIG_INIT;
+    const teddy::CompilationData compilation = teddy::compile(keys, config);
+    const teddy::VerificationBuildContext context{keys, compilation};
+    const teddy::PerSuffixTrieVerifier verifier(context);
+
+    const teddy::CandidateResult result =
+        teddy::verify_json_key_candidate(R"("a"bc":1)", 5, 0xFF, verifier);
+
+    EXPECT_EQ(result.type, teddy::CANDIDATE_KEY_NOT_FOUND);
 }
 
 TEST(TeddyPerSuffixTrieVerifierTest, RejectsCandidatesShorterThanSigma) {

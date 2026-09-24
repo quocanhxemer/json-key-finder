@@ -28,9 +28,21 @@ PerSuffixTrieVerifier::PerSuffixTrieVerifier(
         }
     }
 
+    const size_t matched_key_bytes =
+        static_cast<size_t>(end_quote_offset_ == 0 ? sigma_ - 1 : sigma_);
+
     for (uint32_t key_id = 0; key_id < context.keys.size(); ++key_id) {
+        const std::string_view key = context.keys[key_id];
+        if (key.size() < matched_key_bytes) {
+            throw FindkeyError(
+                FindkeyErrorCode::INVALID_ARGUMENT,
+                "Per-suffix trie key is shorter than its compiled suffix");
+        }
+
+        const std::string_view unmatched_prefix =
+            key.substr(0, key.size() - matched_key_bytes);
         suffix_tries_[teddy.key_suffix_ids[key_id]].insert(
-            context.keys[key_id], key_id,
+            unmatched_prefix, key_id,
             verification::detail::PlainTriePolicy::InsertMetadata{});
     }
 }
@@ -58,7 +70,14 @@ CandidateResult PerSuffixTrieVerifier::check(std::string_view input,
         return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
     }
 
-    return suffix_tries_[suffix_trie->second].check(input, end_quote, 0);
+    // in case suffix contains an unescaped quote, reject the candidate
+    for (size_t position = suffix_start; position < end_quote; ++position) {
+        if (input[position] == '"' && is_valid_quote(input.data(), position)) {
+            return {CANDIDATE_KEY_NOT_FOUND, 0, 0};
+        }
+    }
+
+    return suffix_tries_[suffix_trie->second].check(input, suffix_start, 0);
 }
 
 size_t PerSuffixTrieVerifier::memory_usage_bytes() const noexcept {
