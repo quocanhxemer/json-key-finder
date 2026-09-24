@@ -54,38 +54,82 @@ struct findkey_timing {
 };
 
 enum findkey_teddy_compile_grouping_strategy {
+
+    // Grouping strategy from the original paper
     TEDDY_COMPILE_GREEDY_PAPER_POLICY = 0,
+
+    // Altered version that minimizes the score delta when merging groups
     TEDDY_COMPILE_GREEDY_MIN_DELTA = 1,
+
+    // Groups suffixes into bucket according to their hash values
     TEDDY_COMPILE_HASH_STD = 2,
     TEDDY_COMPILE_HASH_ADLER32 = 3,
     TEDDY_COMPILE_HASH_CRC32 = 4,
     TEDDY_COMPILE_HASH_XXHASH = 5,
     TEDDY_COMPILE_HASH_FNV1A = 6,
+
+    // Sorts suffixes lexicographically and distributes them
+    // into groups in a round-robin fashion
+    // Used as contrast to compare with TEDDY_COMPILE_SORTED_SUFFIX_PARTITION
     TEDDY_COMPILE_SORTED_SUFFIX_ROUND_ROBIN = 7,
+
+    // Sorts suffixes lexicographically and groups them into contiguous ranges
     TEDDY_COMPILE_SORTED_SUFFIX_PARTITION = 8,
+
+    // Sorts suffixes lexicographically
+    // and finds the most optimal partition using dynamic programming
     TEDDY_COMPILE_SORTED_SUFFIX_OPTIMAL_PARTITION = 9,
+
     FINDKEY_TEDDY_COMPILE_GROUPING_STRATEGY_COUNT,
 };
 
 enum findkey_teddy_grouping_score {
+
+    // Score model from the paper
     TEDDY_GROUPING_SCORE_PAPER = 0,
+
+    // Score model from the paper but uses nibbles instead of bytes
     TEDDY_GROUPING_SCORE_PAPER_NIBBLE = 1,
+
+    // Count the number of unique nibbles in each byte of the suffixes
+    // then take their product as the score
+    // Lower score should mean lower diversity of nibbles in one position,
+    // which should lower false positive rate
     TEDDY_GROUPING_SCORE_NIBBLE_COUNT = 2,
+
     FINDKEY_TEDDY_GROUPING_SCORE_COUNT,
 };
 
 enum findkey_teddy_suffix_mode {
+
+    // Suffixes are the last `sigma` bytes of the key
     TEDDY_SUFFIX_RAW = 0,
+
+    // The closing quote is included in the suffix
+    // for lower false positive rate
     TEDDY_SUFFIX_QUOTED = 1,
+
     FINDKEY_TEDDY_SUFFIX_MODE_COUNT,
 };
 
 enum findkey_teddy_verification_strategy {
-    TEDDY_VERIFY_PLAIN_TRIE = 0,
-    TEDDY_VERIFY_HASH = 1,
+
+    // Verification by hash table lookup
+    TEDDY_VERIFY_HASH = 0,
+
+    // Verification by a Trie for all keys
+    TEDDY_VERIFY_PLAIN_TRIE = 1,
+
+    // Each node contains a bitmask of the groups of the current key
+    // Support earlier exit when the candidate group is not in the bitmask
     TEDDY_VERIFY_GROUP_MASK_TRIE = 2,
+
+    // Each group has its own Trie
     TEDDY_VERIFY_PER_GROUP_TRIE = 3,
+
+    // Each suffix has its own Trie
     TEDDY_VERIFY_PER_SUFFIX_TRIE = 4,
+
     FINDKEY_TEDDY_VERIFICATION_STRATEGY_COUNT,
 };
 

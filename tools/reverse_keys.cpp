@@ -144,6 +144,10 @@ static void print_usage(const char* program_name) {
 }
 
 int main(int argc, char* argv[]) {
+    if (argc == 2 && std::string(argv[1]) == "--help") {
+        print_usage(argv[0]);
+        return EXIT_SUCCESS;
+    }
     std::string json_input;
     std::string json_output;
     std::string keys_input;

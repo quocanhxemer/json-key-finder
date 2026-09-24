@@ -8,7 +8,8 @@
 
 namespace {
 
-[[noreturn]] void print_usage_and_exit(const char* prog_name) {
+[[noreturn]] void print_usage_and_exit(const char* prog_name,
+                                       int exit_code = EXIT_FAILURE) {
     std::cerr
         << "Usage:\n"
         << "  " << prog_name
@@ -59,7 +60,7 @@ namespace {
         << "  - --collect-stats cannot be combined with --print-positions\n"
         << "  - Teddy options are ignored when --algo scalar is selected\n";
 
-    std::exit(EXIT_FAILURE);
+    std::exit(exit_code);
 }
 
 }  // namespace
@@ -76,6 +77,7 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
         {"data", required_argument, nullptr, 'd'},
         {"collect-stats", no_argument, nullptr, 'c'},
         {"print-positions", no_argument, nullptr, 'p'},
+        {"help", no_argument, nullptr, 'h'},
         {nullptr, 0, nullptr, 0},
     };
 
@@ -161,6 +163,8 @@ ParsedCliArgs parse_cli_args_or_exit(int argc, char** argv) {
             case 'p':
                 args.print_positions = true;
                 break;
+            case 'h':
+                print_usage_and_exit(argv[0], EXIT_SUCCESS);
             default:
                 print_usage_and_exit(argv[0]);
         }

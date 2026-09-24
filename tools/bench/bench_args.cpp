@@ -41,7 +41,8 @@ std::optional<size_t> parse_size(std::string_view raw) {
     return static_cast<size_t>(value);
 }
 
-[[noreturn]] void print_usage_and_exit(const char* program_name) {
+[[noreturn]] void print_usage_and_exit(const char* program_name,
+                                       int exit_code = EXIT_FAILURE) {
     std::cerr
         << "Usage:\n"
         << "  " << program_name
@@ -75,7 +76,7 @@ std::optional<size_t> parse_size(std::string_view raw) {
            "repeatable. Defaults: 1.."
         << FINDKEY_TEDDY_MAX_REQUESTED_SIGMA
         << " (quoted mode compiles one extra byte)\n";
-    std::exit(EXIT_FAILURE);
+    std::exit(exit_code);
 }
 
 bool has_non_scalar_algo(const Options& options) {
@@ -102,6 +103,7 @@ Options parse_options(int argc, char** argv) {
         {"repeats", required_argument, nullptr, 'r'},
         {"warmup", required_argument, nullptr, 'w'},
         {"dry-run", no_argument, nullptr, 'd'},
+        {"help", no_argument, nullptr, 'h'},
         {nullptr, 0, nullptr, 0},
     };
 
@@ -239,6 +241,8 @@ Options parse_options(int argc, char** argv) {
             case 'd':
                 options.dry_run = true;
                 break;
+            case 'h':
+                print_usage_and_exit(argv[0], EXIT_SUCCESS);
             default:
                 print_usage_and_exit(argv[0]);
         }

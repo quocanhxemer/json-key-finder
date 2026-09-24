@@ -8,8 +8,6 @@
 
 namespace teddy::grouping {
 
-// Count the number of unique nibbles in each byte of the suffixes
-// then take their product as the score
 template <int Sigma>
 class NibbleCountScore final {
    public:
