@@ -105,7 +105,7 @@ target_include_directories(findkey PRIVATE include src)
 target_link_libraries(findkey PRIVATE find_json_key find_json_key_utils findkey_cli)
 
 add_library(find_key_generation STATIC tools/key_generation.cpp)
-target_include_directories(find_key_generation PUBLIC tools)
+target_include_directories(find_key_generation PUBLIC tools PRIVATE src)
 target_link_libraries(find_key_generation PUBLIC find_json_key_warnings)
 
 add_library(find_json_input STATIC tools/json_input.cpp)

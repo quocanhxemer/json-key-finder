@@ -1,7 +1,8 @@
 #include "key_generation.h"
 
+#include "core/json_whitespace.h"
+
 #include <algorithm>
-#include <cctype>
 #include <random>
 #include <unordered_map>
 
@@ -46,7 +47,8 @@ std::unordered_map<std::string, uint64_t> get_key_frequencies(
         }
 
         size_t j = i + 1;
-        while (j < len && std::isspace(static_cast<unsigned char>(str[j]))) {
+        while (j < len &&
+               json_syntax::is_whitespace(static_cast<uint8_t>(str[j]))) {
             ++j;
         }
 

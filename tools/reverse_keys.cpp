@@ -1,6 +1,6 @@
+#include "core/json_whitespace.h"
 #include "io/mmap_file.h"
 
-#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -82,7 +82,7 @@ static bool reverse_json_keys(std::string_view data,
 
         size_t j = i + 1;
         while (j < len &&
-               std::isspace(static_cast<unsigned char>(str[j])) != 0) {
+               json_syntax::is_whitespace(static_cast<uint8_t>(str[j]))) {
             ++j;
         }
 

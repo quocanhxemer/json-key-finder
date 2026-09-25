@@ -1,6 +1,6 @@
 #include "matcher_scalar.h"
 
-#include <cctype>
+#include "core/json_whitespace.h"
 
 std::vector<findkey_result> matcher_scalar(
     std::string_view data,
@@ -43,7 +43,8 @@ std::vector<findkey_result> matcher_scalar(
 
         // found end of string
         size_t j = i + 1;
-        while (j < len && std::isspace(static_cast<unsigned char>(str[j]))) {
+        while (j < len &&
+               json_syntax::is_whitespace(static_cast<uint8_t>(str[j]))) {
             ++j;
         }
 

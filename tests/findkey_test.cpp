@@ -79,6 +79,42 @@ TEST(FindkeyPublicApiTest, RequiresTimingOutput) {
     EXPECT_EQ(total, 0u);
 }
 
+TEST(FindkeyPublicApiTest, AcceptsExactlyJsonWhitespaceBeforeNameSeparator) {
+    const std::vector<std::string_view> keys = {"key"};
+
+    for (const char whitespace : {' ', '\t', '\n', '\r'}) {
+        std::string json = R"({"key")";
+        json.push_back(whitespace);
+        json += ":1}";
+
+        SCOPED_TRACE(::testing::Message()
+                     << "accepted byte="
+                     << static_cast<unsigned int>(
+                            static_cast<unsigned char>(whitespace)));
+
+        const ApiRun scalar = run_findkey(json, keys, SCALAR);
+        ASSERT_EQ(scalar.status, FINDKEY_OK);
+        ASSERT_EQ(scalar.total, 1u);
+        expect_teddy_matchers_match(scalar, json, keys);
+    }
+
+    for (const char non_json_whitespace : {'\v', '\f'}) {
+        std::string json = R"({"key")";
+        json.push_back(non_json_whitespace);
+        json += ":1}";
+
+        SCOPED_TRACE(::testing::Message()
+                     << "rejected byte="
+                     << static_cast<unsigned int>(
+                            static_cast<unsigned char>(non_json_whitespace)));
+
+        const ApiRun scalar = run_findkey(json, keys, SCALAR);
+        ASSERT_EQ(scalar.status, FINDKEY_OK);
+        ASSERT_EQ(scalar.total, 0u);
+        expect_teddy_matchers_match(scalar, json, keys);
+    }
+}
+
 TEST(FindkeyDifferentialTest, MatchesScalarForJsonEdgeCases) {
     struct TestCase {
         std::string_view json;

@@ -173,6 +173,7 @@ This project performs lightweight raw-byte JSON scanning; it is not a complete J
   Escape sequences are not decoded.
   For example, a key written as `"a\u0062"` must be supplied as the raw text `a\u0062`, not as `ab`.
   - Escaped quotes and backslashes are handled when locating string boundaries.
+  - Between a key's closing quote and colon, only the four JSON whitespace bytes defined by RFC 8259 are accepted: space, horizontal tab, line feed, and carriage return.
   - Duplicate requested keys produce only one match per occurrence.
 
 These semantics apply consistently to the scalar, Teddy baseline, and SIMD matchers.

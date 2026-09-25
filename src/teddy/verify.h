@@ -1,11 +1,11 @@
 #pragma once
 
+#include "core/json_whitespace.h"
 #include "teddy/compile.h"
 #include "teddy/verification/json_context.h"
 #include "teddy/verification/result.h"
 #include "teddy/verification/verifier.h"
 
-#include <cctype>
 #include <cstdint>
 #include <vector>
 
@@ -50,7 +50,8 @@ static inline CandidateResult verify_json_key_candidate(
     }
 
     size_t j = end_quote + 1;
-    while (j < len && std::isspace(static_cast<unsigned char>(str[j]))) {
+    while (j < len &&
+           json_syntax::is_whitespace(static_cast<uint8_t>(str[j]))) {
         ++j;
     }
 
