@@ -230,6 +230,25 @@ TEST(TeddyScoreModelsTest, MergeMatchesScoringTheCombinedSuffixes) {
 }
 
 TEST(TeddyScoreModelsTest, NibbleCountDistinguishesGroupingQuality) {
+    {
+        SCOPED_TRACE("two-byte thesis example");
+        const std::vector<teddy::Suffix> suffix = {{'A', 'A'}};
+        const std::vector<teddy::Suffix> sensible_group = {{'A', 'B'},
+                                                           {'B', 'A'}};
+        const std::vector<teddy::Suffix> poor_group = {{'B', 'B'}, {'C', 'C'}};
+
+        EXPECT_EQ(score_after_merge<PaperScore<2>>(suffix, sensible_group), 9u);
+        EXPECT_EQ(score_after_merge<PaperScore<2>>(suffix, poor_group), 9u);
+        EXPECT_EQ(
+            score_after_merge<PaperNibbleScore<2>>(suffix, sensible_group), 4u);
+        EXPECT_EQ(score_after_merge<PaperNibbleScore<2>>(suffix, poor_group),
+                  4u);
+        EXPECT_EQ(
+            score_after_merge<NibbleCountScore<2>>(suffix, sensible_group), 4u);
+        EXPECT_EQ(score_after_merge<NibbleCountScore<2>>(suffix, poor_group),
+                  9u);
+    }
+
     struct TestCase {
         std::string_view name;
         std::vector<teddy::Suffix> base;
