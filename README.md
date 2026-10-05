@@ -155,6 +155,10 @@ chmod +x run_tests.sh
 ./run_tests.sh
 ```
 
+## Benchmark results
+
+The benchmark results are available as CSV files in [`benchmark-results/`](benchmark-results/).
+
 ## Other tools
 
 ```bash
